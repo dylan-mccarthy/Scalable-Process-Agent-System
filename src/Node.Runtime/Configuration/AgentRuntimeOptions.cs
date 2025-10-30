@@ -18,7 +18,7 @@ public class AgentRuntimeOptions
     /// <summary>
     /// Default model to use if not specified in agent definition.
     /// </summary>
-    public const string DefaultModelValue = "gpt-4";
+    public const string DefaultModelValue = "gpt-5-mini";
 
     /// <summary>
     /// Default temperature for model if not specified.
