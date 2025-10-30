@@ -1,7 +1,9 @@
 using ControlPlane.Api.Models;
 using ControlPlane.Api.Data;
+using ControlPlane.Api.Observability;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
+using System.Diagnostics;
 
 namespace ControlPlane.Api.Services;
 
@@ -28,6 +30,9 @@ public class PostgresNodeStore : INodeStore
 
     public async Task<Node> RegisterNodeAsync(RegisterNodeRequest request)
     {
+        using var activity = TelemetryConfig.ActivitySource.StartActivity("NodeStore.RegisterNode");
+        activity?.SetTag("node.id", request.NodeId);
+
         var entity = new NodeEntity
         {
             NodeId = request.NodeId,
@@ -43,6 +48,9 @@ public class PostgresNodeStore : INodeStore
 
         _context.Nodes.Add(entity);
         await _context.SaveChangesAsync();
+
+        TelemetryConfig.NodesRegisteredCounter.Add(1,
+            new KeyValuePair<string, object?>("node.id", request.NodeId));
 
         return MapToModel(entity);
     }
@@ -65,6 +73,9 @@ public class PostgresNodeStore : INodeStore
 
     public async Task<bool> DeleteNodeAsync(string nodeId)
     {
+        using var activity = TelemetryConfig.ActivitySource.StartActivity("NodeStore.DeleteNode");
+        activity?.SetTag("node.id", nodeId);
+
         var entity = await _context.Nodes.FindAsync(nodeId);
         if (entity == null)
         {
@@ -73,6 +84,9 @@ public class PostgresNodeStore : INodeStore
 
         _context.Nodes.Remove(entity);
         await _context.SaveChangesAsync();
+
+        TelemetryConfig.NodesDisconnectedCounter.Add(1,
+            new KeyValuePair<string, object?>("node.id", nodeId));
 
         return true;
     }

@@ -3,11 +3,107 @@ using ControlPlane.Api.Services;
 using ControlPlane.Api.AgentRuntime;
 using ControlPlane.Api.Data;
 using ControlPlane.Api.Grpc;
+using ControlPlane.Api.Observability;
 using Microsoft.EntityFrameworkCore;
 using StackExchange.Redis;
 using NATS.Client.Core;
+using OpenTelemetry.Logs;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure OpenTelemetry
+var otelConfig = builder.Configuration.GetSection("OpenTelemetry");
+var serviceName = otelConfig.GetValue<string>("ServiceName") ?? TelemetryConfig.ServiceName;
+var serviceVersion = otelConfig.GetValue<string>("ServiceVersion") ?? TelemetryConfig.ServiceVersion;
+var otlpEndpoint = otelConfig.GetValue<string>("OtlpExporter:Endpoint") ?? "http://localhost:4317";
+var consoleExporterEnabled = otelConfig.GetValue<bool>("ConsoleExporter:Enabled", false);
+var tracesEnabled = otelConfig.GetValue<bool>("Traces:Enabled", true);
+var metricsEnabled = otelConfig.GetValue<bool>("Metrics:Enabled", true);
+
+var resourceBuilder = ResourceBuilder.CreateDefault()
+    .AddService(serviceName: serviceName, serviceVersion: serviceVersion)
+    .AddAttributes(new Dictionary<string, object>
+    {
+        ["deployment.environment"] = builder.Environment.EnvironmentName,
+        ["host.name"] = Environment.MachineName
+    });
+
+// Configure Tracing
+if (tracesEnabled)
+{
+    builder.Services.AddOpenTelemetry()
+        .WithTracing(tracing =>
+        {
+            tracing.SetResourceBuilder(resourceBuilder)
+                .AddSource(TelemetryConfig.ActivitySource.Name)
+                .AddAspNetCoreInstrumentation(options =>
+                {
+                    options.RecordException = true;
+                    options.Filter = httpContext =>
+                    {
+                        // Don't trace health check endpoints
+                        return !httpContext.Request.Path.StartsWithSegments("/health");
+                    };
+                })
+                .AddGrpcClientInstrumentation()
+                .AddHttpClientInstrumentation();
+
+            if (consoleExporterEnabled)
+            {
+                tracing.AddConsoleExporter();
+            }
+
+            tracing.AddOtlpExporter(options =>
+            {
+                options.Endpoint = new Uri(otlpEndpoint);
+            });
+        });
+}
+
+// Configure Metrics
+if (metricsEnabled)
+{
+    builder.Services.AddOpenTelemetry()
+        .WithMetrics(metrics =>
+        {
+            metrics.SetResourceBuilder(resourceBuilder)
+                .AddMeter(TelemetryConfig.Meter.Name)
+                .AddAspNetCoreInstrumentation()
+                .AddHttpClientInstrumentation()
+                .AddRuntimeInstrumentation();
+
+            if (consoleExporterEnabled)
+            {
+                metrics.AddConsoleExporter();
+            }
+
+            metrics.AddOtlpExporter(options =>
+            {
+                options.Endpoint = new Uri(otlpEndpoint);
+            });
+        });
+}
+
+// Configure Logging
+builder.Logging.AddOpenTelemetry(logging =>
+{
+    logging.SetResourceBuilder(resourceBuilder);
+    logging.IncludeFormattedMessage = otelConfig.GetValue<bool>("Logs:IncludeFormattedMessage", true);
+    logging.IncludeScopes = otelConfig.GetValue<bool>("Logs:IncludeScopes", true);
+
+    if (consoleExporterEnabled)
+    {
+        logging.AddConsoleExporter();
+    }
+
+    logging.AddOtlpExporter(options =>
+    {
+        options.Endpoint = new Uri(otlpEndpoint);
+    });
+});
 
 // Add services to the container
 builder.Services.AddOpenApi();
