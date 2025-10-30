@@ -32,9 +32,25 @@ public class PostgresAgentStore : IAgentStore
         {
             AgentId = Guid.NewGuid().ToString(),
             Name = request.Name,
+            Description = request.Description,
             Instructions = request.Instructions,
             ModelProfile = request.ModelProfile != null 
                 ? JsonSerializer.Serialize(request.ModelProfile) 
+                : null,
+            Budget = request.Budget != null
+                ? JsonSerializer.Serialize(request.Budget)
+                : null,
+            Tools = request.Tools != null
+                ? JsonSerializer.Serialize(request.Tools)
+                : null,
+            InputConnector = request.Input != null
+                ? JsonSerializer.Serialize(request.Input)
+                : null,
+            OutputConnector = request.Output != null
+                ? JsonSerializer.Serialize(request.Output)
+                : null,
+            Metadata = request.Metadata != null
+                ? JsonSerializer.Serialize(request.Metadata)
                 : null
         };
 
@@ -57,6 +73,11 @@ public class PostgresAgentStore : IAgentStore
             entity.Name = request.Name;
         }
 
+        if (request.Description != null)
+        {
+            entity.Description = request.Description;
+        }
+
         if (request.Instructions != null)
         {
             entity.Instructions = request.Instructions;
@@ -65,6 +86,31 @@ public class PostgresAgentStore : IAgentStore
         if (request.ModelProfile != null)
         {
             entity.ModelProfile = JsonSerializer.Serialize(request.ModelProfile);
+        }
+
+        if (request.Budget != null)
+        {
+            entity.Budget = JsonSerializer.Serialize(request.Budget);
+        }
+
+        if (request.Tools != null)
+        {
+            entity.Tools = JsonSerializer.Serialize(request.Tools);
+        }
+
+        if (request.Input != null)
+        {
+            entity.InputConnector = JsonSerializer.Serialize(request.Input);
+        }
+
+        if (request.Output != null)
+        {
+            entity.OutputConnector = JsonSerializer.Serialize(request.Output);
+        }
+
+        if (request.Metadata != null)
+        {
+            entity.Metadata = JsonSerializer.Serialize(request.Metadata);
         }
 
         await _context.SaveChangesAsync();
@@ -92,9 +138,25 @@ public class PostgresAgentStore : IAgentStore
         {
             AgentId = entity.AgentId,
             Name = entity.Name,
+            Description = entity.Description,
             Instructions = entity.Instructions,
             ModelProfile = entity.ModelProfile != null 
                 ? JsonSerializer.Deserialize<Dictionary<string, object>>(entity.ModelProfile) 
+                : null,
+            Budget = entity.Budget != null
+                ? JsonSerializer.Deserialize<AgentBudget>(entity.Budget)
+                : null,
+            Tools = entity.Tools != null
+                ? JsonSerializer.Deserialize<List<string>>(entity.Tools)
+                : null,
+            Input = entity.InputConnector != null
+                ? JsonSerializer.Deserialize<ConnectorConfiguration>(entity.InputConnector)
+                : null,
+            Output = entity.OutputConnector != null
+                ? JsonSerializer.Deserialize<ConnectorConfiguration>(entity.OutputConnector)
+                : null,
+            Metadata = entity.Metadata != null
+                ? JsonSerializer.Deserialize<Dictionary<string, string>>(entity.Metadata)
                 : null
         };
     }

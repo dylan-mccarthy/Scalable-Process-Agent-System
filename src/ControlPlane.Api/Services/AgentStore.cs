@@ -33,8 +33,14 @@ public class InMemoryAgentStore : IAgentStore
         {
             AgentId = Guid.NewGuid().ToString(),
             Name = request.Name,
+            Description = request.Description,
             Instructions = request.Instructions,
-            ModelProfile = request.ModelProfile
+            ModelProfile = request.ModelProfile,
+            Budget = request.Budget,
+            Tools = request.Tools,
+            Input = request.Input,
+            Output = request.Output,
+            Metadata = request.Metadata
         };
 
         _agents[agent.AgentId] = agent;
@@ -50,10 +56,22 @@ public class InMemoryAgentStore : IAgentStore
 
         if (request.Name != null)
             agent.Name = request.Name;
+        if (request.Description != null)
+            agent.Description = request.Description;
         if (request.Instructions != null)
             agent.Instructions = request.Instructions;
         if (request.ModelProfile != null)
             agent.ModelProfile = request.ModelProfile;
+        if (request.Budget != null)
+            agent.Budget = request.Budget;
+        if (request.Tools != null)
+            agent.Tools = request.Tools;
+        if (request.Input != null)
+            agent.Input = request.Input;
+        if (request.Output != null)
+            agent.Output = request.Output;
+        if (request.Metadata != null)
+            agent.Metadata = request.Metadata;
 
         _agents[agentId] = agent;
         return Task.FromResult<Agent?>(agent);
