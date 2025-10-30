@@ -64,27 +64,19 @@ public class AgentRuntimeServiceTests
     [Fact]
     public async Task ValidateAgentAsync_ReturnsFalse_WhenNameIsEmpty()
     {
-        // Arrange - Create agent with invalid data by directly manipulating store
-        var agent = new Agent
-        {
-            AgentId = "invalid-agent",
-            Name = "", // Invalid
-            Instructions = "Test instructions",
-            ModelProfile = new Dictionary<string, object> { { "model", "gpt-4" } }
-        };
-        await _agentStore.CreateAgentAsync(new CreateAgentRequest
+        // Arrange - Create agent then update to invalid state
+        var agent = await _agentStore.CreateAgentAsync(new CreateAgentRequest
         {
             Name = "temp",
-            Instructions = "temp"
+            Instructions = "temp",
+            ModelProfile = new Dictionary<string, object> { { "model", "gpt-4" } }
         });
-        // Update to invalid state
-        await _agentStore.UpdateAgentAsync(
-            (await _agentStore.GetAllAgentsAsync()).First().AgentId,
-            new UpdateAgentRequest { Name = "" });
+        
+        // Update to invalid state (empty name)
+        await _agentStore.UpdateAgentAsync(agent.AgentId, new UpdateAgentRequest { Name = "" });
 
         // Act
-        var isValid = await _runtimeService.ValidateAgentAsync(
-            (await _agentStore.GetAllAgentsAsync()).First().AgentId);
+        var isValid = await _runtimeService.ValidateAgentAsync(agent.AgentId);
 
         // Assert
         Assert.False(isValid);

@@ -155,7 +155,9 @@ public class AgentRuntimeService : IAgentRuntime
 /// </summary>
 public class AgentRuntimeOptions
 {
-    public string? DefaultModel { get; set; } = "gpt-4";
+    public const string DefaultModelValue = "gpt-4";
+    
+    public string? DefaultModel { get; set; } = DefaultModelValue;
     public double DefaultTemperature { get; set; } = 0.7;
     public int MaxTokens { get; set; } = 4000;
     public int MaxDurationSeconds { get; set; } = 60;
