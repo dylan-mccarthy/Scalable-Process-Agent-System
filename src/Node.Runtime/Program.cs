@@ -57,6 +57,7 @@ if (otelConfig.Traces.Enabled || otelConfig.Metrics.Enabled)
                     .SetResourceBuilder(resourceBuilder)
                     .AddHttpClientInstrumentation()
                     .AddGrpcClientInstrumentation()
+                    .AddSource(Node.Runtime.Observability.TelemetryConfig.ActivitySource.Name)
                     .SetSampler(new TraceIdRatioBasedSampler(otelConfig.Traces.SamplingRatio));
 
                 if (otelConfig.ConsoleExporter.Enabled)
@@ -82,7 +83,8 @@ if (otelConfig.Traces.Enabled || otelConfig.Metrics.Enabled)
                 metrics
                     .SetResourceBuilder(resourceBuilder)
                     .AddHttpClientInstrumentation()
-                    .AddRuntimeInstrumentation();
+                    .AddRuntimeInstrumentation()
+                    .AddMeter(Node.Runtime.Observability.TelemetryConfig.Meter.Name);
 
                 if (otelConfig.ConsoleExporter.Enabled)
                 {
