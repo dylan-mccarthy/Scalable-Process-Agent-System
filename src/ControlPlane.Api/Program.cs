@@ -1,5 +1,6 @@
 using ControlPlane.Api.Models;
 using ControlPlane.Api.Services;
+using ControlPlane.Api.AgentRuntime;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,6 +9,21 @@ builder.Services.AddOpenApi();
 builder.Services.AddSingleton<IAgentStore, InMemoryAgentStore>();
 builder.Services.AddSingleton<INodeStore, InMemoryNodeStore>();
 builder.Services.AddSingleton<IRunStore, InMemoryRunStore>();
+
+// Add Microsoft Agent Framework runtime services
+builder.Services.AddSingleton<IToolRegistry, InMemoryToolRegistry>();
+builder.Services.AddSingleton(sp =>
+{
+    var configuration = builder.Configuration.GetSection("AgentRuntime");
+    return new AgentRuntimeOptions
+    {
+        DefaultModel = configuration.GetValue<string>("DefaultModel") ?? "gpt-4",
+        DefaultTemperature = configuration.GetValue<double>("DefaultTemperature", 0.7),
+        MaxTokens = configuration.GetValue<int>("MaxTokens", 4000),
+        MaxDurationSeconds = configuration.GetValue<int>("MaxDurationSeconds", 60)
+    };
+});
+builder.Services.AddSingleton<IAgentRuntime, AgentRuntimeService>();
 
 var app = builder.Build();
 

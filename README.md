@@ -7,9 +7,10 @@ This is the Control Plane API for the Business Process Agents MVP project. It pr
 ```
 ├── src/
 │   └── ControlPlane.Api/          # Main API project
-│       ├── Models/                # Data models
-│       ├── Services/              # Business logic and storage
-│       └── Program.cs             # API endpoints and configuration
+│       ├── AgentRuntime/           # Agent runtime and tool registry (E1-T2)
+│       ├── Models/                 # Data models
+│       ├── Services/               # Business logic and storage
+│       └── Program.cs              # API endpoints and configuration
 ├── tests/
 │   └── ControlPlane.Api.Tests/    # Integration tests
 └── BusinessProcessAgents.sln      # Solution file
@@ -161,13 +162,53 @@ This is an ASP.NET Core Minimal API implementation using:
 
 ## Current Implementation
 
-This is a skeleton implementation (E1-T1) that provides:
+This is a skeleton implementation (E1-T1, E1-T2) that provides:
 - ✅ Full CRUD operations for Agents
 - ✅ Node registration and heartbeat endpoints
 - ✅ Run state management endpoints (complete, fail, cancel)
 - ✅ In-memory storage for all entities
 - ✅ Input validation and error handling
-- ✅ Comprehensive integration tests (21 tests)
+- ✅ **Microsoft Agent Framework SDK integration** (E1-T2)
+- ✅ **Agent runtime base classes** for executing agents
+- ✅ **Tool registry** for managing agent tools
+- ✅ Configuration support for agent runtime options
+- ✅ Comprehensive integration tests (39 tests)
+
+### Microsoft Agent Framework Integration
+
+The project now includes Microsoft Agent Framework SDK integration with the following components:
+
+#### Agent Runtime Service (`IAgentRuntime`)
+- Creates agent instances from agent definitions
+- Executes agents with input messages
+- Validates agent configurations
+- Integrates with tool registry for agent capabilities
+
+#### Tool Registry (`IToolRegistry`)
+- Manages tools available to agents
+- Associates tools with specific agents
+- Supports function, API, and connector tools
+- In-memory implementation for MVP
+
+#### Configuration
+Agent runtime can be configured via `appsettings.json`:
+```json
+{
+  "AgentRuntime": {
+    "DefaultModel": "gpt-4",
+    "DefaultTemperature": 0.7,
+    "MaxTokens": 4000,
+    "MaxDurationSeconds": 60
+  }
+}
+```
+
+#### NuGet Packages Added
+- `Microsoft.Agents.AI` (v1.0.0-preview.251028.1)
+- `Microsoft.Agents.AI.AzureAI` (v1.0.0-preview.251028.1)
+- `Microsoft.Agents.AI.OpenAI` (v1.0.0-preview.251028.1)
+
+**Note:** Actual agent execution requires Azure AI Foundry or OpenAI credentials, which will be configured in task E3-T4 (Azure AI Foundry integration).
 
 ## Next Steps
 
