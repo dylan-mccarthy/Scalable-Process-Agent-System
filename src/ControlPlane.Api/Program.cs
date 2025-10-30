@@ -231,6 +231,42 @@ app.MapPost("/v1/runs/{runId}:cancel", async (string runId, CancelRunRequest req
 .WithName("CancelRun")
 .WithTags("Runs");
 
+// NATS test endpoint - publishes a test event to verify JetStream setup
+app.MapPost("/v1/events:test", async (INatsEventPublisher publisher) =>
+{
+    var testEvent = new ControlPlane.Api.Events.RunStateChangedEvent
+    {
+        RunId = "test-run-" + Guid.NewGuid().ToString()[..8],
+        AgentId = "test-agent",
+        NodeId = "test-node",
+        PreviousState = "pending",
+        NewState = "running",
+        CorrelationId = Guid.NewGuid().ToString()
+    };
+
+    try
+    {
+        await publisher.PublishAsync(testEvent);
+        return Results.Ok(new
+        {
+            message = "Test event published successfully",
+            eventId = testEvent.EventId,
+            eventType = testEvent.EventType,
+            timestamp = testEvent.Timestamp
+        });
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem(
+            detail: ex.Message,
+            statusCode: 500,
+            title: "Failed to publish test event"
+        );
+    }
+})
+.WithName("PublishTestEvent")
+.WithTags("Events");
+
 app.Run();
 
 // Make the implicit Program class public for testing
