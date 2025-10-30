@@ -1,14 +1,33 @@
 using ControlPlane.Api.Models;
 using ControlPlane.Api.Services;
 using ControlPlane.Api.AgentRuntime;
+using ControlPlane.Api.Data;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container
 builder.Services.AddOpenApi();
-builder.Services.AddSingleton<IAgentStore, InMemoryAgentStore>();
-builder.Services.AddSingleton<INodeStore, InMemoryNodeStore>();
-builder.Services.AddSingleton<IRunStore, InMemoryRunStore>();
+
+// Configure stores based on environment - use PostgreSQL stores by default, in-memory for tests
+var useInMemoryStores = builder.Configuration.GetValue<bool>("UseInMemoryStores", false);
+
+if (useInMemoryStores)
+{
+    builder.Services.AddSingleton<IAgentStore, InMemoryAgentStore>();
+    builder.Services.AddSingleton<INodeStore, InMemoryNodeStore>();
+    builder.Services.AddSingleton<IRunStore, InMemoryRunStore>();
+}
+else
+{
+    // Add Database context only when using PostgreSQL
+    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+        options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    
+    builder.Services.AddScoped<IAgentStore, PostgresAgentStore>();
+    builder.Services.AddScoped<INodeStore, PostgresNodeStore>();
+    builder.Services.AddScoped<IRunStore, PostgresRunStore>();
+}
 
 // Add Microsoft Agent Framework runtime services
 builder.Services.AddSingleton<IToolRegistry, InMemoryToolRegistry>();
