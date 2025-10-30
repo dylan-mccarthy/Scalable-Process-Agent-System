@@ -29,7 +29,7 @@ This is the Control Plane API for the Business Process Agents MVP project. It pr
 The application uses PostgreSQL for persistent storage. The database schema includes:
 
 - **agents**: Agent definitions
-- **agent_versions**: Version history of agents  
+- **agent_versions**: Version history of agents
 - **deployments**: Agent deployments with replicas and placement
 - **nodes**: Worker nodes
 - **runs**: Agent execution runs
@@ -45,6 +45,8 @@ Update `appsettings.json` to configure the PostgreSQL connection:
   }
 }
 ```
+
+> **Security Note**: For production deployments, use strong passwords and store credentials securely using environment variables or Azure Key Vault. Never commit production credentials to source control.
 
 ### Running Migrations
 
