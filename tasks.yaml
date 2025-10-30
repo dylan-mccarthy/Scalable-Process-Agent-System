@@ -1,0 +1,196 @@
+version: 1
+project: Business Process Agents MVP
+owner: Platform Engineering
+phases:
+  - name: Epic 1 – Control Plane Foundations
+    goal: Establish core API, scheduler, and orchestration using Microsoft Agent Framework.
+    tasks:
+      - id: E1-T1
+        title: API skeleton
+        description: Scaffold ASP.NET Minimal API with endpoints for Agents, Nodes, Runs.
+      - id: E1-T2
+        title: Integrate Microsoft Agent Framework SDK
+        description: Configure agent runtime base classes and tool registry integration.
+      - id: E1-T3
+        title: Database setup
+        description: Create Postgres schema for agents, versions, deployments, nodes, runs.
+      - id: E1-T4
+        title: Redis integration
+        description: Implement lease and lock store with TTL expiry.
+      - id: E1-T5
+        title: NATS setup
+        description: Provision JetStream topics and publish test events.
+      - id: E1-T6
+        title: gRPC service contract
+        description: Implement LeaseService (Pull, Ack, Complete, Fail) for node communication.
+      - id: E1-T7
+        title: Scheduler service
+        description: Create least-loaded scheduling strategy with region constraint.
+      - id: E1-T8
+        title: OpenTelemetry wiring
+        description: Add tracing, metrics, and logging through OTel Collector.
+      - id: E1-T9
+        title: Authentication setup
+        description: Integrate Keycloak OIDC middleware for development.
+      - id: E1-T10
+        title: Containerization
+        description: Dockerize services and build Helm chart for control plane.
+      - id: E1-T11
+        title: CI pipeline
+        description: Build/test pipeline with SBOM generation and image signing.
+
+  - name: Epic 2 – Node Runtime & Connectors
+    goal: Build worker node with MAF runtime and connectors.
+    tasks:
+      - id: E2-T1
+        title: Node runtime skeleton
+        description: Create .NET Worker Service with gRPC client implementation.
+      - id: E2-T2
+        title: Integrate MAF runtime
+        description: Load and execute agent definitions via Microsoft Agent Framework SDK.
+      - id: E2-T3
+        title: Node registration
+        description: Register node via Control API and heartbeat endpoint.
+      - id: E2-T4
+        title: Lease pull loop
+        description: Stream leases via gRPC; send Ack, Complete, Fail.
+      - id: E2-T5
+        title: Sandbox process model
+        description: Execute agent runs in isolated process with budgets enforced.
+      - id: E2-T6
+        title: Service Bus connector
+        description: Implement input connector for Azure Service Bus.
+      - id: E2-T7
+        title: HTTP output connector
+        description: Add output connector with retry/backoff and idempotency.
+      - id: E2-T8
+        title: DLQ handling
+        description: Route failed messages to Service Bus DLQ.
+      - id: E2-T9
+        title: Node telemetry
+        description: Capture metrics and traces using OpenTelemetry.
+      - id: E2-T10
+        title: Secure communication
+        description: Enable mTLS between node and control plane.
+
+  - name: Epic 3 – Agent Definition & Deployment Flow
+    goal: Create and deploy the Invoice Classifier agent leveraging Azure AI Foundry LLMs.
+    tasks:
+      - id: E3-T1
+        title: AgentDefinition model
+        description: Implement CRUD API for agent definitions.
+      - id: E3-T2
+        title: Versioning endpoint
+        description: Implement versioning and validation for agents.
+      - id: E3-T3
+        title: Deployment API
+        description: Create simple deployment with replicas and placement labels.
+      - id: E3-T4
+        title: Azure AI Foundry integration
+        description: Configure Azure-hosted LLM endpoint for MAF runtime.
+      - id: E3-T5
+        title: Tool registry setup
+        description: Register Azure AI Foundry provider within MAF SDK.
+      - id: E3-T6
+        title: Invoice Classifier agent
+        description: Define system prompt and connect Service Bus input to API output.
+      - id: E3-T7
+        title: Integration test
+        description: Validate end-to-end message flow through LLM classification.
+
+  - name: Epic 4 – Observability Stack
+    goal: Full observability using OpenTelemetry.
+    tasks:
+      - id: E4-T1
+        title: OTel Collector deployment
+        description: Deploy and configure OTel Collector with Prometheus, Tempo, Loki exporters.
+      - id: E4-T2
+        title: Metrics collection
+        description: Record node utilization, run success/failure, latency.
+      - id: E4-T3
+        title: Tracing integration
+        description: Trace LLM calls and connector operations.
+      - id: E4-T4
+        title: Dashboards
+        description: Create Grafana dashboards for control and node metrics.
+
+  - name: Epic 5 – Admin UI (Minimal)
+    goal: Operator interface for monitoring and management.
+    tasks:
+      - id: E5-T1
+        title: Next.js setup
+        description: Initialize UI project with Tailwind and shadcn/ui.
+      - id: E5-T2
+        title: Auth integration
+        description: Add OIDC login flow via Keycloak.
+      - id: E5-T3
+        title: Fleet dashboard
+        description: Display nodes and active runs.
+      - id: E5-T4
+        title: Runs list
+        description: Show latest runs with status and duration.
+      - id: E5-T5
+        title: Agent editor
+        description: Create form for definition editing and Azure AI Foundry model selection.
+
+  - name: Epic 6 – Infrastructure & CI/CD
+    goal: Automate deployments locally and on Azure.
+    tasks:
+      - id: E6-T1
+        title: Local environment
+        description: k3d setup script for all core services.
+      - id: E6-T2
+        title: Helm chart packaging
+        description: Package control plane, node, UI, observability.
+      - id: E6-T3
+        title: AKS environment
+        description: Provision cluster, PG, Redis, Key Vault, Azure AI Foundry integration.
+      - id: E6-T4
+        title: GitHub Actions workflows
+        description: Build/test/deploy pipeline to AKS.
+
+  - name: Epic 7 – Testing & Validation
+    goal: Verify reliability, performance, and security.
+    tasks:
+      - id: E7-T1
+        title: Unit tests
+        description: API, scheduler, connectors.
+      - id: E7-T2
+        title: Integration tests
+        description: Include Azure AI Foundry mock endpoints.
+      - id: E7-T3
+        title: E2E tests
+        description: Process 100 invoices and validate output accuracy.
+      - id: E7-T4
+        title: Chaos test
+        description: Simulate node failure and verify reassignment.
+
+  - name: Epic 8 – Documentation & Demo
+    goal: Deliver complete docs and working demo.
+    tasks:
+      - id: E8-T1
+        title: README & Quickstart
+        description: Include Azure AI Foundry configuration.
+      - id: E8-T2
+        title: Architecture diagrams
+        description: C4 context and container diagrams.
+      - id: E8-T3
+        title: Demo script
+        description: Walkthrough invoice classification end-to-end.
+      - id: E8-T4
+        title: Retrospective
+        description: Document learnings and backlog.
+
+milestones:
+  - id: M1
+    title: Core API & Scheduler
+    deliverables: Control plane, DB, gRPC leases, MAF SDK integration.
+    date: Week 3
+  - id: M2
+    title: Node Runtime + Connectors
+    deliverables: End-to-end lease flow, Azure AI Foundry LLM execution.
+    date: Week 6
+  - id: M3
+    title: Observability + UI + Demo
+    deliverables: Dashboards, UI, Invoice Agent live.
+    date: Week 9
