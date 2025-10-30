@@ -48,11 +48,14 @@ Edit `.env.local` to configure the API endpoint and authentication settings:
 NEXT_PUBLIC_API_URL=http://localhost:5000
 
 # Authentication (Keycloak OIDC)
+# IMPORTANT: These variables are required for authentication to work
 AUTH_SECRET=your-secret-here-generate-with-openssl-rand-base64-32
 AUTH_KEYCLOAK_ID=admin-ui
 AUTH_KEYCLOAK_SECRET=your-keycloak-client-secret
 AUTH_KEYCLOAK_ISSUER=http://localhost:8080/realms/bpa
 ```
+
+> **Note:** The application will build without these variables set, but authentication will not work at runtime. Make sure to configure them before starting the development server.
 
 **Generate AUTH_SECRET:**
 
