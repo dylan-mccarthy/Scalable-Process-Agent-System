@@ -30,6 +30,7 @@ public interface ILeasePullService
 public sealed class LeasePullService : ILeasePullService
 {
     private readonly LeaseService.LeaseServiceClient _leaseClient;
+    private readonly IAgentExecutor _agentExecutor;
     private readonly NodeRuntimeOptions _options;
     private readonly ILogger<LeasePullService> _logger;
     private Task? _pullTask;
@@ -39,10 +40,12 @@ public sealed class LeasePullService : ILeasePullService
 
     public LeasePullService(
         LeaseService.LeaseServiceClient leaseClient,
+        IAgentExecutor agentExecutor,
         IOptions<NodeRuntimeOptions> options,
         ILogger<LeasePullService> logger)
     {
         _leaseClient = leaseClient;
+        _agentExecutor = agentExecutor;
         _options = options.Value;
         _logger = logger;
     }
@@ -175,41 +178,117 @@ public sealed class LeasePullService : ILeasePullService
             _activeLeasesLock.Release();
         }
 
+        var stopwatch = Stopwatch.StartNew();
+
         try
         {
             _logger.LogInformation("Processing lease {LeaseId} for run {RunId}", lease.LeaseId, lease.RunId);
 
-            // TODO: Implement actual agent execution in E2-T2 (Integrate MAF runtime)
-            // For now, just simulate processing
-            await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
-
-            // Mark as completed (stub implementation)
-            var completeRequest = new CompleteRequest
+            if (lease.RunSpec == null)
             {
-                LeaseId = lease.LeaseId,
-                RunId = lease.RunId,
-                NodeId = _options.NodeId,
-                Timings = new TimingInfo
-                {
-                    DurationMs = 2000
-                },
-                Costs = new CostInfo
-                {
-                    TokensIn = 100,
-                    TokensOut = 50,
-                    UsdCost = 0.001
-                }
+                throw new InvalidOperationException($"Lease {lease.LeaseId} has no run specification");
+            }
+
+            // For MVP, we use a simplified approach where agent details are embedded in metadata
+            // In a full implementation, we would fetch the agent definition from the Control Plane API
+            // For now, extract basic info from the run spec
+            var agentId = lease.RunSpec.AgentId;
+            var version = lease.RunSpec.Version;
+
+            // Get input from metadata or use empty string
+            var input = lease.RunSpec.InputRef.TryGetValue("message", out var msg) ? msg : string.Empty;
+
+            // Create agent specification with defaults
+            // Note: In production, these would be fetched from the Control Plane
+            var agentSpec = new AgentSpec
+            {
+                AgentId = agentId,
+                Version = version,
+                Name = lease.RunSpec.Metadata.TryGetValue("agent_name", out var name) ? name : agentId,
+                Instructions = lease.RunSpec.Metadata.TryGetValue("instructions", out var instr) 
+                    ? instr 
+                    : "Process the input message.",
+                ModelProfile = null, // Will use defaults from AgentRuntimeOptions
+                Budget = lease.RunSpec.Budgets != null
+                    ? new BudgetConstraints
+                    {
+                        MaxTokens = lease.RunSpec.Budgets.MaxTokens > 0 ? lease.RunSpec.Budgets.MaxTokens : null,
+                        MaxDurationSeconds = lease.RunSpec.Budgets.MaxDurationSeconds > 0 ? lease.RunSpec.Budgets.MaxDurationSeconds : null
+                    }
+                    : null
             };
 
-            var response = await _leaseClient.CompleteAsync(completeRequest, cancellationToken: cancellationToken);
+            // Execute the agent using MAF SDK
+            var result = await _agentExecutor.ExecuteAsync(agentSpec, input, cancellationToken);
 
-            if (response.Success)
+            stopwatch.Stop();
+
+            if (result.Success)
             {
-                _logger.LogInformation("Successfully completed run {RunId}", lease.RunId);
+                // Mark as completed
+                var completeRequest = new CompleteRequest
+                {
+                    LeaseId = lease.LeaseId,
+                    RunId = lease.RunId,
+                    NodeId = _options.NodeId,
+                    Timings = new TimingInfo
+                    {
+                        DurationMs = (long)stopwatch.ElapsedMilliseconds
+                    },
+                    Costs = new CostInfo
+                    {
+                        TokensIn = result.TokensIn,
+                        TokensOut = result.TokensOut,
+                        UsdCost = result.UsdCost
+                    }
+                };
+
+                // Add result to response if available
+                if (!string.IsNullOrEmpty(result.Output))
+                {
+                    completeRequest.Result.Add("output", result.Output);
+                }
+
+                var response = await _leaseClient.CompleteAsync(completeRequest, cancellationToken: cancellationToken);
+
+                if (response.Success)
+                {
+                    _logger.LogInformation(
+                        "Successfully completed run {RunId} in {DurationMs}ms (Tokens: {TokensIn}/{TokensOut}, Cost: ${Cost:F4})",
+                        lease.RunId,
+                        stopwatch.ElapsedMilliseconds,
+                        result.TokensIn,
+                        result.TokensOut,
+                        result.UsdCost);
+                }
+                else
+                {
+                    _logger.LogWarning("Failed to complete run {RunId}: {Message}", lease.RunId, response.Message);
+                }
             }
             else
             {
-                _logger.LogWarning("Failed to complete run {RunId}: {Message}", lease.RunId, response.Message);
+                // Agent execution failed - report failure
+                _logger.LogWarning(
+                    "Agent execution failed for run {RunId}: {Error}",
+                    lease.RunId,
+                    result.Error);
+
+                var failRequest = new FailRequest
+                {
+                    LeaseId = lease.LeaseId,
+                    RunId = lease.RunId,
+                    NodeId = _options.NodeId,
+                    ErrorMessage = result.Error ?? "Agent execution failed",
+                    ErrorDetails = result.Error ?? string.Empty,
+                    Retryable = !result.Error?.Contains("timeout", StringComparison.OrdinalIgnoreCase) ?? true,
+                    Timings = new TimingInfo
+                    {
+                        DurationMs = (long)stopwatch.ElapsedMilliseconds
+                    }
+                };
+
+                await _leaseClient.FailAsync(failRequest, cancellationToken: cancellationToken);
             }
         }
         catch (OperationCanceledException)
@@ -218,6 +297,7 @@ public sealed class LeasePullService : ILeasePullService
         }
         catch (Exception ex)
         {
+            stopwatch.Stop();
             _logger.LogError(ex, "Error processing lease {LeaseId} for run {RunId}", lease.LeaseId, lease.RunId);
 
             // Report failure
@@ -233,7 +313,7 @@ public sealed class LeasePullService : ILeasePullService
                     Retryable = true,
                     Timings = new TimingInfo
                     {
-                        DurationMs = 0
+                        DurationMs = (long)stopwatch.ElapsedMilliseconds
                     }
                 };
 

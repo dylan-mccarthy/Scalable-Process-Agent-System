@@ -9,7 +9,7 @@ The Node Runtime provides:
 - **Node Registration**: Registers with the Control Plane on startup
 - **Heartbeat Management**: Sends periodic heartbeats to report node health and capacity
 - **Lease Pull Loop**: Streams work assignments (leases) from the Control Plane via gRPC
-- **Agent Execution**: Executes agents in isolated processes with budget enforcement (to be implemented in E2-T2)
+- **Agent Execution**: Executes agents using Microsoft Agent Framework (MAF) SDK with budget enforcement
 - **OpenTelemetry Integration**: Full observability with metrics, traces, and logs
 
 ## Architecture
@@ -34,9 +34,9 @@ The Node Runtime provides:
 │         │                                                   │
 │         ▼                                                   │
 │  ┌──────────────┐                                          │
-│  │   Agent      │  (To be implemented in E2-T2)            │
-│  │  Executor    │                                          │
-│  └──────────────┘                                          │
+│  │   Agent      │  Microsoft Agent Framework (MAF)         │
+│  │  Executor    │  - Budget enforcement (tokens/time)      │
+│  └──────────────┘  - Token estimation & cost tracking      │
 └─────────────────────────────────────────────────────────────┘
          │                           ▲
          │  HTTP/gRPC               │ gRPC
@@ -104,6 +104,13 @@ Configuration is managed through `appsettings.json`:
   - **Region**: Geographic region (e.g., "us-east-1")
   - **Environment**: Environment name (e.g., "production", "staging", "development")
 
+#### AgentRuntime
+
+- **DefaultModel**: Default model to use for agent execution (default: "gpt-4")
+- **DefaultTemperature**: Default temperature for model inference (default: 0.7)
+- **MaxTokens**: Maximum tokens allowed per agent execution (default: 4000)
+- **MaxDurationSeconds**: Maximum duration in seconds for agent execution (default: 60)
+
 #### OpenTelemetry
 
 - **ServiceName**: Service name for telemetry (default: "Node.Runtime")
@@ -165,8 +172,8 @@ dotnet test
 
 1. **Lease Reception**: Receives leases via gRPC `Pull` stream
 2. **Lease Acknowledgment**: Sends `Ack` for each received lease
-3. **Agent Execution**: Executes agent (to be implemented in E2-T2)
-4. **Result Reporting**: Sends `Complete` or `Fail` via gRPC
+3. **Agent Execution**: Executes agent using MAF SDK with budget constraints
+4. **Result Reporting**: Sends `Complete` or `Fail` via gRPC with timing and cost information
 
 ### Shutdown
 
@@ -183,6 +190,18 @@ Handles HTTP communication with the Control Plane for node lifecycle:
 - **RegisterNodeAsync**: Registers the node with capacity and metadata
 - **SendHeartbeatAsync**: Sends periodic heartbeat with active runs and available slots
 
+### AgentExecutorService
+
+Executes agents using Microsoft Agent Framework SDK:
+
+- **ExecuteAsync**: Executes an agent with the given input and budget constraints
+- Applies token and duration limits from budget constraints
+- Estimates token usage and cost
+- Handles timeouts and errors gracefully
+- Returns detailed execution results with timing and cost information
+
+**Note**: The agent executor requires Azure AI Foundry or OpenAI credentials to be configured (task E3-T4). Until then, execution will return a NotImplementedException indicating the chat client needs configuration.
+
 ### LeasePullService
 
 Manages gRPC communication for work assignment:
@@ -190,7 +209,7 @@ Manages gRPC communication for work assignment:
 - **StartAsync**: Initiates gRPC `Pull` stream to receive leases
 - **StopAsync**: Gracefully stops lease streaming
 - **AcknowledgeLeaseAsync**: Sends acknowledgment for received leases
-- **ProcessLeaseAsync**: Executes agent and reports results (stub implementation)
+- **ProcessLeaseAsync**: Executes agent via AgentExecutorService and reports results
 
 ### Worker
 
@@ -261,11 +280,61 @@ All logs are structured and include:
 - Lease ID and Run ID (when applicable)
 - Trace context for correlation
 
+## Microsoft Agent Framework Integration
+
+The Node Runtime integrates with Microsoft Agent Framework (MAF) SDK to execute business process agents (E2-T2).
+
+### Components
+
+**AgentExecutorService** (`IAgentExecutor`)
+- Creates and executes agents using MAF SDK
+- Enforces budget constraints (token limits, execution timeouts)
+- Tracks token usage and estimates costs
+- Returns detailed execution results
+
+**AgentSpec**
+- Defines agent configuration including ID, version, name, and instructions
+- Specifies model profile and budget constraints
+- Passed from Control Plane via gRPC lease specification
+
+**Budget Enforcement**
+- **Token Limits**: Configurable maximum tokens per execution (default: 4000)
+- **Time Limits**: Configurable maximum duration (default: 60 seconds)
+- **Cost Tracking**: Estimates USD cost based on token usage
+
+### Configuration
+
+Agent runtime behavior is configured via `AgentRuntime` section in `appsettings.json`:
+
+```json
+{
+  "AgentRuntime": {
+    "DefaultModel": "gpt-4",
+    "DefaultTemperature": 0.7,
+    "MaxTokens": 4000,
+    "MaxDurationSeconds": 60
+  }
+}
+```
+
+### Dependencies
+
+The following MAF SDK packages are included:
+- `Microsoft.Agents.AI` (v1.0.0-preview.251028.1)
+- `Microsoft.Agents.AI.AzureAI` (v1.0.0-preview.251028.1)
+- `Microsoft.Agents.AI.OpenAI` (v1.0.0-preview.251028.1)
+
+### Azure AI Foundry Integration
+
+**Note**: Actual agent execution requires Azure AI Foundry or OpenAI API credentials. This will be configured in **E3-T4 (Azure AI Foundry integration)**. 
+
+Until credentials are configured, the agent executor will return a `NotImplementedException` with a message indicating the chat client needs to be configured. The integration is ready to execute agents once the model provider is set up.
+
 ## Next Steps
 
-This is the skeleton implementation for the Node Runtime (E2-T1). Upcoming tasks will enhance it:
+Node Runtime core functionality is implemented (E2-T1, E2-T2). Upcoming tasks will enhance it:
 
-- **E2-T2**: Integrate MAF runtime for actual agent execution
+- **E3-T4**: Configure Azure AI Foundry credentials for actual LLM execution
 - **E2-T3**: Enhanced node registration with full lifecycle management
 - **E2-T4**: Complete lease pull loop with full error handling
 - **E2-T5**: Sandbox process model with budget enforcement
@@ -280,9 +349,11 @@ This is the skeleton implementation for the Node Runtime (E2-T1). Upcoming tasks
 src/Node.Runtime/
 ├── Configuration/          # Configuration options classes
 │   ├── NodeRuntimeOptions.cs
+│   ├── AgentRuntimeOptions.cs
 │   └── OpenTelemetryOptions.cs
 ├── Services/              # Core services
 │   ├── NodeRegistrationService.cs
+│   ├── AgentExecutorService.cs
 │   └── LeasePullService.cs
 ├── Worker.cs              # Background worker service
 ├── Program.cs             # Entry point and DI setup
@@ -290,7 +361,8 @@ src/Node.Runtime/
 
 tests/Node.Runtime.Tests/
 └── Services/              # Unit tests
-    └── NodeRegistrationServiceTests.cs
+    ├── NodeRegistrationServiceTests.cs
+    └── AgentExecutorServiceTests.cs
 ```
 
 ### Adding New Services
