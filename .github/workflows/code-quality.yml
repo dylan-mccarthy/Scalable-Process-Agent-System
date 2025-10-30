@@ -94,6 +94,8 @@ jobs:
   secret-scan:
     name: Secret Scanning
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     
     steps:
       - name: Checkout code
@@ -113,6 +115,8 @@ jobs:
   dotnet-quality:
     name: .NET Code Quality
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     
     steps:
       - name: Checkout code
@@ -156,6 +160,8 @@ jobs:
   nextjs-quality:
     name: Next.js Code Quality
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     defaults:
       run:
         working-directory: ./src/admin-ui
