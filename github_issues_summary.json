@@ -7,161 +7,246 @@
     {
       "task_id": "E2-T2",
       "title": "Integrate MAF runtime",
-      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/3"
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/36"
     },
     {
       "task_id": "E2-T3",
       "title": "Node registration",
-      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/4"
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/37"
     },
     {
       "task_id": "E2-T4",
       "title": "Lease pull loop",
-      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/5"
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/38"
     },
     {
       "task_id": "E2-T5",
       "title": "Sandbox process model",
-      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/6"
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/39"
     },
     {
       "task_id": "E2-T6",
       "title": "Service Bus connector",
-      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/7"
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/40"
     },
     {
       "task_id": "E2-T7",
       "title": "HTTP output connector",
-      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/8"
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/41"
     },
     {
       "task_id": "E2-T8",
       "title": "DLQ handling",
-      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/9"
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/42"
     },
     {
       "task_id": "E2-T9",
       "title": "Node telemetry",
-      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/10"
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/43"
     },
     {
       "task_id": "E2-T10",
       "title": "Secure communication",
-      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/11"
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/44"
     },
     {
       "task_id": "E3-T2",
       "title": "Versioning endpoint",
-      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/12"
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/45"
     },
     {
       "task_id": "E3-T3",
       "title": "Deployment API",
-      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/13"
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/46"
     },
     {
       "task_id": "E3-T4",
       "title": "Azure AI Foundry integration",
-      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/14"
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/47"
     },
     {
       "task_id": "E3-T5",
       "title": "Tool registry setup",
-      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/15"
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/48"
     },
     {
       "task_id": "E3-T6",
       "title": "Invoice Classifier agent",
-      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/16"
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/49"
     },
     {
       "task_id": "E3-T7",
       "title": "Integration test",
-      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/17"
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/50"
     },
     {
       "task_id": "E4-T2",
       "title": "Metrics collection",
-      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/18"
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/51"
     },
     {
       "task_id": "E4-T3",
       "title": "Tracing integration",
-      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/19"
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/52"
     },
     {
       "task_id": "E4-T4",
       "title": "Dashboards",
-      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/20"
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/53"
     },
     {
       "task_id": "E5-T2",
       "title": "Auth integration",
-      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/21"
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/54"
     },
     {
       "task_id": "E5-T3",
       "title": "Fleet dashboard",
-      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/22"
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/55"
     },
     {
       "task_id": "E5-T4",
       "title": "Runs list",
-      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/23"
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/56"
     },
     {
       "task_id": "E5-T5",
       "title": "Agent editor",
-      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/24"
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/57"
     },
     {
       "task_id": "E6-T2",
       "title": "Helm chart packaging",
-      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/25"
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/58"
     },
     {
       "task_id": "E6-T3",
       "title": "AKS environment",
-      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/26"
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/59"
     },
     {
       "task_id": "E6-T4",
       "title": "GitHub Actions workflows",
-      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/27"
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/60"
     },
     {
       "task_id": "E7-T2",
       "title": "Integration tests",
-      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/28"
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/61"
     },
     {
       "task_id": "E7-T3",
       "title": "E2E tests",
-      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/29"
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/62"
     },
     {
       "task_id": "E7-T4",
       "title": "Chaos test",
-      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/30"
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/63"
     },
     {
       "task_id": "E8-T2",
       "title": "Architecture diagrams",
-      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/31"
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/64"
     },
     {
       "task_id": "E8-T3",
       "title": "Demo script",
-      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/32"
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/65"
     },
     {
       "task_id": "E8-T4",
       "title": "Retrospective",
-      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/33"
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/66"
+    },
+    {
+      "task_id": "E1-T2",
+      "title": "Integrate Microsoft Agent Framework SDK",
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/70"
+    },
+    {
+      "task_id": "E1-T3",
+      "title": "Database setup",
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/71"
+    },
+    {
+      "task_id": "E1-T4",
+      "title": "Redis integration",
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/72"
+    },
+    {
+      "task_id": "E1-T5",
+      "title": "NATS setup",
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/73"
+    },
+    {
+      "task_id": "E1-T6",
+      "title": "gRPC service contract",
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/74"
+    },
+    {
+      "task_id": "E1-T7",
+      "title": "Scheduler service",
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/75"
+    },
+    {
+      "task_id": "E1-T8",
+      "title": "OpenTelemetry wiring",
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/76"
+    },
+    {
+      "task_id": "E1-T9",
+      "title": "Authentication setup",
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/77"
+    },
+    {
+      "task_id": "E1-T10",
+      "title": "Containerization",
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/78"
+    },
+    {
+      "task_id": "E1-T11",
+      "title": "CI pipeline",
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/79"
+    },
+    {
+      "task_id": "E2-T1",
+      "title": "Node runtime skeleton",
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/80"
+    },
+    {
+      "task_id": "E3-T1",
+      "title": "AgentDefinition model",
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/81"
+    },
+    {
+      "task_id": "E4-T1",
+      "title": "OTel Collector deployment",
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/82"
+    },
+    {
+      "task_id": "E5-T1",
+      "title": "Next.js setup",
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/83"
+    },
+    {
+      "task_id": "E6-T1",
+      "title": "Local environment",
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/84"
+    },
+    {
+      "task_id": "E7-T1",
+      "title": "Unit tests",
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/85"
+    },
+    {
+      "task_id": "E8-T1",
+      "title": "README & Quickstart",
+      "url": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/86"
     }
   ],
   "milestone_urls": [
-    "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/34",
-    "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/35"
+    "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/67",
+    "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/issues/68"
   ]
 }
