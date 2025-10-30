@@ -132,6 +132,81 @@ public class PostgresAgentStore : IAgentStore
         return true;
     }
 
+    public async Task<AgentVersionResponse> CreateVersionAsync(string agentId, CreateAgentVersionRequest request)
+    {
+        var agent = await _context.Agents.FindAsync(agentId);
+        if (agent == null)
+        {
+            throw new InvalidOperationException($"Agent with ID {agentId} does not exist");
+        }
+
+        var existingVersion = await _context.AgentVersions
+            .FirstOrDefaultAsync(v => v.AgentId == agentId && v.Version == request.Version);
+        
+        if (existingVersion != null)
+        {
+            throw new InvalidOperationException($"Version {request.Version} already exists for agent {agentId}");
+        }
+
+        var versionEntity = new AgentVersionEntity
+        {
+            AgentId = agentId,
+            Version = request.Version,
+            Spec = request.Spec != null ? JsonSerializer.Serialize(request.Spec) : null,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _context.AgentVersions.Add(versionEntity);
+        await _context.SaveChangesAsync();
+
+        return MapVersionToResponse(versionEntity);
+    }
+
+    public async Task<AgentVersionResponse?> GetVersionAsync(string agentId, string version)
+    {
+        var versionEntity = await _context.AgentVersions
+            .FirstOrDefaultAsync(v => v.AgentId == agentId && v.Version == version);
+        
+        return versionEntity != null ? MapVersionToResponse(versionEntity) : null;
+    }
+
+    public async Task<IEnumerable<AgentVersionResponse>> GetVersionsAsync(string agentId)
+    {
+        var versions = await _context.AgentVersions
+            .Where(v => v.AgentId == agentId)
+            .OrderByDescending(v => v.CreatedAt)
+            .ToListAsync();
+        
+        return versions.Select(MapVersionToResponse);
+    }
+
+    public async Task<bool> DeleteVersionAsync(string agentId, string version)
+    {
+        var versionEntity = await _context.AgentVersions
+            .FirstOrDefaultAsync(v => v.AgentId == agentId && v.Version == version);
+        
+        if (versionEntity == null)
+        {
+            return false;
+        }
+
+        _context.AgentVersions.Remove(versionEntity);
+        await _context.SaveChangesAsync();
+
+        return true;
+    }
+
+    private static AgentVersionResponse MapVersionToResponse(AgentVersionEntity entity)
+    {
+        return new AgentVersionResponse
+        {
+            AgentId = entity.AgentId,
+            Version = entity.Version,
+            Spec = DeserializeJson<Agent>(entity.Spec),
+            CreatedAt = entity.CreatedAt
+        };
+    }
+
     private static Agent MapToModel(AgentEntity entity)
     {
         return new Agent

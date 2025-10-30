@@ -10,11 +10,18 @@ public interface IAgentStore
     Task<Agent> CreateAgentAsync(CreateAgentRequest request);
     Task<Agent?> UpdateAgentAsync(string agentId, UpdateAgentRequest request);
     Task<bool> DeleteAgentAsync(string agentId);
+    
+    // Version management
+    Task<AgentVersionResponse> CreateVersionAsync(string agentId, CreateAgentVersionRequest request);
+    Task<AgentVersionResponse?> GetVersionAsync(string agentId, string version);
+    Task<IEnumerable<AgentVersionResponse>> GetVersionsAsync(string agentId);
+    Task<bool> DeleteVersionAsync(string agentId, string version);
 }
 
 public class InMemoryAgentStore : IAgentStore
 {
     private readonly ConcurrentDictionary<string, Agent> _agents = new();
+    private readonly ConcurrentDictionary<string, List<AgentVersionResponse>> _versions = new();
 
     public Task<Agent?> GetAgentAsync(string agentId)
     {
@@ -79,6 +86,70 @@ public class InMemoryAgentStore : IAgentStore
 
     public Task<bool> DeleteAgentAsync(string agentId)
     {
-        return Task.FromResult(_agents.TryRemove(agentId, out _));
+        var removed = _agents.TryRemove(agentId, out _);
+        if (removed)
+        {
+            _versions.TryRemove(agentId, out _);
+        }
+        return Task.FromResult(removed);
+    }
+
+    public Task<AgentVersionResponse> CreateVersionAsync(string agentId, CreateAgentVersionRequest request)
+    {
+        if (!_agents.ContainsKey(agentId))
+        {
+            throw new InvalidOperationException($"Agent with ID {agentId} does not exist");
+        }
+
+        var versions = _versions.GetOrAdd(agentId, _ => new List<AgentVersionResponse>());
+        
+        if (versions.Any(v => v.Version == request.Version))
+        {
+            throw new InvalidOperationException($"Version {request.Version} already exists for agent {agentId}");
+        }
+
+        var versionResponse = new AgentVersionResponse
+        {
+            AgentId = agentId,
+            Version = request.Version,
+            Spec = request.Spec,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        versions.Add(versionResponse);
+        return Task.FromResult(versionResponse);
+    }
+
+    public Task<AgentVersionResponse?> GetVersionAsync(string agentId, string version)
+    {
+        if (_versions.TryGetValue(agentId, out var versions))
+        {
+            var versionResponse = versions.FirstOrDefault(v => v.Version == version);
+            return Task.FromResult(versionResponse);
+        }
+        return Task.FromResult<AgentVersionResponse?>(null);
+    }
+
+    public Task<IEnumerable<AgentVersionResponse>> GetVersionsAsync(string agentId)
+    {
+        if (_versions.TryGetValue(agentId, out var versions))
+        {
+            return Task.FromResult<IEnumerable<AgentVersionResponse>>(versions.OrderByDescending(v => v.CreatedAt).ToList());
+        }
+        return Task.FromResult<IEnumerable<AgentVersionResponse>>(new List<AgentVersionResponse>());
+    }
+
+    public Task<bool> DeleteVersionAsync(string agentId, string version)
+    {
+        if (_versions.TryGetValue(agentId, out var versions))
+        {
+            var versionToRemove = versions.FirstOrDefault(v => v.Version == version);
+            if (versionToRemove != null)
+            {
+                versions.Remove(versionToRemove);
+                return Task.FromResult(true);
+            }
+        }
+        return Task.FromResult(false);
     }
 }
