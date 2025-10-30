@@ -1,4 +1,6 @@
 using ControlPlane.Api.Models;
+using ControlPlane.Api.Observability;
+using System.Diagnostics;
 
 namespace ControlPlane.Api.Services;
 
@@ -26,8 +28,17 @@ public class LeastLoadedScheduler : IScheduler
         Dictionary<string, object>? placementConstraints = null,
         CancellationToken cancellationToken = default)
     {
+        using var activity = TelemetryConfig.ActivitySource.StartActivity("Scheduler.ScheduleRun");
+        activity?.SetTag("run.id", run.RunId);
+        activity?.SetTag("agent.id", run.AgentId);
+        
+        var startTime = Stopwatch.GetTimestamp();
+        
         _logger.LogDebug("Scheduling run {RunId} with constraints: {Constraints}", 
             run.RunId, placementConstraints);
+
+        TelemetryConfig.SchedulingAttemptsCounter.Add(1,
+            new KeyValuePair<string, object?>("agent.id", run.AgentId));
 
         // Get all active nodes
         var nodes = await _nodeStore.GetAllNodesAsync();
@@ -36,6 +47,9 @@ public class LeastLoadedScheduler : IScheduler
         if (!activeNodes.Any())
         {
             _logger.LogWarning("No active nodes available for scheduling");
+            activity?.SetTag("scheduling.result", "no_nodes");
+            TelemetryConfig.SchedulingFailuresCounter.Add(1,
+                new KeyValuePair<string, object?>("reason", "no_active_nodes"));
             return null;
         }
 
@@ -48,6 +62,9 @@ public class LeastLoadedScheduler : IScheduler
         if (!eligibleNodes.Any())
         {
             _logger.LogWarning("No eligible nodes found matching placement constraints for run {RunId}", run.RunId);
+            activity?.SetTag("scheduling.result", "no_eligible_nodes");
+            TelemetryConfig.SchedulingFailuresCounter.Add(1,
+                new KeyValuePair<string, object?>("reason", "no_eligible_nodes"));
             return null;
         }
 
@@ -57,11 +74,23 @@ public class LeastLoadedScheduler : IScheduler
         if (selectedNode == null)
         {
             _logger.LogWarning("No node with available capacity found for run {RunId}", run.RunId);
+            activity?.SetTag("scheduling.result", "no_capacity");
+            TelemetryConfig.SchedulingFailuresCounter.Add(1,
+                new KeyValuePair<string, object?>("reason", "no_capacity"));
             return null;
         }
 
+        var loadPercentage = nodeLoads[selectedNode].LoadPercentage;
         _logger.LogInformation("Scheduled run {RunId} to node {NodeId} (load: {LoadPercentage:F1}%)", 
-            run.RunId, selectedNode, nodeLoads[selectedNode].LoadPercentage);
+            run.RunId, selectedNode, loadPercentage);
+
+        activity?.SetTag("scheduling.result", "success");
+        activity?.SetTag("node.id", selectedNode);
+        activity?.SetTag("node.load_percentage", loadPercentage);
+
+        var elapsedMs = Stopwatch.GetElapsedTime(startTime).TotalMilliseconds;
+        TelemetryConfig.SchedulingDurationHistogram.Record(elapsedMs,
+            new KeyValuePair<string, object?>("result", "success"));
 
         return selectedNode;
     }

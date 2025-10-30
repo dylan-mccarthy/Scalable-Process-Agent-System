@@ -1,5 +1,7 @@
 using Grpc.Core;
 using ControlPlane.Api.Grpc;
+using ControlPlane.Api.Observability;
+using System.Diagnostics;
 
 namespace ControlPlane.Api.Grpc;
 
@@ -19,6 +21,10 @@ public class LeaseServiceImpl : LeaseService.LeaseServiceBase
 
     public override async Task Pull(PullRequest request, IServerStreamWriter<Lease> responseStream, ServerCallContext context)
     {
+        using var activity = TelemetryConfig.ActivitySource.StartActivity("LeaseService.Pull");
+        activity?.SetTag("node.id", request.NodeId);
+        activity?.SetTag("max.leases", request.MaxLeases);
+
         _logger.LogInformation("Pull request received from node {NodeId} for {MaxLeases} leases", 
             request.NodeId, request.MaxLeases);
 
@@ -34,20 +40,31 @@ public class LeaseServiceImpl : LeaseService.LeaseServiceBase
                 throw new RpcException(new Status(StatusCode.InvalidArgument, "MaxLeases must be greater than 0"));
             }
 
+            int leaseCount = 0;
             await foreach (var lease in _leaseService.GetLeasesAsync(request.NodeId, request.MaxLeases, context.CancellationToken))
             {
                 await responseStream.WriteAsync(lease);
                 _logger.LogDebug("Sent lease {LeaseId} to node {NodeId}", lease.LeaseId, request.NodeId);
+                leaseCount++;
+                
+                TelemetryConfig.LeasesGrantedCounter.Add(1,
+                    new KeyValuePair<string, object?>("node.id", request.NodeId),
+                    new KeyValuePair<string, object?>("lease.id", lease.LeaseId));
             }
 
+            activity?.SetTag("leases.granted", leaseCount);
             _logger.LogInformation("Pull stream completed for node {NodeId}", request.NodeId);
         }
         catch (RpcException)
         {
+            activity?.SetStatus(ActivityStatusCode.Error);
             throw;
         }
         catch (Exception ex)
         {
+            activity?.SetStatus(ActivityStatusCode.Error);
+            activity?.SetTag("error.type", ex.GetType().Name);
+            activity?.SetTag("error.message", ex.Message);
             _logger.LogError(ex, "Error processing Pull request for node {NodeId}", request.NodeId);
             throw new RpcException(new Status(StatusCode.Internal, "Internal server error"));
         }
