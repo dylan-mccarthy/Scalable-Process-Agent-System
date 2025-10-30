@@ -53,6 +53,11 @@ spec:
         volumeMounts:
         - name: data
           mountPath: /loki
+      volumes:
+      {{- if not .Values.observability.loki.persistence.enabled }}
+      - name: data
+        emptyDir: {}
+      {{- end }}
   {{- if .Values.observability.loki.persistence.enabled }}
   volumeClaimTemplates:
   - metadata:
@@ -69,9 +74,5 @@ spec:
       resources:
         requests:
           storage: {{ .Values.observability.loki.persistence.size }}
-  {{- else }}
-      volumes:
-      - name: data
-        emptyDir: {}
   {{- end }}
 {{- end }}

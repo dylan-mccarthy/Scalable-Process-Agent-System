@@ -62,6 +62,10 @@ spec:
       - name: config
         configMap:
           name: {{ include "business-process-agents.fullname" . }}-tempo-config
+      {{- if not .Values.observability.tempo.persistence.enabled }}
+      - name: data
+        emptyDir: {}
+      {{- end }}
   {{- if .Values.observability.tempo.persistence.enabled }}
   volumeClaimTemplates:
   - metadata:
@@ -78,8 +82,5 @@ spec:
       resources:
         requests:
           storage: {{ .Values.observability.tempo.persistence.size }}
-  {{- else }}
-      - name: data
-        emptyDir: {}
   {{- end }}
 {{- end }}
