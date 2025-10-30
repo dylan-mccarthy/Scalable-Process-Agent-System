@@ -11,6 +11,7 @@ var builder = Host.CreateApplicationBuilder(args);
 
 // Configure options
 builder.Services.Configure<NodeRuntimeOptions>(builder.Configuration.GetSection("NodeRuntime"));
+builder.Services.Configure<AgentRuntimeOptions>(builder.Configuration.GetSection("AgentRuntime"));
 builder.Services.Configure<OpenTelemetryOptions>(builder.Configuration.GetSection("OpenTelemetry"));
 
 // Get configuration values for service setup
@@ -32,6 +33,7 @@ builder.Services.AddSingleton(sp =>
 });
 
 // Register services
+builder.Services.AddSingleton<IAgentExecutor, AgentExecutorService>();
 builder.Services.AddSingleton<ILeasePullService, LeasePullService>();
 
 // Configure OpenTelemetry
