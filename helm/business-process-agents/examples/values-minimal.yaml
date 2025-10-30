@@ -1,0 +1,43 @@
+# Example values file for minimal local development deployment
+# Usage: helm install bpa ./helm/business-process-agents -f examples/values-minimal.yaml
+
+# Disable persistence for all components (faster for local testing)
+postgresql:
+  persistence:
+    enabled: false
+
+redis:
+  persistence:
+    enabled: false
+
+nats:
+  persistence:
+    enabled: false
+
+# Reduce replica counts for local development
+controlPlane:
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+
+nodeRuntime:
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+
+adminUI:
+  replicaCount: 1
+
+# Disable observability stack for minimal footprint
+otelCollector:
+  enabled: false
+
+observability:
+  prometheus:
+    enabled: false
+  grafana:
+    enabled: false
+  tempo:
+    enabled: false
+  loki:
+    enabled: false

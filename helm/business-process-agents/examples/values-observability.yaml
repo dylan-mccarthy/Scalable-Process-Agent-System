@@ -1,0 +1,52 @@
+# Example values file for deploying with full observability stack
+# Usage: helm install bpa ./helm/business-process-agents -f examples/values-observability.yaml
+
+# Enable OpenTelemetry Collector to receive telemetry from Control Plane and Node Runtime
+otelCollector:
+  enabled: true
+
+# Enable the full observability stack
+observability:
+  # Prometheus for metrics storage and querying
+  prometheus:
+    enabled: true
+    persistence:
+      enabled: true
+      size: 10Gi
+  
+  # Grafana for visualization (pre-configured with all datasources)
+  grafana:
+    enabled: true
+    persistence:
+      enabled: true
+      size: 5Gi
+    # Enable anonymous access for local development (disable in production)
+    auth:
+      anonymous:
+        enabled: true
+        orgRole: Admin
+      disableLoginForm: true
+  
+  # Tempo for distributed tracing
+  tempo:
+    enabled: true
+    persistence:
+      enabled: true
+      size: 10Gi
+  
+  # Loki for log aggregation
+  loki:
+    enabled: true
+    persistence:
+      enabled: true
+      size: 10Gi
+
+# Optionally adjust Control Plane to enable telemetry (already enabled by default)
+controlPlane:
+  enabled: true
+  replicaCount: 2
+
+# Optionally adjust Node Runtime 
+nodeRuntime:
+  enabled: true
+  replicaCount: 2

@@ -129,6 +129,39 @@ The following table lists the configurable parameters and their default values.
 | `nats.persistence.enabled` | Enable persistence | `true` |
 | `nats.persistence.size` | PVC size | `5Gi` |
 
+### OpenTelemetry Collector Configuration
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `otelCollector.enabled` | Enable OpenTelemetry Collector | `false` |
+| `otelCollector.image.repository` | OTel Collector image repository | `otel/opentelemetry-collector-contrib` |
+| `otelCollector.image.tag` | OTel Collector image tag | `0.91.0` |
+| `otelCollector.service.otlpGrpcPort` | OTLP gRPC port | `4317` |
+| `otelCollector.service.otlpHttpPort` | OTLP HTTP port | `4318` |
+| `otelCollector.service.metricsPort` | Metrics export port | `8889` |
+
+### Observability Stack Configuration
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `observability.prometheus.enabled` | Enable Prometheus | `false` |
+| `observability.prometheus.image.tag` | Prometheus image tag | `v2.48.0` |
+| `observability.prometheus.persistence.enabled` | Enable persistence | `true` |
+| `observability.prometheus.persistence.size` | PVC size | `10Gi` |
+| `observability.grafana.enabled` | Enable Grafana | `false` |
+| `observability.grafana.image.tag` | Grafana image tag | `10.2.2` |
+| `observability.grafana.persistence.enabled` | Enable persistence | `true` |
+| `observability.grafana.persistence.size` | PVC size | `5Gi` |
+| `observability.grafana.adminPassword` | Grafana admin password | `admin` |
+| `observability.tempo.enabled` | Enable Tempo | `false` |
+| `observability.tempo.image.tag` | Tempo image tag | `2.3.1` |
+| `observability.tempo.persistence.enabled` | Enable persistence | `true` |
+| `observability.tempo.persistence.size` | PVC size | `10Gi` |
+| `observability.loki.enabled` | Enable Loki | `false` |
+| `observability.loki.image.tag` | Loki image tag | `2.9.3` |
+| `observability.loki.persistence.enabled` | Enable persistence | `true` |
+| `observability.loki.persistence.size` | PVC size | `10Gi` |
+
 ## Examples
 
 ### Minimal Installation (In-Memory)
@@ -238,6 +271,43 @@ kubectl port-forward svc/bpa-business-process-agents-control-plane 8080:8080
 kubectl port-forward svc/bpa-business-process-agents-admin-ui 3000:3000
 ```
 
+### Full Observability Stack
+
+Enable the complete observability stack with OpenTelemetry, Prometheus, Grafana, Tempo, and Loki:
+
+```yaml
+# values-observability.yaml
+otelCollector:
+  enabled: true
+
+observability:
+  prometheus:
+    enabled: true
+  grafana:
+    enabled: true
+  tempo:
+    enabled: true
+  loki:
+    enabled: true
+```
+
+```bash
+# Install with full observability
+helm install bpa ./helm/business-process-agents -f values-observability.yaml
+
+# Access Grafana (pre-configured with all datasources)
+kubectl port-forward svc/bpa-business-process-agents-grafana 3000:3000
+
+# Access Prometheus
+kubectl port-forward svc/bpa-business-process-agents-prometheus 9090:9090
+```
+
+The observability stack provides:
+- **Metrics**: Prometheus scrapes metrics from the OTel Collector
+- **Traces**: Tempo receives distributed traces via OTLP
+- **Logs**: Loki receives structured logs with trace correlation
+- **Dashboards**: Grafana is pre-configured with all datasources and trace-to-log correlation
+
 ## Upgrading
 
 To upgrade the release:
@@ -266,30 +336,99 @@ kubectl exec -it <control-plane-pod> -- dotnet ef database update
 
 ## Monitoring and Observability
 
-Enable the full observability stack:
+The chart includes a complete observability stack based on OpenTelemetry, Prometheus, Grafana, Tempo, and Loki.
+
+### Architecture
+
+1. **Control Plane & Node Runtime** → Send telemetry to **OTel Collector** (OTLP)
+2. **OTel Collector** → Export metrics to **Prometheus**, traces to **Tempo**, logs to **Loki**
+3. **Grafana** → Visualize all telemetry with pre-configured datasources
+
+### Enabling Observability
+
+Enable individual components or the full stack:
 
 ```yaml
+# Enable OpenTelemetry Collector (required for telemetry export)
 otelCollector:
   enabled: true
 
+# Enable specific observability components
 observability:
   prometheus:
-    enabled: true
+    enabled: true  # Metrics storage and querying
   grafana:
-    enabled: true
+    enabled: true  # Visualization dashboards
   tempo:
-    enabled: true
+    enabled: true  # Distributed tracing
   loki:
-    enabled: true
+    enabled: true  # Log aggregation
 ```
 
-Access Grafana:
+### Accessing Observability Tools
 
+**Grafana** (Main visualization interface):
 ```bash
 kubectl port-forward svc/bpa-business-process-agents-grafana 3000:3000
+# Visit: http://localhost:3000
+# Default credentials: admin/admin (or anonymous access if enabled)
 ```
 
-Default credentials: admin/admin
+**Prometheus** (Metrics):
+```bash
+kubectl port-forward svc/bpa-business-process-agents-prometheus 9090:9090
+# Visit: http://localhost:9090
+```
+
+**OpenTelemetry Collector** (Telemetry ingestion):
+```bash
+# Already accessible within cluster at:
+# - OTLP gRPC: bpa-business-process-agents-otel-collector:4317
+# - OTLP HTTP: bpa-business-process-agents-otel-collector:4318
+# - Metrics: bpa-business-process-agents-otel-collector:8889
+```
+
+### Key Metrics
+
+The Control Plane and Node Runtime export these metrics:
+- `runs_started_total` - Total number of runs started
+- `runs_completed_total` - Total number of runs completed
+- `runs_failed_total` - Total number of runs failed
+- `run_duration_ms` - Histogram of run durations
+- `nodes_registered_total` - Total nodes registered
+- `nodes_disconnected_total` - Total nodes disconnected
+
+### Trace Correlation
+
+Grafana is pre-configured with trace-to-log correlation:
+1. View a trace in Grafana → Explore → Tempo
+2. Click "Logs for this span" to see correlated logs
+3. From logs, click a trace_id to see the full distributed trace
+
+### Persistence
+
+By default, all observability components use persistent storage:
+- Prometheus: 10Gi
+- Tempo: 10Gi  
+- Loki: 10Gi
+- Grafana: 5Gi
+
+To disable persistence for development:
+```yaml
+observability:
+  prometheus:
+    persistence:
+      enabled: false
+  tempo:
+    persistence:
+      enabled: false
+  loki:
+    persistence:
+      enabled: false
+  grafana:
+    persistence:
+      enabled: false
+```
 
 ## Security Considerations
 
