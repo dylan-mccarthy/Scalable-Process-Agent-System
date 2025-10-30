@@ -68,3 +68,23 @@ public class UpdateAgentRequest
     public ConnectorConfiguration? Output { get; set; }
     public Dictionary<string, string>? Metadata { get; set; }
 }
+
+/// <summary>
+/// Request to create a new agent version.
+/// </summary>
+public class CreateAgentVersionRequest
+{
+    public string Version { get; set; } = string.Empty;
+    public Agent? Spec { get; set; }
+}
+
+/// <summary>
+/// Response containing agent version information.
+/// </summary>
+public class AgentVersionResponse
+{
+    public string AgentId { get; set; } = string.Empty;
+    public string Version { get; set; } = string.Empty;
+    public Agent? Spec { get; set; }
+    public DateTime CreatedAt { get; set; }
+}

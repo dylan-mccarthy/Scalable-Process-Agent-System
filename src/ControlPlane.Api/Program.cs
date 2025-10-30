@@ -312,6 +312,56 @@ app.MapDelete("/v1/agents/{agentId}", async (string agentId, IAgentStore store) 
 .WithName("DeleteAgent")
 .WithTags("Agents");
 
+// Agent Version endpoints
+app.MapPost("/v1/agents/{agentId}:version", async (string agentId, CreateAgentVersionRequest request, IAgentStore store) =>
+{
+    if (string.IsNullOrWhiteSpace(request.Version))
+    {
+        return Results.BadRequest(new { error = "Version is required" });
+    }
+
+    try
+    {
+        VersionValidator.ValidateOrThrow(request.Version);
+        var version = await store.CreateVersionAsync(agentId, request);
+        return Results.Created($"/v1/agents/{agentId}/versions/{version.Version}", version);
+    }
+    catch (ArgumentException ex)
+    {
+        return Results.BadRequest(new { error = ex.Message });
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.Conflict(new { error = ex.Message });
+    }
+})
+.WithName("CreateAgentVersion")
+.WithTags("Agents");
+
+app.MapGet("/v1/agents/{agentId}/versions", async (string agentId, IAgentStore store) =>
+{
+    var versions = await store.GetVersionsAsync(agentId);
+    return Results.Ok(versions);
+})
+.WithName("GetAgentVersions")
+.WithTags("Agents");
+
+app.MapGet("/v1/agents/{agentId}/versions/{version}", async (string agentId, string version, IAgentStore store) =>
+{
+    var versionResponse = await store.GetVersionAsync(agentId, version);
+    return versionResponse != null ? Results.Ok(versionResponse) : Results.NotFound();
+})
+.WithName("GetAgentVersion")
+.WithTags("Agents");
+
+app.MapDelete("/v1/agents/{agentId}/versions/{version}", async (string agentId, string version, IAgentStore store) =>
+{
+    var deleted = await store.DeleteVersionAsync(agentId, version);
+    return deleted ? Results.NoContent() : Results.NotFound();
+})
+.WithName("DeleteAgentVersion")
+.WithTags("Agents");
+
 // Node endpoints
 app.MapGet("/v1/nodes", async (INodeStore store) =>
 {
