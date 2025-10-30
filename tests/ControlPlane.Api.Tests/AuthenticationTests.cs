@@ -44,24 +44,7 @@ public class AuthenticationTests : IAsyncLifetime
                     });
                 });
 
-                builder.ConfigureServices(services =>
-                {
-                    // Use in-memory stores for testing
-                    var descriptorsToRemove = services
-                        .Where(d => d.ServiceType == typeof(IAgentStore) || 
-                                    d.ServiceType == typeof(INodeStore) || 
-                                    d.ServiceType == typeof(IRunStore))
-                        .ToList();
-                    
-                    foreach (var descriptor in descriptorsToRemove)
-                    {
-                        services.Remove(descriptor);
-                    }
-                    
-                    services.AddSingleton<IAgentStore, InMemoryAgentStore>();
-                    services.AddSingleton<INodeStore, InMemoryNodeStore>();
-                    services.AddSingleton<IRunStore, InMemoryRunStore>();
-                });
+                ConfigureInMemoryStores(builder);
             });
 
         // Factory with authentication disabled
@@ -77,30 +60,38 @@ public class AuthenticationTests : IAsyncLifetime
                     });
                 });
 
-                builder.ConfigureServices(services =>
-                {
-                    // Use in-memory stores for testing
-                    var descriptorsToRemove = services
-                        .Where(d => d.ServiceType == typeof(IAgentStore) || 
-                                    d.ServiceType == typeof(INodeStore) || 
-                                    d.ServiceType == typeof(IRunStore))
-                        .ToList();
-                    
-                    foreach (var descriptor in descriptorsToRemove)
-                    {
-                        services.Remove(descriptor);
-                    }
-                    
-                    services.AddSingleton<IAgentStore, InMemoryAgentStore>();
-                    services.AddSingleton<INodeStore, InMemoryNodeStore>();
-                    services.AddSingleton<IRunStore, InMemoryRunStore>();
-                });
+                ConfigureInMemoryStores(builder);
             });
 
         _clientWithAuth = _factoryWithAuth.CreateClient();
         _clientWithoutAuth = _factoryWithoutAuth.CreateClient();
 
         return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Helper method to configure in-memory stores for testing.
+    /// </summary>
+    private static void ConfigureInMemoryStores(IWebHostBuilder builder)
+    {
+        builder.ConfigureServices(services =>
+        {
+            // Use in-memory stores for testing
+            var descriptorsToRemove = services
+                .Where(d => d.ServiceType == typeof(IAgentStore) || 
+                            d.ServiceType == typeof(INodeStore) || 
+                            d.ServiceType == typeof(IRunStore))
+                .ToList();
+            
+            foreach (var descriptor in descriptorsToRemove)
+            {
+                services.Remove(descriptor);
+            }
+            
+            services.AddSingleton<IAgentStore, InMemoryAgentStore>();
+            services.AddSingleton<INodeStore, InMemoryNodeStore>();
+            services.AddSingleton<IRunStore, InMemoryRunStore>();
+        });
     }
 
     public async Task DisposeAsync()
@@ -189,7 +180,9 @@ public class AuthenticationTests : IAsyncLifetime
 
     /// <summary>
     /// Helper method to generate a test JWT token for authentication testing.
-    /// Note: This is for unit testing only and uses a test secret.
+    /// Note: This is reserved for future use when implementing endpoint-level
+    /// authorization tests with [Authorize] attributes. The method uses a test
+    /// secret and should only be used in unit tests.
     /// </summary>
     private static string GenerateTestJwtToken(string issuer = "http://localhost:8080/realms/bpa", 
         string audience = "control-plane-api")
