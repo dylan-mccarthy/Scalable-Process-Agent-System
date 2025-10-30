@@ -204,12 +204,18 @@ Executes agents using Microsoft Agent Framework SDK:
 
 ### LeasePullService
 
-Manages gRPC communication for work assignment:
+Manages gRPC communication for work assignment with enhanced error handling and telemetry:
 
 - **StartAsync**: Initiates gRPC `Pull` stream to receive leases
 - **StopAsync**: Gracefully stops lease streaming
 - **AcknowledgeLeaseAsync**: Sends acknowledgment for received leases
 - **ProcessLeaseAsync**: Executes agent via AgentExecutorService and reports results
+
+**Key Features:**
+- **Exponential Backoff Retry**: Automatic reconnection with exponential backoff (2^attempt seconds, max 60s) and jitter (0-2s)
+- **Comprehensive Telemetry**: Full instrumentation with activities, counters, and histograms
+- **Concurrency Control**: Tracks active leases and available slots using semaphores
+- **Error Categorization**: Distinguishes between cancellation, transient errors, and permanent failures
 
 ### Worker
 
@@ -258,27 +264,74 @@ Reports failure of a run with error details and retry information.
 
 ## Observability
 
-The Node Runtime includes comprehensive OpenTelemetry instrumentation:
+The Node Runtime includes comprehensive OpenTelemetry instrumentation for end-to-end observability (E2-T9):
 
-### Traces
+### Telemetry Configuration
 
-- HTTP client calls to Control Plane
-- gRPC calls to LeaseService
-- Custom spans for agent execution (to be implemented)
+The `Node.Runtime.Observability.TelemetryConfig` class provides centralized configuration for all telemetry:
+
+**Activity Source:** `Node.Runtime` v1.0.0 for distributed tracing
+**Meter:** `Node.Runtime` v1.0.0 for custom metrics
 
 ### Metrics
 
-- HTTP client metrics
+The following custom metrics are automatically collected:
+
+**Counters:**
+- `leases_received_total` - Total number of leases received from control plane
+- `leases_acknowledged_total` - Total number of leases acknowledged
+- `leases_completed_total` - Total number of leases completed successfully
+- `leases_failed_total` - Total number of leases that failed
+- `agent_executions_total` - Total number of agent executions
+- `agent_execution_errors_total` - Total number of agent execution errors
+- `lease_stream_errors_total` - Total number of lease stream errors
+- `lease_stream_reconnects_total` - Total number of lease stream reconnection attempts
+
+**Histograms:**
+- `lease_processing_duration_ms` - Duration of lease processing in milliseconds
+- `agent_execution_duration_ms` - Duration of agent execution in milliseconds
+- `agent_tokens_total` - Total tokens used per agent execution
+- `agent_cost_usd` - Cost of agent execution in USD
+
+**Automatic Instrumentation:**
+- HTTP client calls to Control Plane
+- gRPC client calls to LeaseService
 - .NET runtime metrics (GC, thread pool, etc.)
-- Custom metrics for lease processing (to be implemented)
 
-### Logs
+### Distributed Tracing
 
-All logs are structured and include:
+Distributed traces are automatically created for:
+- **Lease pull operations**: `LeasePullService.PullLeases` with reconnection tracking
+- **Lease acknowledgment**: `LeasePullService.AcknowledgeLease` with lease and run IDs
+- **Lease processing**: `LeasePullService.ProcessLease` with agent information and execution status
+- **HTTP/gRPC requests**: Automatic correlation via trace context propagation
 
-- Node ID
-- Lease ID and Run ID (when applicable)
-- Trace context for correlation
+Each trace includes relevant tags (e.g., `node.id`, `lease.id`, `run.id`, `agent.id`) and correlates with logs via `trace_id`.
+
+### Error Tracking
+
+All errors are categorized and tracked with telemetry:
+- **Stream Errors**: Connection failures, network issues, gRPC errors
+- **Reconnection Attempts**: Tracked with exponential backoff metrics
+- **Agent Execution Errors**: Failures during agent processing
+- **Lease Failures**: Failed lease completions with error details
+
+### Logging
+
+Structured logs are enhanced with OpenTelemetry context:
+- **Trace correlation**: Logs include `trace_id` and `span_id` for correlation with traces
+- **Node context**: All logs include `node.id` for filtering
+- **Lease context**: Processing logs include `lease.id` and `run.id`
+- **JSON format**: Logs are structured for easy parsing and filtering
+
+### Integration with Observability Stack
+
+The Node Runtime integrates with the following observability stack:
+
+- **Prometheus**: Metrics collection and storage via OTLP exporter
+- **Tempo/Jaeger**: Distributed tracing backend via OTLP exporter
+- **Loki**: Log aggregation and querying
+- **Grafana**: Unified dashboards for metrics, traces, and logs
 
 ## Microsoft Agent Framework Integration
 
@@ -332,14 +385,19 @@ Until credentials are configured, the agent executor will return a `NotImplement
 
 ## Next Steps
 
-Node Runtime core functionality is implemented (E2-T1, E2-T2). Upcoming tasks will enhance it:
+Node Runtime core functionality is implemented and enhanced with comprehensive telemetry and error handling:
 
-- **E3-T4**: Configure Azure AI Foundry credentials for actual LLM execution
-- **E2-T3**: Enhanced node registration with full lifecycle management
-- **E2-T4**: Complete lease pull loop with full error handling
-- **E2-T5**: Sandbox process model with budget enforcement
-- **E2-T9**: Node telemetry with custom metrics
-- **E2-T10**: Secure mTLS communication
+- ✅ **E2-T1**: Node runtime skeleton (Complete)
+- ✅ **E2-T2**: Integrate MAF runtime (Complete)
+- ✅ **E2-T3**: Node registration (Complete)
+- ✅ **E2-T4**: Lease pull loop (Complete)
+- ⏳ **E2-T5**: Sandbox process model with budget enforcement
+- ⏳ **E2-T6**: Service Bus connector
+- ⏳ **E2-T7**: HTTP output connector
+- ⏳ **E2-T8**: DLQ handling
+- ⏳ **E2-T9**: Node telemetry (Metrics complete, custom gauges pending)
+- ⏳ **E2-T10**: Secure mTLS communication
+- ⏳ **E3-T4**: Configure Azure AI Foundry credentials for actual LLM execution
 
 ## Development
 
