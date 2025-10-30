@@ -243,7 +243,8 @@ This implementation provides:
 - ✅ **NATS JetStream event streaming** (E1-T5)
 - ✅ **gRPC LeaseService** for node communication (E1-T6)
 - ✅ **Scheduler service with least-loaded strategy** (E1-T7)
-- ✅ Comprehensive integration tests (107 tests)
+- ✅ **OpenTelemetry instrumentation** with metrics, tracing, and logging (E1-T8)
+- ✅ Comprehensive integration tests (121 tests)
 
 ### Database Schema
 
@@ -550,6 +551,168 @@ builder.Services.AddSingleton<IScheduler, LeastLoadedScheduler>();
 - Only nodes in these regions are considered
 - Least-loaded eligible node is selected
 
+### OpenTelemetry Observability
+
+The application includes comprehensive OpenTelemetry (OTel) instrumentation for end-to-end observability (E1-T8), providing metrics, distributed tracing, and structured logging.
+
+#### Configuration
+
+OpenTelemetry is configured in `appsettings.json`:
+
+```json
+{
+  "OpenTelemetry": {
+    "ServiceName": "ControlPlane.Api",
+    "ServiceVersion": "1.0.0",
+    "OtlpExporter": {
+      "Endpoint": "http://localhost:4317",
+      "Protocol": "grpc"
+    },
+    "ConsoleExporter": {
+      "Enabled": false
+    },
+    "Traces": {
+      "Enabled": true,
+      "SamplingRatio": 1.0
+    },
+    "Metrics": {
+      "Enabled": true,
+      "ExportIntervalMilliseconds": 60000
+    },
+    "Logs": {
+      "Enabled": true,
+      "IncludeFormattedMessage": true,
+      "IncludeScopes": true
+    }
+  }
+}
+```
+
+#### Metrics
+
+The following custom metrics are automatically collected:
+
+**Counters:**
+- `runs_started_total` - Total number of runs started
+- `runs_completed_total` - Total number of runs completed successfully
+- `runs_failed_total` - Total number of runs failed
+- `runs_cancelled_total` - Total number of runs cancelled
+- `nodes_registered_total` - Total number of nodes registered
+- `nodes_disconnected_total` - Total number of nodes disconnected
+- `leases_granted_total` - Total number of leases granted to nodes
+- `leases_released_total` - Total number of leases released
+- `scheduling_attempts_total` - Total number of scheduling attempts
+- `scheduling_failures_total` - Total number of scheduling failures
+
+**Histograms:**
+- `run_duration_ms` - Duration of run execution in milliseconds
+- `scheduling_duration_ms` - Duration of scheduling operations in milliseconds
+- `run_tokens` - Number of tokens used per run
+- `run_cost_usd` - Cost of run execution in USD
+
+**Automatic Instrumentation:**
+- ASP.NET Core HTTP requests and responses
+- gRPC client calls
+- HTTP client calls
+- .NET runtime metrics (GC, thread pool, etc.)
+
+#### Distributed Tracing
+
+Distributed traces are automatically created for:
+- **Run operations**: `RunStore.CreateRun`, `RunStore.CompleteRun`, `RunStore.FailRun`, `RunStore.CancelRun`
+- **Node operations**: `NodeStore.RegisterNode`, `NodeStore.DeleteNode`
+- **Scheduling**: `Scheduler.ScheduleRun` with load balancing details
+- **Lease management**: `LeaseService.Pull` with lease grant tracking
+- **HTTP/gRPC requests**: Automatic correlation via trace context propagation
+
+Each trace includes relevant tags (e.g., `run.id`, `agent.id`, `node.id`) and correlates with logs via `trace_id`.
+
+#### Logging
+
+Structured logs are enhanced with OpenTelemetry context:
+- **Trace correlation**: Logs include `trace_id` and `span_id` for correlation with traces
+- **Formatted messages**: Human-readable log messages
+- **Scopes**: Log scopes are included for better context
+- **JSON format**: Logs are structured for easy parsing and filtering
+
+#### Exporters
+
+**OTLP Exporter (Production):**
+- Sends telemetry to OpenTelemetry Collector at `http://localhost:4317`
+- Compatible with Prometheus, Tempo, Loki, and other backends
+- Uses gRPC protocol for efficient data transmission
+
+**Console Exporter (Development):**
+- Can be enabled for local debugging: `"ConsoleExporter": { "Enabled": true }`
+- Outputs metrics, traces, and logs to console for immediate visibility
+
+#### Integration with Observability Stack
+
+The Control Plane integrates with the following observability stack (as defined in the System Architecture Document):
+
+- **Prometheus**: Metrics collection and storage
+- **Tempo/Jaeger**: Distributed tracing backend
+- **Loki**: Log aggregation and querying
+- **Grafana**: Unified dashboards for metrics, traces, and logs
+
+**Example trace flow:**
+```
+receive → plan → lease → think → http.out → complete
+```
+
+Each step is instrumented with activities that record timing, attributes, and correlation IDs.
+
+#### Running with OTel Collector
+
+**Local Development (Docker Compose):**
+```yaml
+services:
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    ports:
+      - "4317:4317"  # OTLP gRPC
+      - "4318:4318"  # OTLP HTTP
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otelcol/config.yaml
+```
+
+**Configuration Example:**
+```yaml
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+
+exporters:
+  prometheus:
+    endpoint: 0.0.0.0:8889
+  logging:
+    loglevel: debug
+
+service:
+  pipelines:
+    metrics:
+      receivers: [otlp]
+      exporters: [prometheus, logging]
+    traces:
+      receivers: [otlp]
+      exporters: [logging]
+    logs:
+      receivers: [otlp]
+      exporters: [logging]
+```
+
+**NuGet Packages Added:**
+- `OpenTelemetry.Exporter.Console` (v1.10.0)
+- `OpenTelemetry.Exporter.OpenTelemetryProtocol` (v1.10.0)
+- `OpenTelemetry.Extensions.Hosting` (v1.10.0)
+- `OpenTelemetry.Instrumentation.AspNetCore` (v1.10.0)
+- `OpenTelemetry.Instrumentation.GrpcNetClient` (v1.10.0-beta.1)
+- `OpenTelemetry.Instrumentation.Http` (v1.10.0)
+- `OpenTelemetry.Instrumentation.Runtime` (v1.10.0)
+- `OpenTelemetry.Instrumentation.StackExchangeRedis` (v1.10.0-beta.1)
+
 ## Next Steps
 
 See `tasks.yaml` for the full project roadmap. The next tasks include:
@@ -560,7 +723,7 @@ See `tasks.yaml` for the full project roadmap. The next tasks include:
 - ✅ **E1-T5**: Set up NATS for event streaming (Complete)
 - ✅ **E1-T6**: Implement gRPC service for node communication (Complete)
 - ✅ **E1-T7**: Scheduler service (Complete)
-- **E1-T8**: OpenTelemetry wiring
+- ✅ **E1-T8**: OpenTelemetry wiring (Complete)
 
 ## OpenAPI/Swagger
 
