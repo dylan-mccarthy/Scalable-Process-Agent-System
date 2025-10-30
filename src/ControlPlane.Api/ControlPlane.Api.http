@@ -1,0 +1,53 @@
+@ControlPlane.Api_HostAddress = http://localhost:5109
+
+### Get all agents
+GET {{ControlPlane.Api_HostAddress}}/v1/agents
+Accept: application/json
+
+###
+
+### Create an agent
+POST {{ControlPlane.Api_HostAddress}}/v1/agents
+Content-Type: application/json
+
+{
+  "name": "Invoice Classifier",
+  "instructions": "Classify invoices by vendor and route appropriately",
+  "modelProfile": {
+    "model": "gpt-4",
+    "temperature": 0.7
+  }
+}
+
+###
+
+### Get all nodes
+GET {{ControlPlane.Api_HostAddress}}/v1/nodes
+Accept: application/json
+
+###
+
+### Register a node
+POST {{ControlPlane.Api_HostAddress}}/v1/nodes:register
+Content-Type: application/json
+
+{
+  "nodeId": "node-1",
+  "metadata": {
+    "region": "us-east-1",
+    "environment": "dev"
+  },
+  "capacity": {
+    "slots": 8,
+    "cpu": "4",
+    "memory": "8Gi"
+  }
+}
+
+###
+
+### Get all runs
+GET {{ControlPlane.Api_HostAddress}}/v1/runs
+Accept: application/json
+
+###
