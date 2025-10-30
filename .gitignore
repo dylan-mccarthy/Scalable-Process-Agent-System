@@ -482,3 +482,11 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# CI/CD artifacts
+*.spdx.json
+*.sarif
+trivy-results-*.sarif
+sbom-*.spdx.json
+coverage/
+TestResults/
