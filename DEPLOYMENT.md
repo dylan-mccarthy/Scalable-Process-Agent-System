@@ -38,7 +38,7 @@ docker build -t business-process-agents/admin-ui:latest \
 docker run -d --name bpa-postgres \
   -e POSTGRES_DB=bpa \
   -e POSTGRES_USER=postgres \
-  -e POSTGRES_PASSWORD=postgres \
+  -e POSTGRES_PASSWORD=<SECURE_PASSWORD> \
   -p 5432:5432 \
   postgres:16-alpine
 
@@ -54,7 +54,7 @@ docker run -d --name bpa-nats \
 
 # Start Control Plane
 docker run -d --name bpa-control-plane \
-  -e ConnectionStrings__DefaultConnection="Host=host.docker.internal:5432;Database=bpa;Username=postgres;Password=postgres" \
+  -e ConnectionStrings__DefaultConnection="Host=host.docker.internal:5432;Database=bpa;Username=postgres;Password=<SECURE_PASSWORD>" \
   -e ConnectionStrings__Redis="host.docker.internal:6379" \
   -e ConnectionStrings__Nats="nats://host.docker.internal:4222" \
   -p 8080:8080 -p 8081:8081 \
@@ -590,7 +590,7 @@ helm install bpa ./helm/business-process-agents --dry-run --debug
 - [ ] Enable TLS for all external endpoints
 - [ ] Configure network policies to restrict pod communication
 - [ ] Use signed container images
-- [ ] Enable pod security policies
+- [ ] Enable Pod Security Standards (PSS) or Pod Security Admission
 - [ ] Configure RBAC appropriately
 - [ ] Enable audit logging
 - [ ] Regularly update base images
