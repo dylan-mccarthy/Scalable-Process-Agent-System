@@ -56,43 +56,39 @@ public class SchedulerIntegrationTests
 
         // Add runs to match the node status
         var run1 = await runStore.CreateRunAsync("agent-1", "1.0.0");
-        run1.RunId = "existing-run-1";
         run1.NodeId = "node-1";
         run1.Status = "running";
         
         var run2 = await runStore.CreateRunAsync("agent-1", "1.0.0");
-        run2.RunId = "existing-run-2";
         run2.NodeId = "node-1";
         run2.Status = "running";
         
         var run3 = await runStore.CreateRunAsync("agent-1", "1.0.0");
-        run3.RunId = "existing-run-3";
         run3.NodeId = "node-1";
         run3.Status = "assigned";
         
         var run4 = await runStore.CreateRunAsync("agent-1", "1.0.0");
-        run4.RunId = "existing-run-4";
         run4.NodeId = "node-2";
         run4.Status = "running";
 
         // Create a pending run
         var pendingRun = await runStore.CreateRunAsync("agent-1", "1.0.0");
-        pendingRun.RunId = "new-run";
         pendingRun.Status = "pending";
 
-        // Setup lease store to succeed for node-2
-        leaseStore.Setup(s => s.AcquireLeaseAsync("new-run", "node-2", It.IsAny<int>()))
+        // Setup lease store to succeed for node-2 with the pending run's ID
+        leaseStore.Setup(s => s.AcquireLeaseAsync(pendingRun.RunId, "node-2", It.IsAny<int>()))
             .ReturnsAsync(true);
 
         // Act - Node-2 requests a lease
         var cts = new CancellationTokenSource();
         cts.CancelAfter(TimeSpan.FromSeconds(1));
 
+        const int expectedLeaseCount = 1;
         var leases = new List<ControlPlane.Api.Grpc.Lease>();
         await foreach (var lease in leaseService.GetLeasesAsync("node-2", 5, cts.Token))
         {
             leases.Add(lease);
-            if (leases.Count >= 1)
+            if (leases.Count >= expectedLeaseCount)
             {
                 cts.Cancel(); // Got the lease we wanted
             }
@@ -100,8 +96,8 @@ public class SchedulerIntegrationTests
 
         // Assert
         Assert.Single(leases);
-        Assert.Equal("new-run", leases[0].RunId);
-        leaseStore.Verify(s => s.AcquireLeaseAsync("new-run", "node-2", It.IsAny<int>()), Times.Once);
+        Assert.Equal(pendingRun.RunId, leases[0].RunId);
+        leaseStore.Verify(s => s.AcquireLeaseAsync(pendingRun.RunId, "node-2", It.IsAny<int>()), Times.Once);
     }
 
     [Fact]
@@ -180,17 +176,14 @@ public class SchedulerIntegrationTests
 
         // Add some runs
         var run1 = await runStore.CreateRunAsync("agent-1", "1.0.0");
-        run1.RunId = "run-1";
         run1.NodeId = "test-node";
         run1.Status = "running";
         
         var run2 = await runStore.CreateRunAsync("agent-1", "1.0.0");
-        run2.RunId = "run-2";
         run2.NodeId = "test-node";
         run2.Status = "running";
         
         var run3 = await runStore.CreateRunAsync("agent-1", "1.0.0");
-        run3.RunId = "run-3";
         run3.NodeId = "test-node";
         run3.Status = "assigned";
 
