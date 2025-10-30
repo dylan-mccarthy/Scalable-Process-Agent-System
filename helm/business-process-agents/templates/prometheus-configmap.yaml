@@ -1,0 +1,29 @@
+{{- if .Values.observability.prometheus.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "business-process-agents.fullname" . }}-prometheus-config
+  labels:
+    {{- include "business-process-agents.labels" . | nindent 4 }}
+    app.kubernetes.io/component: prometheus
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+    
+    scrape_configs:
+      {{- if .Values.otelCollector.enabled }}
+      # Scrape OTel Collector metrics endpoint
+      - job_name: 'otel-collector'
+        static_configs:
+          - targets: ['{{ include "business-process-agents.fullname" . }}-otel-collector:{{ .Values.otelCollector.service.metricsPort }}']
+            labels:
+              service: 'otel-collector'
+      {{- end }}
+      
+      # Scrape Prometheus itself
+      - job_name: 'prometheus'
+        static_configs:
+          - targets: ['localhost:9090']
+{{- end }}

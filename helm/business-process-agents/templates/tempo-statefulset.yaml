@@ -1,0 +1,85 @@
+{{- if .Values.observability.tempo.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "business-process-agents.fullname" . }}-tempo
+  labels:
+    {{- include "business-process-agents.labels" . | nindent 4 }}
+    app.kubernetes.io/component: tempo
+spec:
+  serviceName: {{ include "business-process-agents.fullname" . }}-tempo
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "business-process-agents.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: tempo
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/tempo-configmap.yaml") . | sha256sum }}
+      labels:
+        {{- include "business-process-agents.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: tempo
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "business-process-agents.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+      - name: tempo
+        securityContext:
+          {{- toYaml .Values.securityContext | nindent 10 }}
+        image: "{{ .Values.observability.tempo.image.repository }}:{{ .Values.observability.tempo.image.tag }}"
+        imagePullPolicy: {{ .Values.observability.tempo.image.pullPolicy }}
+        args:
+          - -config.file=/etc/tempo/tempo.yaml
+        ports:
+        - name: http
+          containerPort: {{ .Values.observability.tempo.service.port }}
+          protocol: TCP
+        - name: otlp-grpc
+          containerPort: {{ .Values.observability.tempo.service.otlpPort }}
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /ready
+            port: http
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http
+        resources:
+          {{- toYaml .Values.observability.tempo.resources | nindent 10 }}
+        volumeMounts:
+        - name: config
+          mountPath: /etc/tempo
+        - name: data
+          mountPath: /tmp/tempo
+      volumes:
+      - name: config
+        configMap:
+          name: {{ include "business-process-agents.fullname" . }}-tempo-config
+  {{- if .Values.observability.tempo.persistence.enabled }}
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      {{- if .Values.observability.tempo.persistence.storageClass }}
+      {{- if (eq "-" .Values.observability.tempo.persistence.storageClass) }}
+      storageClassName: ""
+      {{- else }}
+      storageClassName: {{ .Values.observability.tempo.persistence.storageClass }}
+      {{- end }}
+      {{- end }}
+      resources:
+        requests:
+          storage: {{ .Values.observability.tempo.persistence.size }}
+  {{- else }}
+      - name: data
+        emptyDir: {}
+  {{- end }}
+{{- end }}
