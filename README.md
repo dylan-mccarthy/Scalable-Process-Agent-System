@@ -1,5 +1,8 @@
 # Business Process Agents - MVP Platform
 
+[![CI Pipeline](https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/actions/workflows/ci.yml/badge.svg)](https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/actions/workflows/ci.yml)
+[![Code Quality](https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/actions/workflows/code-quality.yml/badge.svg)](https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/actions/workflows/code-quality.yml)
+
 This is the Business Process Agents MVP project, providing a complete platform for deploying and executing business process agents using the Microsoft Agent Framework.
 
 ## Project Structure
@@ -785,6 +788,7 @@ See `tasks.yaml` for the full project roadmap. The completed tasks include:
 - ✅ **E1-T8**: OpenTelemetry wiring (Complete)
 - ✅ **E1-T9**: Authentication setup (Complete)
 - ✅ **E1-T10**: Containerization (Complete)
+- ✅ **E1-T11**: CI pipeline (Complete)
 
 ## Authentication
 
@@ -797,6 +801,20 @@ The Control Plane API supports OIDC authentication with JWT Bearer tokens. Authe
 - Microsoft Entra ID supported for production
 - Configure via `appsettings.json` Authentication section
 - Enable/disable authentication without code changes
+
+## CI/CD Pipeline
+
+The project includes a comprehensive CI/CD pipeline with automated builds, tests, security scanning, SBOM generation, and container image signing.
+
+**For detailed CI/CD pipeline documentation, see [CI-CD.md](./CI-CD.md).**
+
+**Key Features:**
+- Automated build and test on every push and PR
+- SBOM generation for compliance (SPDX format)
+- Container image signing with Sigstore/Cosign
+- Security scanning with Trivy and CodeQL
+- Dependency review and secret scanning
+- Automated releases with semantic versioning
 
 **Epic 2 – Node Runtime & Connectors:**
 - ✅ **E2-T1**: Node runtime skeleton (Complete)
