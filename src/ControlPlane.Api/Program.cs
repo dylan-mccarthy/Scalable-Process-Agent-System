@@ -11,6 +11,8 @@ using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -109,6 +111,68 @@ builder.Logging.AddOpenTelemetry(logging =>
 builder.Services.AddOpenApi();
 builder.Services.AddGrpc();
 
+// Configure authentication
+var authConfig = builder.Configuration.GetSection("Authentication").Get<AuthenticationOptions>() 
+    ?? new AuthenticationOptions();
+
+if (authConfig.Enabled)
+{
+    builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        .AddJwtBearer(options =>
+        {
+            options.Authority = authConfig.Authority;
+            options.Audience = authConfig.Audience;
+            options.RequireHttpsMetadata = authConfig.RequireHttpsMetadata;
+            
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = authConfig.ValidateIssuer,
+                ValidateAudience = authConfig.ValidateAudience,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ClockSkew = TimeSpan.FromMinutes(5)
+            };
+
+            if (authConfig.ValidIssuers?.Length > 0)
+            {
+                options.TokenValidationParameters.ValidIssuers = authConfig.ValidIssuers;
+            }
+
+            if (authConfig.ValidAudiences?.Length > 0)
+            {
+                options.TokenValidationParameters.ValidAudiences = authConfig.ValidAudiences;
+            }
+
+            if (!string.IsNullOrEmpty(authConfig.MetadataAddress))
+            {
+                options.MetadataAddress = authConfig.MetadataAddress;
+            }
+
+            options.Events = new JwtBearerEvents
+            {
+                OnAuthenticationFailed = context =>
+                {
+                    var logger = context.HttpContext.RequestServices
+                        .GetRequiredService<ILogger<Program>>();
+                    logger.LogWarning(context.Exception, 
+                        "Authentication failed for {Path}", context.Request.Path);
+                    return Task.CompletedTask;
+                },
+                OnTokenValidated = context =>
+                {
+                    var logger = context.HttpContext.RequestServices
+                        .GetRequiredService<ILogger<Program>>();
+                    logger.LogDebug("Token validated for {User}", 
+                        context.Principal?.Identity?.Name ?? "unknown");
+                    return Task.CompletedTask;
+                }
+            };
+        });
+
+    builder.Services.AddAuthorization();
+}
+
+
 // Configure stores based on environment - use PostgreSQL stores by default, in-memory for tests
 var useInMemoryStores = builder.Configuration.GetValue<bool>("UseInMemoryStores", false);
 
@@ -191,6 +255,13 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Add authentication and authorization middleware if enabled
+if (authConfig.Enabled)
+{
+    app.UseAuthentication();
+    app.UseAuthorization();
+}
 
 // Map gRPC services
 app.MapGrpcService<LeaseServiceImpl>();

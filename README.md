@@ -783,6 +783,19 @@ See `tasks.yaml` for the full project roadmap. The completed tasks include:
 - ✅ **E1-T6**: Implement gRPC service for node communication (Complete)
 - ✅ **E1-T7**: Scheduler service (Complete)
 - ✅ **E1-T8**: OpenTelemetry wiring (Complete)
+- ✅ **E1-T9**: Authentication setup (Complete)
+
+## Authentication
+
+The Control Plane API supports OIDC authentication with JWT Bearer tokens. Authentication is configurable and disabled by default for ease of development.
+
+**For detailed authentication setup and configuration, see [AUTHENTICATION.md](./AUTHENTICATION.md).**
+
+**Quick Start:**
+- Keycloak for development (docker-compose.dev.yml included)
+- Microsoft Entra ID supported for production
+- Configure via `appsettings.json` Authentication section
+- Enable/disable authentication without code changes
 
 **Epic 2 – Node Runtime & Connectors:**
 - ✅ **E2-T1**: Node runtime skeleton (Complete)
