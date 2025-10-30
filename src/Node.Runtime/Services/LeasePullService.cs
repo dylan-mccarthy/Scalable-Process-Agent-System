@@ -1,6 +1,7 @@
 using ControlPlane.Api.Grpc;
 using Grpc.Core;
 using Node.Runtime.Configuration;
+using Node.Runtime.Observability;
 using Microsoft.Extensions.Options;
 using System.Diagnostics;
 
@@ -37,6 +38,8 @@ public sealed class LeasePullService : ILeasePullService
     private CancellationTokenSource? _pullCts;
     private readonly SemaphoreSlim _activeLeasesLock = new(1, 1);
     private int _activeLeases = 0;
+    private int _reconnectAttempts = 0;
+    private const int MaxReconnectDelay = 60; // Maximum delay in seconds
 
     public LeasePullService(
         LeaseService.LeaseServiceClient leaseClient,
@@ -92,6 +95,10 @@ public sealed class LeasePullService : ILeasePullService
         {
             try
             {
+                using var activity = TelemetryConfig.ActivitySource.StartActivity("LeasePullService.PullLeases");
+                activity?.SetTag("node.id", _options.NodeId);
+                activity?.SetTag("max.leases", _options.MaxConcurrentLeases);
+
                 _logger.LogInformation("Initiating lease pull for node {NodeId} with max leases {MaxLeases}",
                     _options.NodeId, _options.MaxConcurrentLeases);
 
@@ -103,8 +110,15 @@ public sealed class LeasePullService : ILeasePullService
 
                 using var call = _leaseClient.Pull(request, cancellationToken: cancellationToken);
 
+                // Reset reconnect attempts on successful connection
+                _reconnectAttempts = 0;
+
                 await foreach (var lease in call.ResponseStream.ReadAllAsync(cancellationToken))
                 {
+                    TelemetryConfig.LeasesReceivedCounter.Add(1,
+                        new KeyValuePair<string, object?>("node.id", _options.NodeId),
+                        new KeyValuePair<string, object?>("lease.id", lease.LeaseId));
+
                     _logger.LogInformation(
                         "Received lease {LeaseId} for run {RunId} (Agent: {AgentId}, Version: {Version})",
                         lease.LeaseId, lease.RunId, lease.RunSpec?.AgentId, lease.RunSpec?.Version);
@@ -112,7 +126,7 @@ public sealed class LeasePullService : ILeasePullService
                     // Acknowledge the lease
                     _ = Task.Run(async () => await AcknowledgeLeaseAsync(lease, cancellationToken), cancellationToken);
 
-                    // Process the lease (to be implemented in E2-T4)
+                    // Process the lease
                     _ = Task.Run(async () => await ProcessLeaseAsync(lease, cancellationToken), cancellationToken);
                 }
 
@@ -130,18 +144,52 @@ public sealed class LeasePullService : ILeasePullService
             }
             catch (Exception ex)
             {
+                TelemetryConfig.LeaseStreamErrorsCounter.Add(1,
+                    new KeyValuePair<string, object?>("node.id", _options.NodeId),
+                    new KeyValuePair<string, object?>("error.type", ex.GetType().Name));
+
                 _logger.LogError(ex, "Error pulling leases for node {NodeId}", _options.NodeId);
 
-                // Wait before retrying
-                await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
+                // Exponential backoff with jitter for reconnection
+                _reconnectAttempts++;
+                var delay = CalculateReconnectDelay(_reconnectAttempts);
+                
+                TelemetryConfig.LeaseStreamReconnectsCounter.Add(1,
+                    new KeyValuePair<string, object?>("node.id", _options.NodeId),
+                    new KeyValuePair<string, object?>("attempt", _reconnectAttempts));
+
+                _logger.LogWarning(
+                    "Reconnecting to lease stream in {DelaySeconds}s (attempt {Attempt})",
+                    delay,
+                    _reconnectAttempts);
+
+                await Task.Delay(TimeSpan.FromSeconds(delay), cancellationToken);
             }
         }
+    }
+
+    /// <summary>
+    /// Calculates the delay for reconnection attempts using exponential backoff with jitter
+    /// </summary>
+    /// <param name="attempt">The reconnection attempt number</param>
+    /// <returns>Delay in seconds</returns>
+    private int CalculateReconnectDelay(int attempt)
+    {
+        // Exponential backoff: min(2^attempt, MaxReconnectDelay) + jitter
+        var baseDelay = Math.Min(Math.Pow(2, attempt), MaxReconnectDelay);
+        var jitter = Random.Shared.NextDouble() * 2; // 0-2 seconds of jitter
+        return (int)(baseDelay + jitter);
     }
 
     private async Task AcknowledgeLeaseAsync(Lease lease, CancellationToken cancellationToken)
     {
         try
         {
+            using var activity = TelemetryConfig.ActivitySource.StartActivity("LeasePullService.AcknowledgeLease");
+            activity?.SetTag("lease.id", lease.LeaseId);
+            activity?.SetTag("run.id", lease.RunId);
+            activity?.SetTag("node.id", _options.NodeId);
+
             var ackRequest = new AckRequest
             {
                 LeaseId = lease.LeaseId,
@@ -153,6 +201,10 @@ public sealed class LeasePullService : ILeasePullService
 
             if (response.Success)
             {
+                TelemetryConfig.LeasesAcknowledgedCounter.Add(1,
+                    new KeyValuePair<string, object?>("node.id", _options.NodeId),
+                    new KeyValuePair<string, object?>("lease.id", lease.LeaseId));
+
                 _logger.LogDebug("Acknowledged lease {LeaseId}", lease.LeaseId);
             }
             else
@@ -182,6 +234,13 @@ public sealed class LeasePullService : ILeasePullService
 
         try
         {
+            using var activity = TelemetryConfig.ActivitySource.StartActivity("LeasePullService.ProcessLease");
+            activity?.SetTag("lease.id", lease.LeaseId);
+            activity?.SetTag("run.id", lease.RunId);
+            activity?.SetTag("node.id", _options.NodeId);
+            activity?.SetTag("agent.id", lease.RunSpec?.AgentId);
+            activity?.SetTag("agent.version", lease.RunSpec?.Version);
+
             _logger.LogInformation("Processing lease {LeaseId} for run {RunId}", lease.LeaseId, lease.RunId);
 
             if (lease.RunSpec == null)
@@ -219,12 +278,38 @@ public sealed class LeasePullService : ILeasePullService
             };
 
             // Execute the agent using MAF SDK
+            TelemetryConfig.AgentExecutionsCounter.Add(1,
+                new KeyValuePair<string, object?>("node.id", _options.NodeId),
+                new KeyValuePair<string, object?>("agent.id", agentId),
+                new KeyValuePair<string, object?>("agent.version", version));
+
             var result = await _agentExecutor.ExecuteAsync(agentSpec, input, cancellationToken);
 
             stopwatch.Stop();
 
+            // Record execution metrics
+            TelemetryConfig.LeaseProcessingDurationHistogram.Record(stopwatch.ElapsedMilliseconds,
+                new KeyValuePair<string, object?>("node.id", _options.NodeId),
+                new KeyValuePair<string, object?>("success", result.Success));
+
+            TelemetryConfig.AgentExecutionDurationHistogram.Record(stopwatch.ElapsedMilliseconds,
+                new KeyValuePair<string, object?>("node.id", _options.NodeId),
+                new KeyValuePair<string, object?>("agent.id", agentId));
+
             if (result.Success)
             {
+                TelemetryConfig.LeasesCompletedCounter.Add(1,
+                    new KeyValuePair<string, object?>("node.id", _options.NodeId),
+                    new KeyValuePair<string, object?>("agent.id", agentId));
+
+                TelemetryConfig.AgentTokensHistogram.Record(result.TokensIn + result.TokensOut,
+                    new KeyValuePair<string, object?>("node.id", _options.NodeId),
+                    new KeyValuePair<string, object?>("agent.id", agentId));
+
+                TelemetryConfig.AgentCostHistogram.Record(result.UsdCost,
+                    new KeyValuePair<string, object?>("node.id", _options.NodeId),
+                    new KeyValuePair<string, object?>("agent.id", agentId));
+
                 // Mark as completed
                 var completeRequest = new CompleteRequest
                 {
@@ -253,6 +338,7 @@ public sealed class LeasePullService : ILeasePullService
 
                 if (response.Success)
                 {
+                    activity?.SetStatus(ActivityStatusCode.Ok);
                     _logger.LogInformation(
                         "Successfully completed run {RunId} in {DurationMs}ms (Tokens: {TokensIn}/{TokensOut}, Cost: ${Cost:F4})",
                         lease.RunId,
@@ -268,7 +354,16 @@ public sealed class LeasePullService : ILeasePullService
             }
             else
             {
+                TelemetryConfig.LeasesFailedCounter.Add(1,
+                    new KeyValuePair<string, object?>("node.id", _options.NodeId),
+                    new KeyValuePair<string, object?>("agent.id", agentId));
+
+                TelemetryConfig.AgentExecutionErrorsCounter.Add(1,
+                    new KeyValuePair<string, object?>("node.id", _options.NodeId),
+                    new KeyValuePair<string, object?>("agent.id", agentId));
+
                 // Agent execution failed - report failure
+                activity?.SetStatus(ActivityStatusCode.Error, result.Error);
                 _logger.LogWarning(
                     "Agent execution failed for run {RunId}: {Error}",
                     lease.RunId,
