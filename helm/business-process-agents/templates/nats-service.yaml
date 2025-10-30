@@ -1,0 +1,23 @@
+{{- if .Values.nats.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "business-process-agents.fullname" . }}-nats
+  labels:
+    {{- include "business-process-agents.labels" . | nindent 4 }}
+    app.kubernetes.io/component: nats
+spec:
+  type: {{ .Values.nats.service.type }}
+  ports:
+    - port: {{ .Values.nats.service.clientPort }}
+      targetPort: client
+      protocol: TCP
+      name: client
+    - port: {{ .Values.nats.service.monitorPort }}
+      targetPort: monitor
+      protocol: TCP
+      name: monitor
+  selector:
+    {{- include "business-process-agents.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: nats
+{{- end }}

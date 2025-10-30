@@ -1,0 +1,55 @@
+# Git
+.git
+.gitignore
+.github
+
+# Build outputs
+**/bin/
+**/obj/
+**/out/
+
+# Test results
+TestResults/
+test-results/
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation
+*.md
+!README.md
+
+# Docker
+docker-compose*.yml
+Dockerfile*
+.dockerignore
+
+# Node modules (for admin-ui)
+**/node_modules/
+**/.next/
+
+# Logs
+*.log
+logs/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Temporary files
+tmp/
+temp/
+
+# Package managers
+*.nupkg
+package-lock.json

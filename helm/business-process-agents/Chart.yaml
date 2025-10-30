@@ -1,0 +1,17 @@
+apiVersion: v2
+name: business-process-agents
+description: A Helm chart for Business Process Agents MVP platform
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - business-process-agents
+  - agents
+  - automation
+  - microsoft-agent-framework
+home: https://github.com/dylan-mccarthy/Scalable-Process-Agent-System
+sources:
+  - https://github.com/dylan-mccarthy/Scalable-Process-Agent-System
+maintainers:
+  - name: Platform Engineering
+    email: platform@example.com
