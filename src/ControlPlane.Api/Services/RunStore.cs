@@ -66,14 +66,13 @@ public class InMemoryRunStore : IRunStore
 
         run.Status = "failed";
         run.Timings = request.Timings;
-        if (run.Timings == null)
+        run.ErrorInfo = new Dictionary<string, object>
         {
-            run.Timings = new Dictionary<string, object>();
-        }
-        run.Timings["errorMessage"] = request.ErrorMessage;
+            ["errorMessage"] = request.ErrorMessage
+        };
         if (request.ErrorDetails != null)
         {
-            run.Timings["errorDetails"] = request.ErrorDetails;
+            run.ErrorInfo["errorDetails"] = request.ErrorDetails;
         }
         _runs[runId] = run;
         return Task.FromResult<Run?>(run);
@@ -87,11 +86,10 @@ public class InMemoryRunStore : IRunStore
         }
 
         run.Status = "cancelled";
-        if (run.Timings == null)
+        run.ErrorInfo = new Dictionary<string, object>
         {
-            run.Timings = new Dictionary<string, object>();
-        }
-        run.Timings["cancelReason"] = request.Reason;
+            ["cancelReason"] = request.Reason
+        };
         _runs[runId] = run;
         return Task.FromResult<Run?>(run);
     }

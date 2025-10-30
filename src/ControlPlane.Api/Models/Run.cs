@@ -11,6 +11,7 @@ public class Run
     public string Status { get; set; } = "pending";
     public Dictionary<string, object>? Timings { get; set; }
     public Dictionary<string, object>? Costs { get; set; }
+    public Dictionary<string, object>? ErrorInfo { get; set; }
     public string? TraceId { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }
