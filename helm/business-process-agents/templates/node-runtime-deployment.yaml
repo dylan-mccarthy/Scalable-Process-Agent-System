@@ -1,0 +1,66 @@
+{{- if .Values.nodeRuntime.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "business-process-agents.fullname" . }}-node-runtime
+  labels:
+    {{- include "business-process-agents.nodeRuntime.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.nodeRuntime.autoscaling.enabled }}
+  replicas: {{ .Values.nodeRuntime.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "business-process-agents.nodeRuntime.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "business-process-agents.nodeRuntime.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "business-process-agents.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: node-runtime
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.nodeRuntime.image.repository }}:{{ .Values.nodeRuntime.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.nodeRuntime.image.pullPolicy }}
+          env:
+            {{- range .Values.nodeRuntime.env }}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
+            {{- end }}
+            - name: ControlPlane__BaseUrl
+              value: "http://{{ include "business-process-agents.fullname" . }}-control-plane:{{ .Values.controlPlane.service.port }}"
+            - name: ControlPlane__GrpcUrl
+              value: "http://{{ include "business-process-agents.fullname" . }}-control-plane:{{ .Values.controlPlane.service.grpcPort }}"
+            - name: Node__Metadata__Region
+              value: {{ .Values.nodeRuntime.metadata.region | quote }}
+            - name: Node__Metadata__Environment
+              value: {{ .Values.nodeRuntime.metadata.environment | quote }}
+            - name: Node__Capacity__Slots
+              value: {{ .Values.nodeRuntime.capacity.slots | quote }}
+            - name: Node__Capacity__Cpu
+              value: {{ .Values.nodeRuntime.capacity.cpu | quote }}
+            - name: Node__Capacity__Memory
+              value: {{ .Values.nodeRuntime.capacity.memory | quote }}
+          resources:
+            {{- toYaml .Values.nodeRuntime.resources | nindent 12 }}
+      {{- with .Values.nodeRuntime.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeRuntime.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeRuntime.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

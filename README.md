@@ -784,6 +784,7 @@ See `tasks.yaml` for the full project roadmap. The completed tasks include:
 - ✅ **E1-T7**: Scheduler service (Complete)
 - ✅ **E1-T8**: OpenTelemetry wiring (Complete)
 - ✅ **E1-T9**: Authentication setup (Complete)
+- ✅ **E1-T10**: Containerization (Complete)
 
 ## Authentication
 
@@ -808,6 +809,181 @@ The Control Plane API supports OIDC authentication with JWT Bearer tokens. Authe
 - ⏳ **E2-T8**: DLQ handling
 - ⏳ **E2-T9**: Node telemetry
 - ⏳ **E2-T10**: Secure communication
+
+## Containerization & Deployment
+
+The platform is fully containerized and can be deployed using Docker Compose or Kubernetes with Helm.
+
+### Docker Deployment
+
+#### Using Docker Compose (Full Stack)
+
+Run all services locally with Docker Compose:
+
+```bash
+# Build and start all services
+docker-compose up --build
+
+# Start with observability stack
+docker-compose --profile observability up --build
+
+# Stop all services
+docker-compose down
+
+# Clean up volumes
+docker-compose down -v
+```
+
+Services will be available at:
+- **Control Plane API**: http://localhost:8080
+- **Admin UI**: http://localhost:3000
+- **Grafana** (with observability profile): http://localhost:3001
+
+#### Building Individual Services
+
+```bash
+# Build Control Plane API
+docker build -t business-process-agents/control-plane:latest -f src/ControlPlane.Api/Dockerfile .
+
+# Build Node Runtime
+docker build -t business-process-agents/node-runtime:latest -f src/Node.Runtime/Dockerfile .
+
+# Build Admin UI
+docker build -t business-process-agents/admin-ui:latest -f src/admin-ui/Dockerfile ./src/admin-ui
+```
+
+### Kubernetes Deployment with Helm
+
+#### Prerequisites
+
+- Kubernetes 1.24+
+- Helm 3.8+
+- kubectl configured to access your cluster
+
+#### Quick Start (Local k3d)
+
+```bash
+# Create k3d cluster
+k3d cluster create bpa-dev --servers 1 --agents 2
+
+# Install the Helm chart
+helm install bpa ./helm/business-process-agents
+
+# Port forward to access services
+kubectl port-forward svc/bpa-business-process-agents-control-plane 8080:8080
+kubectl port-forward svc/bpa-business-process-agents-admin-ui 3000:3000
+```
+
+#### Production Deployment
+
+```bash
+# Create a custom values file
+cat > values-production.yaml <<EOF
+controlPlane:
+  replicaCount: 3
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 10
+  ingress:
+    enabled: true
+    className: nginx
+    hosts:
+      - host: api.bpa.example.com
+        paths:
+          - path: /
+            pathType: Prefix
+
+adminUI:
+  ingress:
+    enabled: true
+    className: nginx
+    hosts:
+      - host: admin.bpa.example.com
+        paths:
+          - path: /
+            pathType: Prefix
+
+postgresql:
+  persistence:
+    size: 50Gi
+  auth:
+    password: <secure-password>
+
+nodeRuntime:
+  autoscaling:
+    enabled: true
+    minReplicas: 5
+    maxReplicas: 50
+EOF
+
+# Install with production values
+helm install bpa ./helm/business-process-agents -f values-production.yaml
+
+# Verify deployment
+kubectl get pods -l app.kubernetes.io/instance=bpa
+```
+
+#### Helm Chart Configuration
+
+See [Helm Chart README](helm/business-process-agents/README.md) for detailed configuration options.
+
+Key configuration areas:
+- **Control Plane**: Replicas, autoscaling, ingress, resources
+- **Node Runtime**: Capacity, placement metadata, autoscaling
+- **Admin UI**: Ingress configuration
+- **PostgreSQL**: Persistence, credentials, size
+- **Redis**: Persistence, size
+- **NATS**: JetStream configuration, persistence
+- **Observability**: OpenTelemetry, Prometheus, Grafana
+
+#### Upgrading
+
+```bash
+# Upgrade the release
+helm upgrade bpa ./helm/business-process-agents -f values-production.yaml
+
+# Rollback if needed
+helm rollback bpa
+```
+
+#### Uninstalling
+
+```bash
+# Uninstall the release
+helm uninstall bpa
+
+# Clean up PVCs (optional)
+kubectl delete pvc -l app.kubernetes.io/instance=bpa
+```
+
+### Container Images
+
+The project includes Dockerfiles for all services:
+
+- **Control Plane API** (`src/ControlPlane.Api/Dockerfile`):
+  - Multi-stage build with .NET SDK and ASP.NET runtime
+  - Non-root user execution
+  - Health checks configured
+  - Base image: `mcr.microsoft.com/dotnet/aspnet:9.0`
+
+- **Node Runtime** (`src/Node.Runtime/Dockerfile`):
+  - Multi-stage build with .NET SDK and ASP.NET runtime
+  - Non-root user execution
+  - Base image: `mcr.microsoft.com/dotnet/aspnet:9.0`
+
+- **Admin UI** (`src/admin-ui/Dockerfile`):
+  - Multi-stage build with Node.js
+  - Next.js standalone output
+  - Non-root user execution
+  - Base image: `node:20-alpine`
+
+All images follow security best practices:
+- Non-root user execution
+- Minimal base images (Alpine where possible)
+- Multi-stage builds to reduce image size
+- Health checks configured
+- No secrets in images
 
 ## Components
 

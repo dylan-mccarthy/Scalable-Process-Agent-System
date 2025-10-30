@@ -1,0 +1,161 @@
+{{- $controlPlaneUrl := printf "http://%s-control-plane:%d" (include "business-process-agents.fullname" .) (.Values.controlPlane.service.port | int) }}
+{{- $adminUIUrl := printf "http://%s-admin-ui:%d" (include "business-process-agents.fullname" .) (.Values.adminUI.service.port | int) }}
+
+🎉 Business Process Agents has been deployed! 🎉
+
+Your release is named {{ .Release.Name }}.
+
+To learn more about the release, try:
+
+  $ helm status {{ .Release.Name }}
+  $ helm get all {{ .Release.Name }}
+
+{{- if .Values.controlPlane.enabled }}
+
+📡 CONTROL PLANE API
+====================
+
+{{- if .Values.controlPlane.ingress.enabled }}
+The Control Plane API is available at:
+{{- range .Values.controlPlane.ingress.hosts }}
+  - https://{{ .host }}
+{{- end }}
+{{- else }}
+The Control Plane API is running on ClusterIP. To access it:
+
+  $ kubectl port-forward svc/{{ include "business-process-agents.fullname" . }}-control-plane {{ .Values.controlPlane.service.port }}:{{ .Values.controlPlane.service.port }}
+
+Then visit:
+  - HTTP API: http://localhost:{{ .Values.controlPlane.service.port }}
+  - gRPC: localhost:{{ .Values.controlPlane.service.grpcPort }}
+  - Health: http://localhost:{{ .Values.controlPlane.service.port }}/health
+{{- end }}
+{{- end }}
+
+{{- if .Values.adminUI.enabled }}
+
+🖥️  ADMIN UI
+============
+
+{{- if .Values.adminUI.ingress.enabled }}
+The Admin UI is available at:
+{{- range .Values.adminUI.ingress.hosts }}
+  - https://{{ .host }}
+{{- end }}
+{{- else }}
+The Admin UI is running on ClusterIP. To access it:
+
+  $ kubectl port-forward svc/{{ include "business-process-agents.fullname" . }}-admin-ui {{ .Values.adminUI.service.port }}:{{ .Values.adminUI.service.port }}
+
+Then visit: http://localhost:{{ .Values.adminUI.service.port }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.nodeRuntime.enabled }}
+
+🤖 NODE RUNTIME
+===============
+
+Worker nodes are running with the following configuration:
+  - Replicas: {{ .Values.nodeRuntime.replicaCount }}
+  - Capacity per node: {{ .Values.nodeRuntime.capacity.slots }} slots
+  - Region: {{ .Values.nodeRuntime.metadata.region }}
+  - Environment: {{ .Values.nodeRuntime.metadata.environment }}
+
+{{- if .Values.nodeRuntime.autoscaling.enabled }}
+  - Autoscaling: enabled ({{ .Values.nodeRuntime.autoscaling.minReplicas }}-{{ .Values.nodeRuntime.autoscaling.maxReplicas }} replicas)
+{{- end }}
+
+To view node status:
+
+  $ kubectl get pods -l app.kubernetes.io/component=node-runtime
+{{- end }}
+
+{{- if .Values.postgresql.enabled }}
+
+🐘 POSTGRESQL
+=============
+
+PostgreSQL is running with:
+  - Database: {{ .Values.postgresql.auth.database }}
+  - Username: {{ .Values.postgresql.auth.username }}
+{{- if .Values.postgresql.persistence.enabled }}
+  - Persistence: enabled ({{ .Values.postgresql.persistence.size }})
+{{- else }}
+  - ⚠️  Persistence: disabled (data will be lost on restart)
+{{- end }}
+
+To connect to PostgreSQL:
+
+  $ kubectl exec -it {{ include "business-process-agents.fullname" . }}-postgresql-0 -- psql -U {{ .Values.postgresql.auth.username }} -d {{ .Values.postgresql.auth.database }}
+{{- end }}
+
+📊 MONITORING
+=============
+
+{{- if .Values.otelCollector.enabled }}
+OpenTelemetry Collector is enabled. Telemetry is being exported to:
+  - OTLP gRPC: {{ include "business-process-agents.fullname" . }}-otel-collector:{{ .Values.otelCollector.service.otlpGrpcPort }}
+  - Metrics: {{ include "business-process-agents.fullname" . }}-otel-collector:{{ .Values.otelCollector.service.metricsPort }}
+{{- else }}
+OpenTelemetry Collector is disabled. To enable it:
+
+  $ helm upgrade {{ .Release.Name }} . --set otelCollector.enabled=true
+{{- end }}
+
+View logs:
+
+  # Control Plane
+  $ kubectl logs -l app.kubernetes.io/component=control-plane -f
+
+  # Node Runtime
+  $ kubectl logs -l app.kubernetes.io/component=node-runtime -f
+
+  # Admin UI
+  $ kubectl logs -l app.kubernetes.io/component=admin-ui -f
+
+🔐 SECURITY
+===========
+
+{{- if or (eq .Values.postgresql.auth.password "postgres") (not .Values.postgresql.auth.existingSecret) }}
+⚠️  WARNING: You are using default database credentials!
+   For production, set secure passwords or use existingSecret.
+{{- end }}
+
+{{- if not .Values.controlPlane.ingress.enabled }}
+ℹ️  Ingress is disabled. Your API is only accessible within the cluster.
+   To enable external access, set controlPlane.ingress.enabled=true
+{{- end }}
+
+📚 DOCUMENTATION
+================
+
+For more information:
+  - Chart README: helm/business-process-agents/README.md
+  - Project README: https://github.com/dylan-mccarthy/Scalable-Process-Agent-System
+  - System Architecture: sad.md
+
+🚀 NEXT STEPS
+=============
+
+1. Check all pods are running:
+   $ kubectl get pods -l app.kubernetes.io/instance={{ .Release.Name }}
+
+2. Access the Control Plane API and verify health:
+   $ curl {{ $controlPlaneUrl }}/health
+
+3. Create your first agent:
+   $ curl -X POST {{ $controlPlaneUrl }}/v1/agents \
+     -H "Content-Type: application/json" \
+     -d '{
+       "name": "My First Agent",
+       "instructions": "Process incoming requests",
+       "modelProfile": {
+         "model": "gpt-4",
+         "temperature": 0.7
+       }
+     }'
+
+4. Monitor the system via the Admin UI
+
+Happy agent processing! 🎯

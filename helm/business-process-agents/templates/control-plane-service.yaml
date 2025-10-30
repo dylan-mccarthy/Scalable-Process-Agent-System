@@ -1,0 +1,25 @@
+{{- if .Values.controlPlane.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "business-process-agents.fullname" . }}-control-plane
+  labels:
+    {{- include "business-process-agents.controlPlane.labels" . | nindent 4 }}
+  {{- with .Values.controlPlane.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.controlPlane.service.type }}
+  ports:
+    - port: {{ .Values.controlPlane.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+    - port: {{ .Values.controlPlane.service.grpcPort }}
+      targetPort: grpc
+      protocol: TCP
+      name: grpc
+  selector:
+    {{- include "business-process-agents.controlPlane.selectorLabels" . | nindent 4 }}
+{{- end }}

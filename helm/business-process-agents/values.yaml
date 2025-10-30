@@ -1,0 +1,362 @@
+# Default values for business-process-agents
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Global configuration
+global:
+  imagePullSecrets: []
+  storageClass: ""
+
+# Control Plane API configuration
+controlPlane:
+  enabled: true
+  replicaCount: 2
+  
+  image:
+    repository: business-process-agents/control-plane
+    pullPolicy: IfNotPresent
+    tag: "latest"
+  
+  service:
+    type: ClusterIP
+    port: 8080
+    grpcPort: 8081
+    annotations: {}
+  
+  ingress:
+    enabled: false
+    className: ""
+    annotations: {}
+      # kubernetes.io/ingress.class: nginx
+      # cert-manager.io/cluster-issuer: letsencrypt-prod
+    hosts:
+      - host: control-plane.local
+        paths:
+          - path: /
+            pathType: Prefix
+    tls: []
+      # - secretName: control-plane-tls
+      #   hosts:
+      #     - control-plane.local
+  
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+  
+  autoscaling:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 80
+  
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  
+  env:
+    - name: ASPNETCORE_ENVIRONMENT
+      value: "Production"
+    - name: UseInMemoryStores
+      value: "false"
+  
+  # Database migration job
+  migration:
+    enabled: true
+    image:
+      repository: business-process-agents/control-plane
+      tag: "latest"
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+
+# Node Runtime configuration
+nodeRuntime:
+  enabled: true
+  replicaCount: 2
+  
+  image:
+    repository: business-process-agents/node-runtime
+    pullPolicy: IfNotPresent
+    tag: "latest"
+  
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+    requests:
+      cpu: 1000m
+      memory: 1Gi
+  
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 20
+    targetCPUUtilizationPercentage: 70
+  
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  
+  # Node capacity configuration
+  capacity:
+    slots: 8
+    cpu: "2"
+    memory: "2Gi"
+  
+  # Node metadata
+  metadata:
+    region: "default"
+    environment: "production"
+  
+  env:
+    - name: ASPNETCORE_ENVIRONMENT
+      value: "Production"
+
+# Admin UI configuration
+adminUI:
+  enabled: true
+  replicaCount: 1
+  
+  image:
+    repository: business-process-agents/admin-ui
+    pullPolicy: IfNotPresent
+    tag: "latest"
+  
+  service:
+    type: ClusterIP
+    port: 3000
+    annotations: {}
+  
+  ingress:
+    enabled: false
+    className: ""
+    annotations: {}
+    hosts:
+      - host: admin.local
+        paths:
+          - path: /
+            pathType: Prefix
+    tls: []
+  
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  
+  env:
+    - name: NODE_ENV
+      value: "production"
+    - name: NEXT_PUBLIC_API_URL
+      value: "http://control-plane:8080"
+
+# PostgreSQL configuration
+postgresql:
+  enabled: true
+  
+  image:
+    repository: postgres
+    tag: "16-alpine"
+    pullPolicy: IfNotPresent
+  
+  service:
+    type: ClusterIP
+    port: 5432
+  
+  persistence:
+    enabled: true
+    storageClass: ""
+    size: 10Gi
+  
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+  
+  # Database credentials (use external secrets in production)
+  auth:
+    database: bpa
+    username: postgres
+    password: postgres
+    existingSecret: ""
+  
+  initdb:
+    scripts:
+      init.sql: |
+        -- Database will be initialized by Entity Framework migrations
+        -- This file is a placeholder for any custom initialization
+
+# Redis configuration
+redis:
+  enabled: true
+  
+  image:
+    repository: redis
+    tag: "7-alpine"
+    pullPolicy: IfNotPresent
+  
+  service:
+    type: ClusterIP
+    port: 6379
+  
+  persistence:
+    enabled: true
+    storageClass: ""
+    size: 5Gi
+  
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+# NATS configuration
+nats:
+  enabled: true
+  
+  image:
+    repository: nats
+    tag: "2.10-alpine"
+    pullPolicy: IfNotPresent
+  
+  service:
+    type: ClusterIP
+    clientPort: 4222
+    monitorPort: 8222
+  
+  persistence:
+    enabled: true
+    storageClass: ""
+    size: 5Gi
+  
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  
+  # JetStream enabled by default
+  jetstream:
+    enabled: true
+
+# OpenTelemetry Collector configuration
+otelCollector:
+  enabled: false
+  
+  image:
+    repository: otel/opentelemetry-collector-contrib
+    tag: "0.91.0"
+    pullPolicy: IfNotPresent
+  
+  service:
+    type: ClusterIP
+    otlpGrpcPort: 4317
+    otlpHttpPort: 4318
+    metricsPort: 8889
+  
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+    
+    exporters:
+      logging:
+        loglevel: debug
+      prometheus:
+        endpoint: 0.0.0.0:8889
+    
+    service:
+      pipelines:
+        metrics:
+          receivers: [otlp]
+          exporters: [prometheus, logging]
+        traces:
+          receivers: [otlp]
+          exporters: [logging]
+        logs:
+          receivers: [otlp]
+          exporters: [logging]
+
+# Observability stack (optional)
+observability:
+  # Prometheus for metrics
+  prometheus:
+    enabled: false
+    service:
+      type: ClusterIP
+      port: 9090
+  
+  # Grafana for visualization
+  grafana:
+    enabled: false
+    service:
+      type: ClusterIP
+      port: 3000
+    adminPassword: admin
+  
+  # Tempo for traces
+  tempo:
+    enabled: false
+    service:
+      type: ClusterIP
+      port: 3200
+  
+  # Loki for logs
+  loki:
+    enabled: false
+    service:
+      type: ClusterIP
+      port: 3100
+
+# Service Account
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+# Pod Security Context
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  fsGroup: 1001
+
+# Security Context
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: false

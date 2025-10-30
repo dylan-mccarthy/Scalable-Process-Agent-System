@@ -1,0 +1,200 @@
+version: '3.8'
+
+# Full-stack Business Process Agents deployment
+# This compose file includes all services for local development and testing
+
+services:
+  # PostgreSQL database
+  postgres:
+    image: postgres:16-alpine
+    container_name: bpa-postgres
+    environment:
+      POSTGRES_DB: bpa
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - bpa-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for leases and locks
+  redis:
+    image: redis:7-alpine
+    container_name: bpa-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - bpa-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # NATS with JetStream
+  nats:
+    image: nats:2.10-alpine
+    container_name: bpa-nats
+    command: 
+      - "--jetstream"
+      - "--store_dir=/data"
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    volumes:
+      - nats-data:/data
+    networks:
+      - bpa-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8222/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Control Plane API
+  control-plane:
+    build:
+      context: .
+      dockerfile: src/ControlPlane.Api/Dockerfile
+    container_name: bpa-control-plane
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Host=postgres:5432;Database=bpa;Username=postgres;Password=postgres
+      - ConnectionStrings__Redis=redis:6379
+      - ConnectionStrings__Nats=nats://nats:4222
+      - UseInMemoryStores=false
+    networks:
+      - bpa-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  # Node Runtime
+  node-runtime:
+    build:
+      context: .
+      dockerfile: src/Node.Runtime/Dockerfile
+    container_name: bpa-node-runtime
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ControlPlane__BaseUrl=http://control-plane:8080
+      - ControlPlane__GrpcUrl=http://control-plane:8081
+      - Node__Metadata__Region=local
+      - Node__Metadata__Environment=development
+      - Node__Capacity__Slots=8
+      - Node__Capacity__Cpu=2
+      - Node__Capacity__Memory=2Gi
+    networks:
+      - bpa-network
+    depends_on:
+      control-plane:
+        condition: service_healthy
+    deploy:
+      replicas: 2
+
+  # Admin UI
+  admin-ui:
+    build:
+      context: src/admin-ui
+      dockerfile: Dockerfile
+    container_name: bpa-admin-ui
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://localhost:8080
+    networks:
+      - bpa-network
+    depends_on:
+      - control-plane
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000', (res) => process.exit(res.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  # OpenTelemetry Collector (optional)
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.91.0
+    container_name: bpa-otel-collector
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otelcol/config.yaml
+    ports:
+      - "4317:4317"   # OTLP gRPC receiver
+      - "4318:4318"   # OTLP HTTP receiver
+      - "8889:8889"   # Prometheus metrics exporter
+    networks:
+      - bpa-network
+    profiles:
+      - observability
+
+  # Prometheus (optional)
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    container_name: bpa-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - bpa-network
+    profiles:
+      - observability
+
+  # Grafana (optional)
+  grafana:
+    image: grafana/grafana:10.2.2
+    container_name: bpa-grafana
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana-datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+    ports:
+      - "3001:3000"
+    networks:
+      - bpa-network
+    profiles:
+      - observability
+
+networks:
+  bpa-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  redis-data:
+  nats-data:
+  prometheus-data:
+  grafana-data:

@@ -1,0 +1,45 @@
+{{- if .Values.controlPlane.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "business-process-agents.fullname" . }}-control-plane-config
+  labels:
+    {{- include "business-process-agents.controlPlane.labels" . | nindent 4 }}
+data:
+  appsettings.Production.json: |
+    {
+      "Logging": {
+        "LogLevel": {
+          "Default": "Information",
+          "Microsoft.AspNetCore": "Warning"
+        }
+      },
+      "ConnectionStrings": {
+        "DefaultConnection": "{{ include "business-process-agents.postgresql.connectionString" . }}",
+        "Redis": "{{ include "business-process-agents.redis.connectionString" . }}",
+        "Nats": "{{ include "business-process-agents.nats.connectionString" . }}"
+      },
+      "UseInMemoryStores": false,
+      "OpenTelemetry": {
+        "ServiceName": "ControlPlane.Api",
+        "ServiceVersion": "{{ .Chart.AppVersion }}",
+        "OtlpExporter": {
+          "Endpoint": "{{ if .Values.otelCollector.enabled }}http://{{ include "business-process-agents.fullname" . }}-otel-collector:{{ .Values.otelCollector.service.otlpGrpcPort }}{{ else }}http://localhost:4317{{ end }}",
+          "Protocol": "grpc"
+        },
+        "Traces": {
+          "Enabled": true,
+          "SamplingRatio": 1.0
+        },
+        "Metrics": {
+          "Enabled": true,
+          "ExportIntervalMilliseconds": 60000
+        },
+        "Logs": {
+          "Enabled": true,
+          "IncludeFormattedMessage": true,
+          "IncludeScopes": true
+        }
+      }
+    }
+{{- end }}
