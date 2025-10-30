@@ -1,0 +1,112 @@
+syntax = "proto3";
+
+option csharp_namespace = "ControlPlane.Api.Grpc";
+
+package lease;
+
+// LeaseService manages run leases for node communication
+service LeaseService {
+  // Pull streams leases from the control plane to worker nodes
+  rpc Pull(PullRequest) returns (stream Lease);
+  
+  // Ack acknowledges receipt of a lease
+  rpc Ack(AckRequest) returns (AckResponse);
+  
+  // Complete marks a run as successfully completed
+  rpc Complete(CompleteRequest) returns (CompleteResponse);
+  
+  // Fail marks a run as failed
+  rpc Fail(FailRequest) returns (FailResponse);
+}
+
+// Request to pull leases for a specific node
+message PullRequest {
+  string node_id = 1;
+  int32 max_leases = 2; // Maximum number of concurrent leases
+}
+
+// Lease represents a work assignment to a node
+message Lease {
+  string lease_id = 1;
+  string run_id = 2;
+  RunSpec run_spec = 3;
+  int64 deadline_unix_ms = 4; // Unix timestamp in milliseconds
+  string trace_id = 5;
+}
+
+// RunSpec contains the specification for executing the run
+message RunSpec {
+  string agent_id = 1;
+  string version = 2;
+  string deployment_id = 3;
+  map<string, string> input_ref = 4; // Input reference (e.g., queue message ID)
+  BudgetConstraints budgets = 5;
+  map<string, string> metadata = 6;
+}
+
+// BudgetConstraints define execution limits
+message BudgetConstraints {
+  int32 max_tokens = 1;
+  int32 max_duration_seconds = 2;
+}
+
+// Request to acknowledge a lease
+message AckRequest {
+  string lease_id = 1;
+  string node_id = 2;
+  int64 ack_timestamp_unix_ms = 3;
+}
+
+// Response for acknowledgment
+message AckResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// Request to complete a run
+message CompleteRequest {
+  string lease_id = 1;
+  string run_id = 2;
+  string node_id = 3;
+  map<string, string> result = 4;
+  TimingInfo timings = 5;
+  CostInfo costs = 6;
+}
+
+// Timing information for a run
+message TimingInfo {
+  int64 duration_ms = 1;
+  int64 queue_time_ms = 2;
+  int64 execution_time_ms = 3;
+}
+
+// Cost information for a run
+message CostInfo {
+  int32 tokens_in = 1;
+  int32 tokens_out = 2;
+  double usd_cost = 3;
+}
+
+// Response for completion
+message CompleteResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// Request to fail a run
+message FailRequest {
+  string lease_id = 1;
+  string run_id = 2;
+  string node_id = 3;
+  string error_message = 4;
+  string error_details = 5;
+  TimingInfo timings = 6;
+  bool retryable = 7; // Whether the error is retryable
+}
+
+// Response for failure
+message FailResponse {
+  bool success = 1;
+  string message = 2;
+  bool should_retry = 3;
+}

@@ -2,6 +2,7 @@ using ControlPlane.Api.Models;
 using ControlPlane.Api.Services;
 using ControlPlane.Api.AgentRuntime;
 using ControlPlane.Api.Data;
+using ControlPlane.Api.Grpc;
 using Microsoft.EntityFrameworkCore;
 using StackExchange.Redis;
 using NATS.Client.Core;
@@ -10,6 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container
 builder.Services.AddOpenApi();
+builder.Services.AddGrpc();
 
 // Configure stores based on environment - use PostgreSQL stores by default, in-memory for tests
 var useInMemoryStores = builder.Configuration.GetValue<bool>("UseInMemoryStores", false);
@@ -66,6 +68,9 @@ builder.Services.AddSingleton(sp =>
 });
 builder.Services.AddSingleton<IAgentRuntime, AgentRuntimeService>();
 
+// Add LeaseService for gRPC
+builder.Services.AddSingleton<ILeaseService, LeaseServiceLogic>();
+
 var app = builder.Build();
 
 // Initialize NATS JetStream streams (optional - fail gracefully if NATS is not available)
@@ -87,6 +92,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Map gRPC services
+app.MapGrpcService<LeaseServiceImpl>();
 
 // Agent endpoints
 app.MapGet("/v1/agents", async (IAgentStore store) =>
