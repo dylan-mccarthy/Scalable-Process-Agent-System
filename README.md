@@ -240,7 +240,10 @@ This implementation provides:
 - ✅ **Redis integration for leases and locks** (E1-T4)
 - ✅ **Lease store with TTL expiry** for preventing double-assignment of runs
 - ✅ **Lock store with TTL expiry** for distributed coordination
-- ✅ Comprehensive integration tests (77 tests)
+- ✅ **NATS JetStream event streaming** (E1-T5)
+- ✅ **gRPC LeaseService** for node communication (E1-T6)
+- ✅ **Scheduler service with least-loaded strategy** (E1-T7)
+- ✅ Comprehensive integration tests (107 tests)
 
 ### Database Schema
 
@@ -465,6 +468,88 @@ await foreach (var lease in call.ResponseStream.ReadAllAsync())
 - `Grpc.AspNetCore` (v2.70.0) - Server-side gRPC support
 - `Grpc.Net.Client` (v2.70.0) - Client-side gRPC support (for testing)
 
+### Scheduler Service
+
+The application includes a sophisticated scheduler service that implements a **least-loaded scheduling strategy with region constraints** (E1-T7), as specified in the System Architecture Document.
+
+#### Scheduling Strategy
+
+The `LeastLoadedScheduler` assigns runs to worker nodes based on:
+
+1. **Load Balancing**: Selects the node with the lowest load percentage (active runs / total slots)
+2. **Capacity Awareness**: Only considers nodes with available slots
+3. **Region Constraints**: Respects placement requirements for geographic affinity
+4. **Environment Constraints**: Supports environment-based placement (e.g., production vs. staging)
+5. **Tie-Breaking**: When load is equal, prefers nodes with more available slots
+
+#### Placement Constraints
+
+Deployments can specify placement constraints that the scheduler honors:
+
+```json
+{
+  "placement": {
+    "region": "us-east-1",
+    "environment": "production"
+  }
+}
+```
+
+**Supported constraint types:**
+- `region` - Single region (string) or multiple regions (array)
+- `environment` - Target environment (e.g., "production", "staging", "dev")
+
+#### Scheduler Interface
+
+The `IScheduler` interface provides:
+
+```csharp
+// Schedule a run to the most appropriate node
+Task<string?> ScheduleRunAsync(
+    Run run, 
+    Dictionary<string, object>? placementConstraints = null, 
+    CancellationToken cancellationToken = default);
+
+// Get current load information for all nodes
+Task<Dictionary<string, NodeLoadInfo>> GetNodeLoadAsync(
+    CancellationToken cancellationToken = default);
+```
+
+#### Integration with LeaseService
+
+The scheduler is automatically used by the `LeaseService` when nodes request work:
+
+1. Node requests leases via gRPC `Pull` stream
+2. Scheduler evaluates pending runs and determines best node for each
+3. Only runs scheduled to the requesting node are streamed back
+4. Lease is acquired atomically via Redis to prevent double-assignment
+
+**Configuration:**
+
+The scheduler is registered as a singleton service and automatically integrated:
+
+```csharp
+builder.Services.AddSingleton<IScheduler, LeastLoadedScheduler>();
+```
+
+#### Example Scenarios
+
+**Basic Load Balancing:**
+- Node A: 75% load (3/4 slots used)
+- Node B: 25% load (1/4 slots used)
+- New run → Scheduled to Node B
+
+**Region Constraint:**
+- Node A: us-east-1, 25% load
+- Node B: us-west-1, 10% load
+- Run requires region: us-east-1
+- New run → Scheduled to Node A (only eligible node)
+
+**Multiple Regions:**
+- Run allows regions: ["us-east-1", "eu-west-1"]
+- Only nodes in these regions are considered
+- Least-loaded eligible node is selected
+
 ## Next Steps
 
 See `tasks.yaml` for the full project roadmap. The next tasks include:
@@ -474,7 +559,7 @@ See `tasks.yaml` for the full project roadmap. The next tasks include:
 - ✅ **E1-T4**: Add Redis for lease and lock management (Complete)
 - ✅ **E1-T5**: Set up NATS for event streaming (Complete)
 - ✅ **E1-T6**: Implement gRPC service for node communication (Complete)
-- **E1-T7**: Scheduler service
+- ✅ **E1-T7**: Scheduler service (Complete)
 - **E1-T8**: OpenTelemetry wiring
 
 ## OpenAPI/Swagger

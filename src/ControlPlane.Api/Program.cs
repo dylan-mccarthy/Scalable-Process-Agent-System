@@ -68,6 +68,9 @@ builder.Services.AddSingleton(sp =>
 });
 builder.Services.AddSingleton<IAgentRuntime, AgentRuntimeService>();
 
+// Add Scheduler service
+builder.Services.AddSingleton<IScheduler, LeastLoadedScheduler>();
+
 // Add LeaseService for gRPC
 builder.Services.AddSingleton<ILeaseService, LeaseServiceLogic>();
 

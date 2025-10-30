@@ -12,17 +12,20 @@ public class LeaseServiceLogic : ILeaseService
     private readonly IRunStore _runStore;
     private readonly INodeStore _nodeStore;
     private readonly ILeaseStore _leaseStore;
+    private readonly IScheduler? _scheduler;
     private readonly ILogger<LeaseServiceLogic> _logger;
 
     public LeaseServiceLogic(
         IRunStore runStore,
         INodeStore nodeStore,
         ILeaseStore leaseStore,
-        ILogger<LeaseServiceLogic> logger)
+        ILogger<LeaseServiceLogic> logger,
+        IScheduler? scheduler = null)
     {
         _runStore = runStore;
         _nodeStore = nodeStore;
         _leaseStore = leaseStore;
+        _scheduler = scheduler;
         _logger = logger;
     }
 
@@ -42,7 +45,6 @@ public class LeaseServiceLogic : ILeaseService
         }
 
         // Poll for available runs and stream them to the node
-        // In a real implementation, this would be more sophisticated with proper scheduling
         while (!cancellationToken.IsCancellationRequested)
         {
             var leasesToYield = new List<Grpc.Lease>();
@@ -58,6 +60,26 @@ public class LeaseServiceLogic : ILeaseService
 
                 foreach (var run in pendingRuns)
                 {
+                    // Use scheduler if available to determine best node for this run
+                    string? selectedNodeId = nodeId;
+                    if (_scheduler != null)
+                    {
+                        // Get placement constraints from deployment (if any)
+                        Dictionary<string, object>? placementConstraints = null;
+                        // TODO: When deployments are fully implemented, extract placement from deployment
+                        // For now, we can work with the scheduler using basic node selection
+                        
+                        selectedNodeId = await _scheduler.ScheduleRunAsync(run, placementConstraints, cancellationToken);
+                        
+                        // If scheduler didn't select this node, skip this run
+                        if (selectedNodeId != nodeId)
+                        {
+                            _logger.LogDebug("Run {RunId} scheduled to different node {SelectedNode}, skipping for {NodeId}", 
+                                run.RunId, selectedNodeId, nodeId);
+                            continue;
+                        }
+                    }
+
                     // Try to acquire lease for this run
                     var leaseId = $"lease-{run.RunId}-{Guid.NewGuid():N}";
                     var ttlSeconds = 300; // 5 minutes in seconds
