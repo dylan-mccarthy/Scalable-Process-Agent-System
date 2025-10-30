@@ -1,21 +1,78 @@
-# Business Process Agents - Control Plane API
+# Business Process Agents - MVP Platform
 
-This is the Control Plane API for the Business Process Agents MVP project. It provides REST endpoints for managing Agents, Nodes, and Runs.
+This is the Business Process Agents MVP project, providing a complete platform for deploying and executing business process agents using the Microsoft Agent Framework.
 
 ## Project Structure
 
 ```
 ├── src/
-│   └── ControlPlane.Api/          # Main API project
-│       ├── AgentRuntime/           # Agent runtime and tool registry (E1-T2)
-│       ├── Data/                   # Database entities and migrations (E1-T3)
-│       ├── Models/                 # Data models
-│       ├── Services/               # Business logic and storage
-│       └── Program.cs              # API endpoints and configuration
+│   ├── ControlPlane.Api/          # Control Plane API (E1)
+│   │   ├── AgentRuntime/           # Agent runtime and tool registry (E1-T2)
+│   │   ├── Data/                   # Database entities and migrations (E1-T3)
+│   │   ├── Models/                 # Data models
+│   │   ├── Services/               # Business logic and storage
+│   │   ├── Grpc/                   # gRPC services (E1-T6)
+│   │   └── Program.cs              # API endpoints and configuration
+│   └── Node.Runtime/              # Worker Node Runtime (E2)
+│       ├── Configuration/          # Configuration options
+│       ├── Services/               # Core services
+│       ├── Worker.cs               # Background worker service
+│       └── Program.cs              # Entry point and DI setup
 ├── tests/
-│   └── ControlPlane.Api.Tests/    # Integration tests
+│   ├── ControlPlane.Api.Tests/    # Control Plane integration tests
+│   └── Node.Runtime.Tests/        # Node Runtime unit tests
 └── BusinessProcessAgents.sln      # Solution file
 ```
+
+## Quick Start
+
+### Building the Solution
+
+```bash
+# Clone the repository
+git clone https://github.com/dylan-mccarthy/Scalable-Process-Agent-System.git
+cd Scalable-Process-Agent-System
+
+# Build the solution
+dotnet build
+
+# Run tests
+dotnet test
+```
+
+### Running Control Plane API
+
+```bash
+# Option 1: In-memory mode (no external dependencies)
+cd src/ControlPlane.Api
+# Set UseInMemoryStores=true in appsettings.json
+dotnet run
+
+# Option 2: Full mode with PostgreSQL, Redis, and NATS
+# Start dependencies (requires Docker)
+docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=postgres postgres:14
+docker run -d -p 6379:6379 redis:6
+docker run -d -p 4222:4222 -p 8222:8222 nats:latest --jetstream
+
+# Run migrations and start API
+cd src/ControlPlane.Api
+dotnet ef database update
+dotnet run
+```
+
+The API will be available at `http://localhost:5109`.
+
+### Running Node Runtime
+
+```bash
+cd src/Node.Runtime
+dotnet run
+```
+
+The Node Runtime will:
+1. Register with the Control Plane
+2. Start sending heartbeats
+3. Begin pulling leases for agent execution
 
 ## Prerequisites
 
@@ -715,7 +772,9 @@ service:
 
 ## Next Steps
 
-See `tasks.yaml` for the full project roadmap. The next tasks include:
+See `tasks.yaml` for the full project roadmap. The completed tasks include:
+
+**Epic 1 – Control Plane Foundations:**
 - ✅ **E1-T1**: API skeleton (Complete)
 - ✅ **E1-T2**: Integrate Microsoft Agent Framework SDK (Complete)
 - ✅ **E1-T3**: Database setup (Complete)
@@ -724,6 +783,44 @@ See `tasks.yaml` for the full project roadmap. The next tasks include:
 - ✅ **E1-T6**: Implement gRPC service for node communication (Complete)
 - ✅ **E1-T7**: Scheduler service (Complete)
 - ✅ **E1-T8**: OpenTelemetry wiring (Complete)
+
+**Epic 2 – Node Runtime & Connectors:**
+- ✅ **E2-T1**: Node runtime skeleton (Complete)
+- ⏳ **E2-T2**: Integrate MAF runtime (Next)
+- ⏳ **E2-T3**: Node registration enhancement
+- ⏳ **E2-T4**: Lease pull loop completion
+- ⏳ **E2-T5**: Sandbox process model
+- ⏳ **E2-T6**: Service Bus connector
+- ⏳ **E2-T7**: HTTP output connector
+- ⏳ **E2-T8**: DLQ handling
+- ⏳ **E2-T9**: Node telemetry
+- ⏳ **E2-T10**: Secure communication
+
+## Components
+
+### Control Plane API
+
+The Control Plane provides centralized management and orchestration of the agent platform. See [Control Plane API documentation](src/ControlPlane.Api/README.md) for details.
+
+**Key Features:**
+- REST API for agent, node, and run management
+- gRPC LeaseService for efficient node communication
+- PostgreSQL for persistent storage
+- Redis for distributed leases and locks
+- NATS JetStream for event streaming
+- OpenTelemetry for full observability
+
+### Node Runtime
+
+The Node Runtime executes business process agents on worker nodes. See [Node Runtime documentation](src/Node.Runtime/README.md) for details.
+
+**Key Features:**
+- .NET Worker Service architecture
+- Automatic node registration and heartbeat
+- gRPC client for lease pull loop
+- OpenTelemetry instrumentation
+- Configurable capacity and placement metadata
+- Agent execution with budget enforcement (to be implemented in E2-T2)
 
 ## OpenAPI/Swagger
 
