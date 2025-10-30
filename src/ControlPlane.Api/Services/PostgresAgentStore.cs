@@ -140,24 +140,30 @@ public class PostgresAgentStore : IAgentStore
             Name = entity.Name,
             Description = entity.Description,
             Instructions = entity.Instructions,
-            ModelProfile = entity.ModelProfile != null 
-                ? JsonSerializer.Deserialize<Dictionary<string, object>>(entity.ModelProfile) 
-                : null,
-            Budget = entity.Budget != null
-                ? JsonSerializer.Deserialize<AgentBudget>(entity.Budget)
-                : null,
-            Tools = entity.Tools != null
-                ? JsonSerializer.Deserialize<List<string>>(entity.Tools)
-                : null,
-            Input = entity.InputConnector != null
-                ? JsonSerializer.Deserialize<ConnectorConfiguration>(entity.InputConnector)
-                : null,
-            Output = entity.OutputConnector != null
-                ? JsonSerializer.Deserialize<ConnectorConfiguration>(entity.OutputConnector)
-                : null,
-            Metadata = entity.Metadata != null
-                ? JsonSerializer.Deserialize<Dictionary<string, string>>(entity.Metadata)
-                : null
+            ModelProfile = DeserializeJson<Dictionary<string, object>>(entity.ModelProfile),
+            Budget = DeserializeJson<AgentBudget>(entity.Budget),
+            Tools = DeserializeJson<List<string>>(entity.Tools),
+            Input = DeserializeJson<ConnectorConfiguration>(entity.InputConnector),
+            Output = DeserializeJson<ConnectorConfiguration>(entity.OutputConnector),
+            Metadata = DeserializeJson<Dictionary<string, string>>(entity.Metadata)
         };
+    }
+
+    private static T? DeserializeJson<T>(string? json) where T : class
+    {
+        if (string.IsNullOrEmpty(json))
+        {
+            return null;
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<T>(json);
+        }
+        catch (JsonException)
+        {
+            // Log the error in production - for now return null to handle corrupted data gracefully
+            return null;
+        }
     }
 }

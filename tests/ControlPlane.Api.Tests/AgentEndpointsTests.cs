@@ -324,7 +324,7 @@ public class AgentEndpointsTests : IAsyncLifetime
                 Type = "azure-service-bus",
                 Config = new Dictionary<string, object>
                 {
-                    { "connectionString", "Endpoint=sb://test.servicebus.windows.net/" },
+                    { "connectionString", "Endpoint=sb://fake-test-namespace.servicebus.windows.net/" },
                     { "queueName", "data-queue" }
                 }
             },
