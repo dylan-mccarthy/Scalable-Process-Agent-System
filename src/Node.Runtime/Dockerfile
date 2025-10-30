@@ -5,12 +5,14 @@ WORKDIR /src
 # Copy solution and project files
 COPY ["BusinessProcessAgents.sln", "./"]
 COPY ["src/Node.Runtime/Node.Runtime.csproj", "src/Node.Runtime/"]
+COPY ["src/ControlPlane.Api/ControlPlane.Api.csproj", "src/ControlPlane.Api/"]
 
 # Restore dependencies
 RUN dotnet restore "src/Node.Runtime/Node.Runtime.csproj"
 
 # Copy source code
 COPY ["src/Node.Runtime/", "src/Node.Runtime/"]
+COPY ["src/ControlPlane.Api/Protos/", "src/ControlPlane.Api/Protos/"]
 
 # Build the application
 WORKDIR "/src/src/Node.Runtime"

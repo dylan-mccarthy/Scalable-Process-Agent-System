@@ -23,12 +23,10 @@ data:
       "OpenTelemetry": {
         "ServiceName": "ControlPlane.Api",
         "ServiceVersion": "{{ .Chart.AppVersion }}",
-        {{- if .Values.otelCollector.enabled }}
         "OtlpExporter": {
-          "Endpoint": "http://{{ include "business-process-agents.fullname" . }}-otel-collector:{{ .Values.otelCollector.service.otlpGrpcPort }}",
+          "Endpoint": "{{ if .Values.otelCollector.enabled }}http://{{ include "business-process-agents.fullname" . }}-otel-collector:{{ .Values.otelCollector.service.otlpGrpcPort }}{{ else }}http://localhost:4317{{ end }}",
           "Protocol": "grpc"
         },
-        {{- end }}
         "Traces": {
           "Enabled": true,
           "SamplingRatio": 1.0

@@ -111,25 +111,25 @@ app.kubernetes.io/component: admin-ui
 PostgreSQL connection string
 */}}
 {{- define "business-process-agents.postgresql.connectionString" -}}
-{{- if .Values.postgresql.enabled }}
+{{- if .Values.postgresql.enabled -}}
 Host={{ include "business-process-agents.fullname" . }}-postgresql:{{ .Values.postgresql.service.port }};Database={{ .Values.postgresql.auth.database }};Username={{ .Values.postgresql.auth.username }};Password={{ .Values.postgresql.auth.password }}
-{{- end }}
-{{- end }}
+{{- end -}}
+{{- end -}}
 
 {{/*
 Redis connection string
 */}}
 {{- define "business-process-agents.redis.connectionString" -}}
-{{- if .Values.redis.enabled }}
+{{- if .Values.redis.enabled -}}
 {{ include "business-process-agents.fullname" . }}-redis:{{ .Values.redis.service.port }}
-{{- end }}
-{{- end }}
+{{- end -}}
+{{- end -}}
 
 {{/*
 NATS connection string
 */}}
 {{- define "business-process-agents.nats.connectionString" -}}
-{{- if .Values.nats.enabled }}
+{{- if .Values.nats.enabled -}}
 nats://{{ include "business-process-agents.fullname" . }}-nats:{{ .Values.nats.service.clientPort }}
-{{- end }}
-{{- end }}
+{{- end -}}
+{{- end -}}
