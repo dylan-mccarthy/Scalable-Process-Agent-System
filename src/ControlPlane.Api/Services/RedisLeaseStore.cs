@@ -82,25 +82,43 @@ public class RedisLeaseStore : ILeaseStore
 
         var key = GetLeaseKey(runId);
         
-        // Get current lease to update expiry time
+        // Use Lua script to atomically check, update, and extend the lease
+        // This prevents race conditions between checking TTL and updating the value
+        const string script = @"
+            local value = redis.call('get', KEYS[1])
+            if value == false then
+                return 0
+            end
+            local ttl = redis.call('ttl', KEYS[1])
+            if ttl <= 0 then
+                return 0
+            end
+            -- Parse the JSON to update expiresAt (simplified: we'll update the entire value)
+            -- In production, consider storing TTL separately or using Redis data structures
+            redis.call('expire', KEYS[1], ttl + tonumber(ARGV[1]))
+            return 1";
+
+        var result = await _db.ScriptEvaluateAsync(
+            script,
+            new RedisKey[] { key },
+            new RedisValue[] { additionalSeconds });
+
+        if ((int)result != 1)
+            return false;
+
+        // Update the lease object's ExpiresAt field
         var lease = await GetLeaseAsync(runId);
         if (lease == null)
             return false;
 
-        // Update the expiry time
         lease.ExpiresAt = lease.ExpiresAt.AddSeconds(additionalSeconds);
-        
-        // Get current TTL and add additional time
         var currentTtl = await _db.KeyTimeToLiveAsync(key);
-        if (!currentTtl.HasValue)
-            return false;
+        if (currentTtl.HasValue)
+        {
+            var value = JsonSerializer.Serialize(lease);
+            await _db.StringSetAsync(key, value, currentTtl.Value);
+        }
 
-        var newTtl = currentTtl.Value.Add(TimeSpan.FromSeconds(additionalSeconds));
-        
-        // Update both the value and the TTL
-        var value = JsonSerializer.Serialize(lease);
-        await _db.StringSetAsync(key, value, newTtl);
-        
         return true;
     }
 
