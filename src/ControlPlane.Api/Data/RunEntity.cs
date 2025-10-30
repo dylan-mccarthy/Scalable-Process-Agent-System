@@ -37,6 +37,9 @@ public class RunEntity
     [Column("costs", TypeName = "jsonb")]
     public string? Costs { get; set; }
 
+    [Column("error_info", TypeName = "jsonb")]
+    public string? ErrorInfo { get; set; }
+
     [Column("trace_id")]
     public string? TraceId { get; set; }
 

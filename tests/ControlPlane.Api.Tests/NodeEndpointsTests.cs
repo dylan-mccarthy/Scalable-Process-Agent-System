@@ -1,7 +1,11 @@
 using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using ControlPlane.Api.Models;
+using ControlPlane.Api.Services;
 
 namespace ControlPlane.Api.Tests;
 
@@ -12,7 +16,38 @@ public class NodeEndpointsTests : IAsyncLifetime
 
     public Task InitializeAsync()
     {
-        _factory = new WebApplicationFactory<Program>();
+        _factory = new WebApplicationFactory<Program>()
+            .WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureAppConfiguration((context, config) =>
+                {
+                    config.AddInMemoryCollection(new Dictionary<string, string?>
+                    {
+                        ["UseInMemoryStores"] = "true"
+                    });
+                });
+                
+                // Override service registrations to use in-memory stores
+                builder.ConfigureServices(services =>
+                {
+                    // Remove any existing IAgentStore, INodeStore, IRunStore registrations
+                    var descriptorsToRemove = services
+                        .Where(d => d.ServiceType == typeof(IAgentStore) || 
+                                    d.ServiceType == typeof(INodeStore) || 
+                                    d.ServiceType == typeof(IRunStore))
+                        .ToList();
+                    
+                    foreach (var descriptor in descriptorsToRemove)
+                    {
+                        services.Remove(descriptor);
+                    }
+                    
+                    // Add in-memory stores
+                    services.AddSingleton<IAgentStore, InMemoryAgentStore>();
+                    services.AddSingleton<INodeStore, InMemoryNodeStore>();
+                    services.AddSingleton<IRunStore, InMemoryRunStore>();
+                });
+            });
         _client = _factory.CreateClient();
         return Task.CompletedTask;
     }
