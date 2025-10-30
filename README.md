@@ -8,6 +8,7 @@ This is the Control Plane API for the Business Process Agents MVP project. It pr
 ├── src/
 │   └── ControlPlane.Api/          # Main API project
 │       ├── AgentRuntime/           # Agent runtime and tool registry (E1-T2)
+│       ├── Data/                   # Database entities and migrations (E1-T3)
 │       ├── Models/                 # Data models
 │       ├── Services/               # Business logic and storage
 │       └── Program.cs              # API endpoints and configuration
@@ -19,6 +20,61 @@ This is the Control Plane API for the Business Process Agents MVP project. It pr
 ## Prerequisites
 
 - .NET 9.0 SDK or later
+- PostgreSQL 14 or later (for production use)
+
+## Database Setup
+
+### PostgreSQL Database
+
+The application uses PostgreSQL for persistent storage. The database schema includes:
+
+- **agents**: Agent definitions
+- **agent_versions**: Version history of agents  
+- **deployments**: Agent deployments with replicas and placement
+- **nodes**: Worker nodes
+- **runs**: Agent execution runs
+
+### Connection Configuration
+
+Update `appsettings.json` to configure the PostgreSQL connection:
+
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Host=localhost;Port=5432;Database=bpa;Username=postgres;Password=postgres"
+  }
+}
+```
+
+### Running Migrations
+
+To create or update the database schema, use Entity Framework Core migrations:
+
+```bash
+# Navigate to the API project
+cd src/ControlPlane.Api
+
+# Apply migrations to create/update the database
+dotnet ef database update
+```
+
+To create new migrations (for developers):
+
+```bash
+dotnet ef migrations add <MigrationName> --output-dir Data/Migrations
+```
+
+### Development Mode
+
+For development and testing, you can use in-memory stores by setting `UseInMemoryStores` to `true` in `appsettings.json`:
+
+```json
+{
+  "UseInMemoryStores": true
+}
+```
+
+This bypasses PostgreSQL and uses in-memory storage (data is lost on restart).
 
 ## Building
 
@@ -162,17 +218,45 @@ This is an ASP.NET Core Minimal API implementation using:
 
 ## Current Implementation
 
-This is a skeleton implementation (E1-T1, E1-T2) that provides:
+This implementation provides:
+
 - ✅ Full CRUD operations for Agents
 - ✅ Node registration and heartbeat endpoints
 - ✅ Run state management endpoints (complete, fail, cancel)
-- ✅ In-memory storage for all entities
-- ✅ Input validation and error handling
 - ✅ **Microsoft Agent Framework SDK integration** (E1-T2)
 - ✅ **Agent runtime base classes** for executing agents
 - ✅ **Tool registry** for managing agent tools
 - ✅ Configuration support for agent runtime options
+- ✅ **PostgreSQL database schema** (E1-T3)
+- ✅ **Entity Framework Core migrations**
+- ✅ **Database-backed store implementations**
+- ✅ Configurable in-memory or PostgreSQL storage
 - ✅ Comprehensive integration tests (39 tests)
+
+### Database Schema
+
+The PostgreSQL schema implements the data model defined in the System Architecture Document (SAD):
+
+| Table | Description | Key Fields |
+|-------|-------------|-----------|
+| `agents` | Agent definitions | `agent_id` (PK), `name`, `instructions`, `model_profile` (JSONB) |
+| `agent_versions` | Version history | `version_id` (PK), `agent_id` (FK), `version`, `spec` (JSONB) |
+| `deployments` | Agent deployments | `dep_id` (PK), `agent_id` (FK), `version`, `env`, `target` (JSONB), `status` (JSONB) |
+| `nodes` | Worker nodes | `node_id` (PK), `metadata` (JSONB), `capacity` (JSONB), `status` (JSONB), `heartbeat_at` |
+| `runs` | Agent execution runs | `run_id` (PK), `agent_id` (FK), `version`, `dep_id` (FK), `node_id` (FK), `status`, `timings` (JSONB), `costs` (JSONB), `trace_id` |
+
+### Storage Implementations
+
+The application supports two storage backends:
+
+1. **PostgreSQL Stores** (Production): `PostgresAgentStore`, `PostgresNodeStore`, `PostgresRunStore`
+   - Persistent storage with full ACID guarantees
+   - Configured via connection string in `appsettings.json`
+   
+2. **In-Memory Stores** (Development/Testing): `InMemoryAgentStore`, `InMemoryNodeStore`, `InMemoryRunStore`
+   - Fast, no external dependencies
+   - Data lost on restart
+   - Enabled via `UseInMemoryStores: true` configuration
 
 ### Microsoft Agent Framework Integration
 
@@ -213,8 +297,9 @@ Agent runtime can be configured via `appsettings.json`:
 ## Next Steps
 
 See `tasks.yaml` for the full project roadmap. The next tasks include:
-- **E1-T2**: Integrate Microsoft Agent Framework SDK
-- **E1-T3**: Replace in-memory storage with PostgreSQL
+- ✅ **E1-T1**: API skeleton (Complete)
+- ✅ **E1-T2**: Integrate Microsoft Agent Framework SDK (Complete)
+- ✅ **E1-T3**: Database setup (Complete)
 - **E1-T4**: Add Redis for lease and lock management
 - **E1-T5**: Set up NATS for event streaming
 - **E1-T6**: Implement gRPC service for node communication
