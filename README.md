@@ -21,6 +21,7 @@ This is the Control Plane API for the Business Process Agents MVP project. It pr
 
 - .NET 9.0 SDK or later
 - PostgreSQL 14 or later (for production use)
+- Redis 6.0 or later (for lease and lock management)
 
 ## Database Setup
 
@@ -41,7 +42,8 @@ Update `appsettings.json` to configure the PostgreSQL connection:
 ```json
 {
   "ConnectionStrings": {
-    "DefaultConnection": "Host=localhost;Port=5432;Database=bpa;Username=postgres;Password=postgres"
+    "DefaultConnection": "Host=localhost;Port=5432;Database=bpa;Username=postgres;Password=postgres",
+    "Redis": "localhost:6379"
   }
 }
 ```
@@ -233,7 +235,10 @@ This implementation provides:
 - ✅ **Entity Framework Core migrations**
 - ✅ **Database-backed store implementations**
 - ✅ Configurable in-memory or PostgreSQL storage
-- ✅ Comprehensive integration tests (39 tests)
+- ✅ **Redis integration for leases and locks** (E1-T4)
+- ✅ **Lease store with TTL expiry** for preventing double-assignment of runs
+- ✅ **Lock store with TTL expiry** for distributed coordination
+- ✅ Comprehensive integration tests (77 tests)
 
 ### Database Schema
 
@@ -258,6 +263,36 @@ The application supports two storage backends:
 2. **In-Memory Stores** (Development/Testing): `InMemoryAgentStore`, `InMemoryNodeStore`, `InMemoryRunStore`
    - Fast, no external dependencies
    - Data lost on restart
+   - Enabled via `UseInMemoryStores: true` configuration
+
+### Redis Lease and Lock Management
+
+The application uses Redis for distributed leases and locks with TTL expiry (E1-T4):
+
+1. **Lease Store** (`ILeaseStore`, `RedisLeaseStore`)
+   - Prevents double-assignment of runs to nodes
+   - Atomic lease acquisition using Redis SET NX (set if not exists)
+   - Automatic expiration via TTL
+   - Supports lease extension for heartbeat/keepalive scenarios
+   - Used by the scheduler for run placement
+
+2. **Lock Store** (`ILockStore`, `RedisLockStore`)
+   - Distributed locks for coordinating operations across multiple control plane instances
+   - Owner-based lock management (only the owner can release/extend)
+   - Atomic operations using Lua scripts
+   - Automatic expiration via TTL
+   - Used for critical sections requiring coordination
+
+**Redis Configuration:**
+```json
+{
+  "ConnectionStrings": {
+    "Redis": "localhost:6379"
+  }
+}
+```
+
+For production, use Redis Sentinel or Redis Cluster for high availability.
    - Enabled via `UseInMemoryStores: true` configuration
 
 ### Microsoft Agent Framework Integration
@@ -293,6 +328,7 @@ Agent runtime can be configured via `appsettings.json`:
 - `Microsoft.Agents.AI` (v1.0.0-preview.251028.1)
 - `Microsoft.Agents.AI.AzureAI` (v1.0.0-preview.251028.1)
 - `Microsoft.Agents.AI.OpenAI` (v1.0.0-preview.251028.1)
+- `StackExchange.Redis` (v2.8.16)
 
 **Note:** Actual agent execution requires Azure AI Foundry or OpenAI credentials, which will be configured in task E3-T4 (Azure AI Foundry integration).
 
@@ -302,7 +338,7 @@ See `tasks.yaml` for the full project roadmap. The next tasks include:
 - ✅ **E1-T1**: API skeleton (Complete)
 - ✅ **E1-T2**: Integrate Microsoft Agent Framework SDK (Complete)
 - ✅ **E1-T3**: Database setup (Complete)
-- **E1-T4**: Add Redis for lease and lock management
+- ✅ **E1-T4**: Add Redis for lease and lock management (Complete)
 - **E1-T5**: Set up NATS for event streaming
 - **E1-T6**: Implement gRPC service for node communication
 

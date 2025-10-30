@@ -3,6 +3,7 @@ using ControlPlane.Api.Services;
 using ControlPlane.Api.AgentRuntime;
 using ControlPlane.Api.Data;
 using Microsoft.EntityFrameworkCore;
+using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,6 +29,15 @@ else
     builder.Services.AddScoped<INodeStore, PostgresNodeStore>();
     builder.Services.AddScoped<IRunStore, PostgresRunStore>();
 }
+
+// Add Redis connection
+var redisConnectionString = builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379";
+builder.Services.AddSingleton<IConnectionMultiplexer>(sp => 
+    ConnectionMultiplexer.Connect(redisConnectionString));
+
+// Add Redis-backed lease and lock stores
+builder.Services.AddSingleton<ILeaseStore, RedisLeaseStore>();
+builder.Services.AddSingleton<ILockStore, RedisLockStore>();
 
 // Add Microsoft Agent Framework runtime services
 builder.Services.AddSingleton<IToolRegistry, InMemoryToolRegistry>();
