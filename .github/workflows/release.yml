@@ -56,12 +56,13 @@ jobs:
       - name: Extract version
         id: version
         run: |
-          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            VERSION=${GITHUB_REF#refs/tags/v}
+          REF="${{ github.ref }}"
+          if [[ "$REF" == refs/tags/* ]]; then
+            VERSION="${GITHUB_REF#refs/tags/v}"
           else
-            VERSION=${GITHUB_SHA::8}
+            VERSION="${GITHUB_SHA::8}"
           fi
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "Version: $VERSION"
       
       - name: Extract metadata
@@ -147,7 +148,7 @@ jobs:
       # Attach SBOM to GitHub Release
       - name: Attach SBOM to GitHub Release
         if: github.event_name == 'release'
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: sbom-${{ matrix.name }}-${{ steps.version.outputs.version }}.spdx.json
         env:
@@ -169,25 +170,27 @@ jobs:
       
       - name: Create release summary
         run: |
-          echo "# Release Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## Container Images" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "The following images have been built, signed, and published:" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- Control Plane API" >> $GITHUB_STEP_SUMMARY
-          echo "- Node Runtime" >> $GITHUB_STEP_SUMMARY
-          echo "- Admin UI" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## Security" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ All images are signed with Sigstore/Cosign" >> $GITHUB_STEP_SUMMARY
-          echo "✅ SBOMs generated and attested for all images" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Vulnerability scanning completed" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## Verification" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "To verify image signatures:" >> $GITHUB_STEP_SUMMARY
-          echo '```bash' >> $GITHUB_STEP_SUMMARY
-          echo "cosign verify ${{ env.REGISTRY }}/${{ github.repository }}/control-plane:latest" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
+          {
+            echo "# Release Summary"
+            echo ""
+            echo "## Container Images"
+            echo ""
+            echo "The following images have been built, signed, and published:"
+            echo ""
+            echo "- Control Plane API"
+            echo "- Node Runtime"
+            echo "- Admin UI"
+            echo ""
+            echo "## Security"
+            echo ""
+            echo "✅ All images are signed with Sigstore/Cosign"
+            echo "✅ SBOMs generated and attested for all images"
+            echo "✅ Vulnerability scanning completed"
+            echo ""
+            echo "## Verification"
+            echo ""
+            echo "To verify image signatures:"
+            echo '```bash'
+            echo "cosign verify ${{ env.REGISTRY }}/${{ github.repository }}/control-plane:latest"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
