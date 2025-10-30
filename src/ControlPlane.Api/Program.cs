@@ -4,6 +4,7 @@ using ControlPlane.Api.AgentRuntime;
 using ControlPlane.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using StackExchange.Redis;
+using NATS.Client.Core;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,6 +40,17 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 builder.Services.AddSingleton<ILeaseStore, RedisLeaseStore>();
 builder.Services.AddSingleton<ILockStore, RedisLockStore>();
 
+// Add NATS connection
+var natsUrl = builder.Configuration.GetConnectionString("Nats") ?? "nats://localhost:4222";
+builder.Services.AddSingleton<INatsConnection>(sp =>
+{
+    var opts = NatsOpts.Default with { Url = natsUrl };
+    return new NatsConnection(opts);
+});
+
+// Add NATS event publisher
+builder.Services.AddSingleton<INatsEventPublisher, NatsEventPublisher>();
+
 // Add Microsoft Agent Framework runtime services
 builder.Services.AddSingleton<IToolRegistry, InMemoryToolRegistry>();
 builder.Services.AddSingleton(sp =>
@@ -55,6 +67,18 @@ builder.Services.AddSingleton(sp =>
 builder.Services.AddSingleton<IAgentRuntime, AgentRuntimeService>();
 
 var app = builder.Build();
+
+// Initialize NATS JetStream streams (optional - fail gracefully if NATS is not available)
+try
+{
+    var natsPublisher = app.Services.GetRequiredService<INatsEventPublisher>();
+    await natsPublisher.InitializeStreamsAsync();
+}
+catch (Exception ex)
+{
+    var logger = app.Services.GetRequiredService<ILogger<Program>>();
+    logger.LogWarning(ex, "Failed to initialize NATS JetStream - events will not be published");
+}
 
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
@@ -206,6 +230,42 @@ app.MapPost("/v1/runs/{runId}:cancel", async (string runId, CancelRunRequest req
 })
 .WithName("CancelRun")
 .WithTags("Runs");
+
+// NATS test endpoint - publishes a test event to verify JetStream setup
+app.MapPost("/v1/events:test", async (INatsEventPublisher publisher) =>
+{
+    var testEvent = new ControlPlane.Api.Events.RunStateChangedEvent
+    {
+        RunId = "test-run-" + Guid.NewGuid().ToString()[..8],
+        AgentId = "test-agent",
+        NodeId = "test-node",
+        PreviousState = "pending",
+        NewState = "running",
+        CorrelationId = Guid.NewGuid().ToString()
+    };
+
+    try
+    {
+        await publisher.PublishAsync(testEvent);
+        return Results.Ok(new
+        {
+            message = "Test event published successfully",
+            eventId = testEvent.EventId,
+            eventType = testEvent.EventType,
+            timestamp = testEvent.Timestamp
+        });
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem(
+            detail: ex.Message,
+            statusCode: 500,
+            title: "Failed to publish test event"
+        );
+    }
+})
+.WithName("PublishTestEvent")
+.WithTags("Events");
 
 app.Run();
 

@@ -22,6 +22,7 @@ This is the Control Plane API for the Business Process Agents MVP project. It pr
 - .NET 9.0 SDK or later
 - PostgreSQL 14 or later (for production use)
 - Redis 6.0 or later (for lease and lock management)
+- NATS Server 2.10+ with JetStream enabled (for event streaming)
 
 ## Database Setup
 
@@ -43,7 +44,8 @@ Update `appsettings.json` to configure the PostgreSQL connection:
 {
   "ConnectionStrings": {
     "DefaultConnection": "Host=localhost;Port=5432;Database=bpa;Username=postgres;Password=postgres",
-    "Redis": "localhost:6379"
+    "Redis": "localhost:6379",
+    "Nats": "nats://localhost:4222"
   }
 }
 ```
@@ -293,6 +295,69 @@ The application uses Redis for distributed leases and locks with TTL expiry (E1-
 ```
 
 For production, use Redis Sentinel or Redis Cluster for high availability.
+
+### NATS Event Streaming
+
+The application uses NATS JetStream for internal event streaming to support event-driven architecture and decoupling between components.
+
+#### JetStream Streams
+
+The `BPA_EVENTS` stream is automatically provisioned on startup with the following subjects:
+- `bpa.events.run.*` - Run state change events
+- `bpa.events.node.*` - Node lifecycle events  
+- `bpa.events.agent.*` - Agent deployment events
+
+#### Event Types
+
+The following system events are published to NATS:
+
+| Event Type | Subject | Description |
+|------------|---------|-------------|
+| `RunStateChangedEvent` | `bpa.events.run.state-changed` | Published when a run transitions states |
+| `NodeRegisteredEvent` | `bpa.events.node.registered` | Published when a node registers |
+| `NodeHeartbeatEvent` | `bpa.events.node.heartbeat` | Published on node heartbeat |
+| `NodeDisconnectedEvent` | `bpa.events.node.disconnected` | Published when a node disconnects |
+| `AgentDeployedEvent` | `bpa.events.agent.deployed` | Published when an agent is deployed |
+
+#### Testing NATS
+
+A test endpoint is available to verify JetStream setup:
+
+```bash
+curl -X POST http://localhost:5109/v1/events:test
+```
+
+This publishes a sample `RunStateChangedEvent` to verify the NATS connection and stream configuration.
+
+#### NATS Configuration
+
+```json
+{
+  "ConnectionStrings": {
+    "Nats": "nats://localhost:4222"
+  }
+}
+```
+
+For production, use NATS clustering with JetStream for high availability and durability.
+
+#### Running NATS Locally
+
+```bash
+# Run NATS with JetStream enabled
+docker run -p 4222:4222 -p 8222:8222 nats:latest --jetstream
+
+# Or using Docker Compose (add to your docker-compose.yml)
+services:
+  nats:
+    image: nats:latest
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    command: "--jetstream"
+```
+
+**Note:** If NATS is not available on startup, the application will log a warning and continue without event publishing.
    - Enabled via `UseInMemoryStores: true` configuration
 
 ### Microsoft Agent Framework Integration
@@ -329,6 +394,8 @@ Agent runtime can be configured via `appsettings.json`:
 - `Microsoft.Agents.AI.AzureAI` (v1.0.0-preview.251028.1)
 - `Microsoft.Agents.AI.OpenAI` (v1.0.0-preview.251028.1)
 - `StackExchange.Redis` (v2.8.16)
+- `NATS.Client.Core` (v2.5.3)
+- `NATS.Client.JetStream` (v2.5.3)
 
 **Note:** Actual agent execution requires Azure AI Foundry or OpenAI credentials, which will be configured in task E3-T4 (Azure AI Foundry integration).
 
@@ -336,6 +403,11 @@ Agent runtime can be configured via `appsettings.json`:
 
 See `tasks.yaml` for the full project roadmap. The next tasks include:
 - ✅ **E1-T1**: API skeleton (Complete)
+- ✅ **E1-T2**: Integrate Microsoft Agent Framework SDK (Complete)
+- ✅ **E1-T3**: Database setup (Complete)
+- ✅ **E1-T4**: Add Redis for lease and lock management (Complete)
+- ✅ **E1-T5**: Set up NATS for event streaming (Complete)
+- **E1-T6**: Implement gRPC service for node communication
 - ✅ **E1-T2**: Integrate Microsoft Agent Framework SDK (Complete)
 - ✅ **E1-T3**: Database setup (Complete)
 - ✅ **E1-T4**: Add Redis for lease and lock management (Complete)
