@@ -399,6 +399,72 @@ Agent runtime can be configured via `appsettings.json`:
 
 **Note:** Actual agent execution requires Azure AI Foundry or OpenAI credentials, which will be configured in task E3-T4 (Azure AI Foundry integration).
 
+### gRPC LeaseService
+
+The application includes a gRPC service for node communication, providing lease management for distributed run execution (E1-T6):
+
+#### Service Definition
+
+The `LeaseService` provides four RPC methods:
+
+1. **Pull** - Server-streaming RPC for nodes to pull work leases
+   - Nodes request available runs to execute
+   - Server streams leases as they become available
+   - Each lease includes run specification, deadline, and trace ID
+
+2. **Ack** - Unary RPC to acknowledge lease receipt
+   - Nodes acknowledge they've received a lease
+   - Used for telemetry and diagnostics
+
+3. **Complete** - Unary RPC to mark a run as completed
+   - Nodes report successful run completion
+   - Includes timing information and costs
+   - Automatically releases the lease
+
+4. **Fail** - Unary RPC to mark a run as failed
+   - Nodes report run failures
+   - Includes error details and retry information
+   - Supports automatic retry logic (max 3 attempts)
+
+#### Proto Contract
+
+The service contract is defined in `Protos/lease_service.proto`. Key message types:
+
+- `Lease` - Work assignment with run spec, deadline, and trace ID
+- `RunSpec` - Execution specification including agent ID, version, and budget constraints
+- `BudgetConstraints` - Max tokens and duration limits
+- `TimingInfo` - Execution timing metrics
+- `CostInfo` - Token usage and cost tracking
+
+#### gRPC Endpoint
+
+The gRPC service is available at the same base address as the HTTP API:
+- **Development**: `http://localhost:5109` (or configured port)
+- **Proto namespace**: `ControlPlane.Api.Grpc`
+
+**Example client connection:**
+```csharp
+using var channel = GrpcChannel.ForAddress("http://localhost:5109");
+var client = new LeaseService.LeaseServiceClient(channel);
+
+// Pull leases
+using var call = client.Pull(new PullRequest 
+{ 
+    NodeId = "node-1", 
+    MaxLeases = 5 
+});
+
+await foreach (var lease in call.ResponseStream.ReadAllAsync())
+{
+    // Process lease
+    Console.WriteLine($"Received lease {lease.LeaseId} for run {lease.RunId}");
+}
+```
+
+**NuGet Packages Added:**
+- `Grpc.AspNetCore` (v2.70.0) - Server-side gRPC support
+- `Grpc.Net.Client` (v2.70.0) - Client-side gRPC support (for testing)
+
 ## Next Steps
 
 See `tasks.yaml` for the full project roadmap. The next tasks include:
@@ -407,12 +473,9 @@ See `tasks.yaml` for the full project roadmap. The next tasks include:
 - ✅ **E1-T3**: Database setup (Complete)
 - ✅ **E1-T4**: Add Redis for lease and lock management (Complete)
 - ✅ **E1-T5**: Set up NATS for event streaming (Complete)
-- **E1-T6**: Implement gRPC service for node communication
-- ✅ **E1-T2**: Integrate Microsoft Agent Framework SDK (Complete)
-- ✅ **E1-T3**: Database setup (Complete)
-- ✅ **E1-T4**: Add Redis for lease and lock management (Complete)
-- **E1-T5**: Set up NATS for event streaming
-- **E1-T6**: Implement gRPC service for node communication
+- ✅ **E1-T6**: Implement gRPC service for node communication (Complete)
+- **E1-T7**: Scheduler service
+- **E1-T8**: OpenTelemetry wiring
 
 ## OpenAPI/Swagger
 

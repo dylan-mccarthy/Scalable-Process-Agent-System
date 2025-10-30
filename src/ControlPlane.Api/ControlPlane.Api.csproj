@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Grpc.AspNetCore" Version="2.68.0" />
     <PackageReference Include="Microsoft.Agents.AI" Version="1.0.0-preview.251028.1" />
     <PackageReference Include="Microsoft.Agents.AI.AzureAI" Version="1.0.0-preview.251028.1" />
     <PackageReference Include="Microsoft.Agents.AI.OpenAI" Version="1.0.0-preview.251028.1" />
@@ -19,6 +20,10 @@
     <PackageReference Include="NATS.Client.JetStream" Version="2.5.3" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.0" />
     <PackageReference Include="StackExchange.Redis" Version="2.8.16" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Protobuf Include="Protos\lease_service.proto" GrpcServices="Both" />
   </ItemGroup>
 
 </Project>
