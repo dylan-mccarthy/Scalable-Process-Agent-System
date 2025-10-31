@@ -156,6 +156,17 @@ jobs:
         run: |
           chmod +x ./tests/docker-compose-observability-test.sh
           ./tests/docker-compose-observability-test.sh
+      
+      - name: Install actionlint
+        run: |
+          ACTIONLINT_VERSION=$(curl -s https://api.github.com/repos/rhysd/actionlint/releases/latest | grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/')
+          curl -sL "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz" | tar xz
+          sudo mv actionlint /usr/local/bin/
+      
+      - name: Validate GitHub Actions workflows
+        run: |
+          chmod +x ./tests/validate-workflows.sh
+          ./tests/validate-workflows.sh
   
   # Build Container Images and Generate SBOMs
   docker-build:

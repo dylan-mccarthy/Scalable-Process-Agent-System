@@ -49,7 +49,7 @@ jobs:
         uses: actions/checkout@v4
       
       - name: Azure Login
-        uses: azure/login@v1
+        uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
@@ -87,14 +87,18 @@ jobs:
             --query properties.outputs.keyVaultName.value \
             --output tsv)
           
-          echo "aks-name=$AKS_NAME" >> $GITHUB_OUTPUT
-          echo "acr-name=$ACR_NAME" >> $GITHUB_OUTPUT
-          echo "kv-name=$KV_NAME" >> $GITHUB_OUTPUT
+          {
+            echo "aks-name=$AKS_NAME"
+            echo "acr-name=$ACR_NAME"
+            echo "kv-name=$KV_NAME"
+          } >> "$GITHUB_OUTPUT"
           
-          echo "### Deployment Summary" >> $GITHUB_STEP_SUMMARY
-          echo "- **AKS Cluster**: $AKS_NAME" >> $GITHUB_STEP_SUMMARY
-          echo "- **Container Registry**: $ACR_NAME" >> $GITHUB_STEP_SUMMARY
-          echo "- **Key Vault**: $KV_NAME" >> $GITHUB_STEP_SUMMARY
+          {
+            echo "### Deployment Summary"
+            echo "- **AKS Cluster**: $AKS_NAME"
+            echo "- **Container Registry**: $ACR_NAME"
+            echo "- **Key Vault**: $KV_NAME"
+          } >> "$GITHUB_STEP_SUMMARY"
 
   build-and-push:
     name: Build and Push Images
@@ -108,7 +112,7 @@ jobs:
         uses: actions/checkout@v4
       
       - name: Azure Login
-        uses: azure/login@v1
+        uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
@@ -171,7 +175,7 @@ jobs:
         uses: actions/checkout@v4
       
       - name: Azure Login
-        uses: azure/login@v1
+        uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
@@ -207,16 +211,17 @@ jobs:
       
       - name: Verify deployment
         run: |
-          echo "### Deployment Status" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          kubectl get pods -n bpa >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Services" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          kubectl get svc -n bpa >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          {
+            echo "### Deployment Status"
+            echo "\`\`\`"
+            kubectl get pods -n bpa
+            echo "\`\`\`"
+            echo ""
+            echo "### Services"
+            echo "\`\`\`"
+            kubectl get svc -n bpa
+            echo "\`\`\`"
+          } >> "$GITHUB_STEP_SUMMARY"
       
       - name: Run database migrations
         run: |
