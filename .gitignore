@@ -507,3 +507,15 @@ infra/bicep/*.json
 # Azure deployment secrets (keep parameters template files)
 infra/bicep/*.local.json
 infra/bicep/*.secret.json
+
+# mTLS Certificates and Private Keys
+# IMPORTANT: Never commit private keys or certificates to version control
+certs/
+*.pem
+*.key
+*.crt
+*.cer
+*.p12
+*.pfx
+*.csr
+*.srl
