@@ -103,7 +103,7 @@ public sealed class MessageProcessingServiceTests
     {
         // Arrange
         var service = CreateService();
-        var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
+        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
 
         // Setup to return empty messages to avoid processing loop
         _inputConnectorMock.Setup(x => x.ReceiveMessagesAsync(
@@ -128,7 +128,7 @@ public sealed class MessageProcessingServiceTests
     {
         // Arrange
         var service = CreateService();
-        var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
+        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
 
         _inputConnectorMock.Setup(x => x.ReceiveMessagesAsync(
             It.IsAny<int>(),
@@ -181,7 +181,7 @@ public sealed class MessageProcessingServiceTests
             It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MessageCompletionResult { Success = true });
 
-        var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
+        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
 
         // Act
         await service.StartAsync(cts.Token);
@@ -220,7 +220,7 @@ public sealed class MessageProcessingServiceTests
             It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MessageCompletionResult { Success = true });
 
-        var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
+        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
 
         // Act
         await service.StartAsync(cts.Token);
@@ -279,7 +279,7 @@ public sealed class MessageProcessingServiceTests
             It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MessageCompletionResult { Success = true });
 
-        var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
+        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
 
         // Act
         await service.StartAsync(cts.Token);
@@ -338,7 +338,7 @@ public sealed class MessageProcessingServiceTests
             It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MessageCompletionResult { Success = true });
 
-        var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
+        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
 
         // Act
         await service.StartAsync(cts.Token);
@@ -389,7 +389,7 @@ public sealed class MessageProcessingServiceTests
             It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MessageCompletionResult { Success = true });
 
-        var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
+        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
 
         // Act
         await service.StartAsync(cts.Token);
@@ -438,7 +438,7 @@ public sealed class MessageProcessingServiceTests
             It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MessageCompletionResult { Success = true });
 
-        var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
+        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
 
         // Act
         await service.StartAsync(cts.Token);
@@ -491,7 +491,7 @@ public sealed class MessageProcessingServiceTests
             It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MessageCompletionResult { Success = true });
 
-        var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
+        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
 
         // Act
         await service.StartAsync(cts.Token);
@@ -548,7 +548,7 @@ public sealed class MessageProcessingServiceTests
             It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MessageCompletionResult { Success = true });
 
-        var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
+        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
 
         // Act
         await service.StartAsync(cts.Token);

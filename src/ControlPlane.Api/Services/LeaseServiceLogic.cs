@@ -130,9 +130,21 @@ public class LeaseServiceLogic : ILeaseService
                     }
                 }
             }
+            catch (Npgsql.NpgsqlException npgEx)
+            {
+                _logger.LogError(npgEx, "Database error preparing leases for node {NodeId}", nodeId);
+            }
+            catch (TimeoutException timeoutEx)
+            {
+                _logger.LogWarning(timeoutEx, "Timeout preparing leases for node {NodeId}", nodeId);
+            }
+            catch (InvalidOperationException invalidOpEx)
+            {
+                _logger.LogError(invalidOpEx, "Invalid operation preparing leases for node {NodeId}", nodeId);
+            }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error preparing leases for node {NodeId}", nodeId);
+                _logger.LogError(ex, "Unexpected error preparing leases for node {NodeId}", nodeId);
             }
 
             // Yield all prepared leases
@@ -227,9 +239,24 @@ public class LeaseServiceLogic : ILeaseService
             _logger.LogInformation("Run {RunId} completed successfully", runId);
             return true;
         }
+        catch (Npgsql.NpgsqlException npgEx)
+        {
+            _logger.LogError(npgEx, "Database error completing run {RunId}", runId);
+            return false;
+        }
+        catch (TimeoutException timeoutEx)
+        {
+            _logger.LogWarning(timeoutEx, "Timeout completing run {RunId}", runId);
+            return false;
+        }
+        catch (InvalidOperationException invalidOpEx)
+        {
+            _logger.LogError(invalidOpEx, "Invalid operation completing run {RunId}", runId);
+            return false;
+        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error completing run {RunId}", runId);
+            _logger.LogError(ex, "Unexpected error completing run {RunId}", runId);
             return false;
         }
     }
@@ -295,9 +322,24 @@ public class LeaseServiceLogic : ILeaseService
             _logger.LogInformation("Run {RunId} marked as failed. Should retry: {ShouldRetry}", runId, shouldRetry);
             return (true, shouldRetry);
         }
+        catch (Npgsql.NpgsqlException npgEx)
+        {
+            _logger.LogError(npgEx, "Database error processing failure for run {RunId}", runId);
+            return (false, false);
+        }
+        catch (TimeoutException timeoutEx)
+        {
+            _logger.LogWarning(timeoutEx, "Timeout processing failure for run {RunId}", runId);
+            return (false, false);
+        }
+        catch (InvalidOperationException invalidOpEx)
+        {
+            _logger.LogError(invalidOpEx, "Invalid operation processing failure for run {RunId}", runId);
+            return (false, false);
+        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error processing failure for run {RunId}", runId);
+            _logger.LogError(ex, "Unexpected error processing failure for run {RunId}", runId);
             return (false, false);
         }
     }

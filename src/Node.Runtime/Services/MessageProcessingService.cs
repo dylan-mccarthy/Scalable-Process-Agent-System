@@ -129,9 +129,21 @@ public sealed class MessageProcessingService : IMessageProcessingService
                 _logger.LogInformation("Message processing cancelled");
                 break;
             }
+            catch (Azure.Messaging.ServiceBus.ServiceBusException sbEx) when (sbEx.IsTransient)
+            {
+                _logger.LogWarning(sbEx, "Transient Service Bus error in message processing loop - will retry after delay");
+                await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
+            }
+            catch (Azure.Messaging.ServiceBus.ServiceBusException sbEx)
+            {
+                _logger.LogError(sbEx, "Non-transient Service Bus error: {Reason}", sbEx.Reason);
+                // For non-transient errors, wait longer before retry
+                await Task.Delay(TimeSpan.FromSeconds(30), cancellationToken);
+            }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error in message processing loop");
+                // Only catch unexpected exceptions at the top-level loop
+                _logger.LogCritical(ex, "Unexpected fatal error in message processing loop - this should not happen");
                 // Brief delay before retrying to avoid tight loop on persistent errors
                 await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
             }
@@ -207,6 +219,102 @@ public sealed class MessageProcessingService : IMessageProcessingService
             // Abandon the message so it can be reprocessed
             await _inputConnector.AbandonMessageAsync(message, cancellationToken);
         }
+        catch (Azure.Messaging.ServiceBus.ServiceBusException sbEx) when (sbEx.Reason == Azure.Messaging.ServiceBus.ServiceBusFailureReason.MessageLockLost)
+        {
+            stopwatch.Stop();
+            _logger.LogWarning(sbEx, "Message lock lost for MessageId={MessageId} - will be retried by another processor", message.MessageId);
+            // Don't try to abandon - lock already lost
+            activity?.SetStatus(ActivityStatusCode.Error, "Message lock lost");
+        }
+        catch (Azure.Messaging.ServiceBus.ServiceBusException sbEx) when (sbEx.IsTransient)
+        {
+            stopwatch.Stop();
+            _logger.LogWarning(sbEx, "Transient Service Bus error processing MessageId={MessageId} - will retry", message.MessageId);
+            
+            try
+            {
+                await _inputConnector.AbandonMessageAsync(message, cancellationToken);
+            }
+            catch (Azure.Messaging.ServiceBus.ServiceBusException abandonEx) when (abandonEx.Reason == Azure.Messaging.ServiceBus.ServiceBusFailureReason.MessageLockLost)
+            {
+                _logger.LogWarning("Cannot abandon MessageId={MessageId} - lock already lost", message.MessageId);
+            }
+            catch (InvalidOperationException)
+            {
+                _logger.LogWarning("Cannot abandon MessageId={MessageId} - already settled", message.MessageId);
+            }
+            
+            activity?.SetStatus(ActivityStatusCode.Error, sbEx.Message);
+        }
+        catch (Azure.Messaging.ServiceBus.ServiceBusException sbEx)
+        {
+            stopwatch.Stop();
+            _logger.LogError(sbEx, "Non-transient Service Bus error processing MessageId={MessageId}: {Reason}", message.MessageId, sbEx.Reason);
+            
+            // Non-transient errors should dead-letter
+            activity?.SetStatus(ActivityStatusCode.Error, $"Service Bus error: {sbEx.Reason}");
+        }
+        catch (System.Text.Json.JsonException jsonEx)
+        {
+            stopwatch.Stop();
+            _logger.LogError(jsonEx, "JSON deserialization error for MessageId={MessageId} - message is malformed", message.MessageId);
+            
+            // Malformed messages should be dead-lettered, not retried
+            activity?.SetStatus(ActivityStatusCode.Error, "Deserialization error");
+            activity?.AddEvent(new ActivityEvent("exception",
+                tags: new ActivityTagsCollection
+                {
+                    { "exception.type", "JsonException" },
+                    { "exception.message", jsonEx.Message }
+                }));
+        }
+        catch (TimeoutException timeoutEx)
+        {
+            stopwatch.Stop();
+            _logger.LogError(timeoutEx, "Timeout processing MessageId={MessageId}", message.MessageId);
+            
+            try
+            {
+                await _inputConnector.AbandonMessageAsync(message, cancellationToken);
+            }
+            catch (Azure.Messaging.ServiceBus.ServiceBusException abandonEx) when (abandonEx.Reason == Azure.Messaging.ServiceBus.ServiceBusFailureReason.MessageLockLost)
+            {
+                _logger.LogWarning("Cannot abandon MessageId={MessageId} - lock already lost", message.MessageId);
+            }
+            catch (InvalidOperationException)
+            {
+                _logger.LogWarning("Cannot abandon MessageId={MessageId} - already settled", message.MessageId);
+            }
+            
+            activity?.SetStatus(ActivityStatusCode.Error, "Timeout");
+        }
+        catch (InvalidOperationException invalidOpEx)
+        {
+            stopwatch.Stop();
+            _logger.LogError(invalidOpEx, "Invalid operation while processing MessageId={MessageId}", message.MessageId);
+            
+            // For unexpected InvalidOperationExceptions, abandon the message for retry
+            try
+            {
+                await _inputConnector.AbandonMessageAsync(message, cancellationToken);
+            }
+            catch (Azure.Messaging.ServiceBus.ServiceBusException abandonEx) when (abandonEx.Reason == Azure.Messaging.ServiceBus.ServiceBusFailureReason.MessageLockLost)
+            {
+                _logger.LogWarning("Cannot abandon MessageId={MessageId} - lock already lost", message.MessageId);
+            }
+            catch (InvalidOperationException)
+            {
+                _logger.LogWarning("Cannot abandon MessageId={MessageId} - already settled", message.MessageId);
+            }
+            
+            activity?.SetStatus(ActivityStatusCode.Error, invalidOpEx.Message);
+            activity?.AddEvent(new ActivityEvent("exception",
+                tags: new ActivityTagsCollection
+                {
+                    { "exception.type", "InvalidOperationException" },
+                    { "exception.message", invalidOpEx.Message }
+                }));
+        }
         catch (Exception ex)
         {
             stopwatch.Stop();
@@ -217,9 +325,13 @@ public sealed class MessageProcessingService : IMessageProcessingService
             {
                 await _inputConnector.AbandonMessageAsync(message, cancellationToken);
             }
-            catch (Exception abandonEx)
+            catch (Azure.Messaging.ServiceBus.ServiceBusException abandonEx) when (abandonEx.Reason == Azure.Messaging.ServiceBus.ServiceBusFailureReason.MessageLockLost)
             {
-                _logger.LogError(abandonEx, "Failed to abandon message after error: MessageId={MessageId}", message.MessageId);
+                _logger.LogWarning("Cannot abandon MessageId={MessageId} - lock already lost", message.MessageId);
+            }
+            catch (InvalidOperationException)
+            {
+                _logger.LogWarning("Cannot abandon MessageId={MessageId} - already settled", message.MessageId);
             }
 
             activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
@@ -329,9 +441,22 @@ public sealed class MessageProcessingService : IMessageProcessingService
                     result.ErrorMessage);
             }
         }
+        catch (Azure.Messaging.ServiceBus.ServiceBusException sbEx) when (sbEx.Reason == Azure.Messaging.ServiceBus.ServiceBusFailureReason.MessageLockLost)
+        {
+            _logger.LogWarning(sbEx, "Cannot dead-letter MessageId={MessageId} - message lock lost", message.MessageId);
+            // Message lock was lost - it will be retried by another processor
+        }
+        catch (Azure.Messaging.ServiceBus.ServiceBusException sbEx)
+        {
+            _logger.LogError(sbEx, "Service Bus error moving message to DLQ: MessageId={MessageId}, Reason={Reason}", message.MessageId, sbEx.Reason);
+        }
+        catch (InvalidOperationException invalidOpEx)
+        {
+            _logger.LogError(invalidOpEx, "Invalid operation moving message to DLQ: MessageId={MessageId} - message may already be settled", message.MessageId);
+        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error moving message to DLQ: MessageId={MessageId}", message.MessageId);
+            _logger.LogError(ex, "Unexpected error moving message to DLQ: MessageId={MessageId}", message.MessageId);
         }
     }
 

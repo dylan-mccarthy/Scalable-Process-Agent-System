@@ -35,6 +35,16 @@ try
 
     return response.Success ? 0 : 1;
 }
+catch (System.Text.Json.JsonException jsonEx)
+{
+    await WriteErrorResponse($"JSON error: {jsonEx.Message}");
+    return 1;
+}
+catch (IOException ioEx)
+{
+    await WriteErrorResponse($"I/O error: {ioEx.Message}");
+    return 1;
+}
 catch (Exception ex)
 {
     await WriteErrorResponse($"Unhandled exception: {ex.Message}");
@@ -89,6 +99,27 @@ static async Task<AgentExecutionResponse> ExecuteAgentAsync(AgentExecutionReques
         stopwatch.Stop();
         response.Success = false;
         response.Error = $"Agent execution exceeded maximum duration of {request.MaxDurationSeconds ?? 60} seconds";
+        response.DurationMs = stopwatch.ElapsedMilliseconds;
+    }
+    catch (NotImplementedException notImplEx)
+    {
+        stopwatch.Stop();
+        response.Success = false;
+        response.Error = $"Not implemented: {notImplEx.Message}";
+        response.DurationMs = stopwatch.ElapsedMilliseconds;
+    }
+    catch (InvalidOperationException invalidOpEx)
+    {
+        stopwatch.Stop();
+        response.Success = false;
+        response.Error = $"Invalid operation: {invalidOpEx.Message}";
+        response.DurationMs = stopwatch.ElapsedMilliseconds;
+    }
+    catch (ArgumentException argEx)
+    {
+        stopwatch.Stop();
+        response.Success = false;
+        response.Error = $"Invalid argument: {argEx.Message}";
         response.DurationMs = stopwatch.ElapsedMilliseconds;
     }
     catch (Exception ex)

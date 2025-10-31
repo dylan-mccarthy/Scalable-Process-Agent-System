@@ -161,9 +161,9 @@ public class LeastLoadedScheduler : IScheduler
     private bool MatchesPlacementConstraints(Node node, Dictionary<string, object> placementConstraints)
     {
         // Handle region constraint (most common)
-        if (placementConstraints.ContainsKey("region"))
+        if (placementConstraints.TryGetValue("region", out var regionValue))
         {
-            var requiredRegions = GetRegionConstraint(placementConstraints["region"]);
+            var requiredRegions = GetRegionConstraint(regionValue);
             var nodeRegion = GetNodeRegion(node);
 
             if (nodeRegion == null || !requiredRegions.Contains(nodeRegion))
@@ -175,9 +175,9 @@ public class LeastLoadedScheduler : IScheduler
         }
 
         // Handle environment constraint
-        if (placementConstraints.ContainsKey("environment"))
+        if (placementConstraints.TryGetValue("environment", out var envValue))
         {
-            var requiredEnvironment = placementConstraints["environment"]?.ToString();
+            var requiredEnvironment = envValue?.ToString();
             var nodeEnvironment = GetNodeMetadataValue(node, "environment");
 
             if (requiredEnvironment != null && nodeEnvironment != requiredEnvironment)
@@ -217,12 +217,11 @@ public class LeastLoadedScheduler : IScheduler
 
     private int GetSlotsFromCapacity(Dictionary<string, object>? capacity)
     {
-        if (capacity == null || !capacity.ContainsKey("slots"))
+        if (capacity == null || !capacity.TryGetValue("slots", out var slotsValue))
         {
             return 0;
         }
 
-        var slotsValue = capacity["slots"];
         if (slotsValue is int intValue)
         {
             return intValue;
@@ -263,11 +262,11 @@ public class LeastLoadedScheduler : IScheduler
 
     private string? GetNodeMetadataValue(Node node, string key)
     {
-        if (node.Metadata == null || !node.Metadata.ContainsKey(key))
+        if (node.Metadata == null || !node.Metadata.TryGetValue(key, out var value))
         {
             return null;
         }
 
-        return node.Metadata[key]?.ToString();
+        return value?.ToString();
     }
 }

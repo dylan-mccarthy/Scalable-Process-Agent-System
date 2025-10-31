@@ -1,0 +1,43 @@
+name: "CodeQL Configuration"
+
+# Paths to exclude from CodeQL analysis
+paths-ignore:
+  # Build artifacts
+  - "**/obj/**"
+  - "**/bin/**"
+  - "**/publish/**"
+  - "**/out/**"
+  - "**/build/**"
+  - "**/dist/**"
+  
+  # Dependencies
+  - "**/node_modules/**"
+  - "**/packages/**"
+  - "**/.nuget/**"
+  
+  # Docker build context (auto-generated)
+  - "**/.dockerignore"
+  
+  # Generated files
+  - "**/*.Designer.cs"
+  - "**/*.designer.cs"
+  - "**/*.g.cs"
+  - "**/*.g.i.cs"
+  - "**/AssemblyInfo.cs"
+  - "**/AssemblyAttributes.cs"
+  
+  # Next.js build artifacts
+  - "src/admin-ui/.next/**"
+  - "src/admin-ui/out/**"
+  
+  # Test coverage reports
+  - "**/coverage/**"
+  - "**/TestResults/**"
+  
+  # Temporary files
+  - "**/*.tmp"
+  - "**/*.temp"
+
+# Queries to run
+queries:
+  - uses: security-and-quality

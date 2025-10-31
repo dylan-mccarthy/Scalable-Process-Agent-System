@@ -65,8 +65,8 @@ public class InvoiceClassifierAgentTests
         // Assert
         Assert.NotNull(agent);
         Assert.NotNull(agent.ModelProfile);
-        Assert.True(agent.ModelProfile.ContainsKey("model"));
-        Assert.Equal("gpt-4", agent.ModelProfile["model"].ToString());
+        Assert.True(agent.ModelProfile.TryGetValue("model", out var modelValue));
+        Assert.Equal("gpt-4", modelValue.ToString());
         Assert.True(agent.ModelProfile.ContainsKey("temperature"));
         Assert.True(agent.ModelProfile.ContainsKey("maxTokens"));
     }
@@ -95,8 +95,8 @@ public class InvoiceClassifierAgentTests
         Assert.NotNull(agent.Input);
         Assert.Equal("ServiceBus", agent.Input.Type);
         Assert.NotNull(agent.Input.Config);
-        Assert.True(agent.Input.Config.ContainsKey("queueName"));
-        Assert.Equal("invoices", agent.Input.Config["queueName"].ToString());
+        Assert.True(agent.Input.Config.TryGetValue("queueName", out var queueNameValue));
+        Assert.Equal("invoices", queueNameValue.ToString());
     }
 
     [Fact]
@@ -112,18 +112,18 @@ public class InvoiceClassifierAgentTests
 
         // Verify Service Bus specific configuration
         Assert.True(agent.Input.Config.ContainsKey("connectionString"));
-        Assert.True(agent.Input.Config.ContainsKey("prefetchCount"));
-        Assert.True(agent.Input.Config.ContainsKey("maxDeliveryCount"));
-        Assert.True(agent.Input.Config.ContainsKey("receiveMode"));
+        Assert.True(agent.Input.Config.TryGetValue("prefetchCount", out var prefetchCountValue));
+        Assert.True(agent.Input.Config.TryGetValue("maxDeliveryCount", out var maxDeliveryCountValue));
+        Assert.True(agent.Input.Config.TryGetValue("receiveMode", out var receiveModeValue));
 
         // Verify values
-        var prefetchCount = ((JsonElement)agent.Input.Config["prefetchCount"]).GetInt32();
+        var prefetchCount = ((JsonElement)prefetchCountValue).GetInt32();
         Assert.Equal(16, prefetchCount);
 
-        var maxDeliveryCount = ((JsonElement)agent.Input.Config["maxDeliveryCount"]).GetInt32();
+        var maxDeliveryCount = ((JsonElement)maxDeliveryCountValue).GetInt32();
         Assert.Equal(3, maxDeliveryCount);
 
-        var receiveMode = agent.Input.Config["receiveMode"].ToString();
+        var receiveMode = receiveModeValue.ToString();
         Assert.Equal("PeekLock", receiveMode);
     }
 
@@ -138,8 +138,8 @@ public class InvoiceClassifierAgentTests
         Assert.NotNull(agent.Output);
         Assert.Equal("Http", agent.Output.Type);
         Assert.NotNull(agent.Output.Config);
-        Assert.True(agent.Output.Config.ContainsKey("method"));
-        Assert.Equal("POST", agent.Output.Config["method"].ToString());
+        Assert.True(agent.Output.Config.TryGetValue("method", out var methodValue));
+        Assert.Equal("POST", methodValue.ToString());
     }
 
     [Fact]
@@ -152,9 +152,9 @@ public class InvoiceClassifierAgentTests
         Assert.NotNull(agent);
         Assert.NotNull(agent.Output);
         Assert.NotNull(agent.Output.Config);
-        Assert.True(agent.Output.Config.ContainsKey("retryPolicy"));
+        Assert.True(agent.Output.Config.TryGetValue("retryPolicy", out var retryPolicyValue));
 
-        var retryPolicyJson = (JsonElement)agent.Output.Config["retryPolicy"];
+        var retryPolicyJson = (JsonElement)retryPolicyValue;
         var maxRetries = retryPolicyJson.GetProperty("maxRetries").GetInt32();
         Assert.Equal(3, maxRetries);
 
@@ -172,9 +172,9 @@ public class InvoiceClassifierAgentTests
         Assert.NotNull(agent);
         Assert.NotNull(agent.Output);
         Assert.NotNull(agent.Output.Config);
-        Assert.True(agent.Output.Config.ContainsKey("idempotencyKeyFormat"));
+        Assert.True(agent.Output.Config.TryGetValue("idempotencyKeyFormat", out var idempotencyKeyValue));
 
-        var idempotencyKeyFormat = agent.Output.Config["idempotencyKeyFormat"].ToString();
+        var idempotencyKeyFormat = idempotencyKeyValue.ToString();
         Assert.Contains("RunId", idempotencyKeyFormat);
         Assert.Contains("MessageId", idempotencyKeyFormat);
     }
@@ -200,11 +200,11 @@ public class InvoiceClassifierAgentTests
         // Assert
         Assert.NotNull(agent);
         Assert.NotNull(agent.Metadata);
-        Assert.True(agent.Metadata.ContainsKey("owner"));
-        Assert.True(agent.Metadata.ContainsKey("epic"));
-        Assert.True(agent.Metadata.ContainsKey("version"));
-        Assert.Equal("Platform Engineering", agent.Metadata["owner"]);
-        Assert.Equal("E3-T6", agent.Metadata["epic"]);
+        Assert.True(agent.Metadata.TryGetValue("owner", out var ownerValue));
+        Assert.True(agent.Metadata.TryGetValue("epic", out var epicValue));
+        Assert.True(agent.Metadata.TryGetValue("version", out _));
+        Assert.Equal("Platform Engineering", ownerValue);
+        Assert.Equal("E3-T6", epicValue);
     }
 
     [Fact]
@@ -288,9 +288,9 @@ public class InvoiceClassifierAgentTests
         // Assert
         Assert.NotNull(agent);
         Assert.NotNull(agent.ModelProfile);
-        Assert.True(agent.ModelProfile.ContainsKey("temperature"));
+        Assert.True(agent.ModelProfile.TryGetValue("temperature", out var temperatureValue));
 
-        var temperature = ((JsonElement)agent.ModelProfile["temperature"]).GetDouble();
+        var temperature = ((JsonElement)temperatureValue).GetDouble();
         Assert.True(temperature <= 0.5,
             $"Temperature should be low (≤0.5) for consistent classification results, but was {temperature}");
     }

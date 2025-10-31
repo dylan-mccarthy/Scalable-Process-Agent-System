@@ -61,6 +61,18 @@ builder.Services.AddSingleton(sp =>
             clientCertificate = X509Certificate2.CreateFromPem(certPem, keyPem);
             logger.LogInformation("Loaded client certificate from {CertPath}", mtlsConfig.ClientCertificatePath);
         }
+        catch (FileNotFoundException fnfEx)
+        {
+            throw new InvalidOperationException($"Client certificate file not found: {mtlsConfig.ClientCertificatePath}", fnfEx);
+        }
+        catch (UnauthorizedAccessException uaEx)
+        {
+            throw new InvalidOperationException($"Access denied reading client certificate: {mtlsConfig.ClientCertificatePath}", uaEx);
+        }
+        catch (System.Security.Cryptography.CryptographicException cryptoEx)
+        {
+            throw new InvalidOperationException($"Invalid certificate format in {mtlsConfig.ClientCertificatePath}", cryptoEx);
+        }
         catch (Exception ex)
         {
             throw new InvalidOperationException($"Failed to load client certificate from {mtlsConfig.ClientCertificatePath}", ex);
@@ -75,6 +87,18 @@ builder.Services.AddSingleton(sp =>
                 var caPem = File.ReadAllText(mtlsConfig.ServerCaCertificatePath);
                 serverCaCertificate = X509Certificate2.CreateFromPem(caPem);
                 logger.LogInformation("Loaded server CA certificate from {CertPath}", mtlsConfig.ServerCaCertificatePath);
+            }
+            catch (FileNotFoundException fnfEx)
+            {
+                throw new InvalidOperationException($"Server CA certificate file not found: {mtlsConfig.ServerCaCertificatePath}", fnfEx);
+            }
+            catch (UnauthorizedAccessException uaEx)
+            {
+                throw new InvalidOperationException($"Access denied reading server CA certificate: {mtlsConfig.ServerCaCertificatePath}", uaEx);
+            }
+            catch (System.Security.Cryptography.CryptographicException cryptoEx)
+            {
+                throw new InvalidOperationException($"Invalid CA certificate format in {mtlsConfig.ServerCaCertificatePath}", cryptoEx);
             }
             catch (Exception ex)
             {

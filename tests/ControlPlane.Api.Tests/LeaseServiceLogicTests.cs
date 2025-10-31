@@ -246,7 +246,7 @@ public class LeaseServiceLogicTests
         _mockNodeStore.Setup(s => s.GetNodeAsync(nodeId))
             .ReturnsAsync((Node?)null);
 
-        var cts = new CancellationTokenSource();
+        using var cts = new CancellationTokenSource();
         cts.Cancel(); // Cancel immediately
 
         // Act
@@ -307,7 +307,7 @@ public class LeaseServiceLogicTests
         _mockLeaseStore.Setup(s => s.AcquireLeaseAsync(It.IsAny<string>(), nodeId, It.IsAny<int>()))
             .ReturnsAsync(true);
 
-        var cts = new CancellationTokenSource();
+        using var cts = new CancellationTokenSource();
         cts.CancelAfter(TimeSpan.FromSeconds(1)); // Cancel after 1 second
 
         // Act

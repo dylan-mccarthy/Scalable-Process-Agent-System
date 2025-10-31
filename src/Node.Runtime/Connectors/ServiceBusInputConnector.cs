@@ -87,9 +87,30 @@ public sealed class ServiceBusInputConnector : IInputConnector, IAsyncDisposable
             activity?.SetTag("receive.mode", receiverOptions.ReceiveMode.ToString());
             activity?.SetStatus(ActivityStatusCode.Ok);
         }
+        catch (Azure.Messaging.ServiceBus.ServiceBusException sbEx)
+        {
+            _logger.LogError(sbEx, "Service Bus error initializing connector: {Reason}", sbEx.Reason);
+            activity?.SetStatus(ActivityStatusCode.Error, $"Service Bus error: {sbEx.Reason}");
+            activity?.AddEvent(new ActivityEvent("exception", tags: new ActivityTagsCollection { { "exception.type", "ServiceBusException" }, { "exception.reason", sbEx.Reason.ToString() } }));
+            throw;
+        }
+        catch (UnauthorizedAccessException uaEx)
+        {
+            _logger.LogError(uaEx, "Unauthorized access to Service Bus - check connection string and permissions");
+            activity?.SetStatus(ActivityStatusCode.Error, "Unauthorized access");
+            activity?.AddEvent(new ActivityEvent("exception", tags: new ActivityTagsCollection { { "exception.type", "UnauthorizedAccessException" }, { "exception.message", uaEx.Message } }));
+            throw;
+        }
+        catch (ArgumentException argEx)
+        {
+            _logger.LogError(argEx, "Invalid Service Bus configuration");
+            activity?.SetStatus(ActivityStatusCode.Error, "Invalid configuration");
+            activity?.AddEvent(new ActivityEvent("exception", tags: new ActivityTagsCollection { { "exception.type", "ArgumentException" }, { "exception.message", argEx.Message } }));
+            throw;
+        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to initialize Service Bus connector");
+            _logger.LogError(ex, "Unexpected error initializing Service Bus connector");
             activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
             activity?.AddEvent(new ActivityEvent("exception", tags: new ActivityTagsCollection { { "exception.type", ex.GetType().FullName }, { "exception.message", ex.Message } }));
             throw;
@@ -158,9 +179,29 @@ public sealed class ServiceBusInputConnector : IInputConnector, IAsyncDisposable
 
             return messages;
         }
+        catch (Azure.Messaging.ServiceBus.ServiceBusException sbEx) when (sbEx.Reason == Azure.Messaging.ServiceBus.ServiceBusFailureReason.ServiceTimeout)
+        {
+            _logger.LogWarning(sbEx, "Timeout receiving messages from Service Bus");
+            activity?.SetStatus(ActivityStatusCode.Error, "Service timeout");
+            activity?.AddEvent(new ActivityEvent("exception", tags: new ActivityTagsCollection { { "exception.type", "ServiceBusException" }, { "exception.reason", "ServiceTimeout" } }));
+            throw;
+        }
+        catch (Azure.Messaging.ServiceBus.ServiceBusException sbEx)
+        {
+            _logger.LogError(sbEx, "Service Bus error receiving messages: {Reason}", sbEx.Reason);
+            activity?.SetStatus(ActivityStatusCode.Error, $"Service Bus error: {sbEx.Reason}");
+            activity?.AddEvent(new ActivityEvent("exception", tags: new ActivityTagsCollection { { "exception.type", "ServiceBusException" }, { "exception.reason", sbEx.Reason.ToString() } }));
+            throw;
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogInformation("Message receive operation cancelled");
+            activity?.SetStatus(ActivityStatusCode.Error, "Cancelled");
+            throw;
+        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error receiving messages from Service Bus");
+            _logger.LogError(ex, "Unexpected error receiving messages from Service Bus");
             activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
             activity?.AddEvent(new ActivityEvent("exception", tags: new ActivityTagsCollection { { "exception.type", ex.GetType().FullName }, { "exception.message", ex.Message } }));
             throw;
@@ -189,9 +230,45 @@ public sealed class ServiceBusInputConnector : IInputConnector, IAsyncDisposable
 
             return new MessageCompletionResult { Success = true };
         }
+        catch (Azure.Messaging.ServiceBus.ServiceBusException sbEx) when (sbEx.Reason == Azure.Messaging.ServiceBus.ServiceBusFailureReason.MessageLockLost)
+        {
+            _logger.LogWarning(sbEx, "Cannot complete message {MessageId} - lock lost", message.MessageId);
+            activity?.SetStatus(ActivityStatusCode.Error, "Lock lost");
+            activity?.AddEvent(new ActivityEvent("exception", tags: new ActivityTagsCollection { { "exception.type", "ServiceBusException" }, { "exception.reason", "MessageLockLost" } }));
+
+            return new MessageCompletionResult
+            {
+                Success = false,
+                ErrorMessage = "Message lock lost"
+            };
+        }
+        catch (Azure.Messaging.ServiceBus.ServiceBusException sbEx)
+        {
+            _logger.LogError(sbEx, "Service Bus error completing message {MessageId}: {Reason}", message.MessageId, sbEx.Reason);
+            activity?.SetStatus(ActivityStatusCode.Error, $"Service Bus error: {sbEx.Reason}");
+            activity?.AddEvent(new ActivityEvent("exception", tags: new ActivityTagsCollection { { "exception.type", "ServiceBusException" }, { "exception.reason", sbEx.Reason.ToString() } }));
+
+            return new MessageCompletionResult
+            {
+                Success = false,
+                ErrorMessage = $"Service Bus error: {sbEx.Reason}"
+            };
+        }
+        catch (InvalidOperationException invalidOpEx)
+        {
+            _logger.LogError(invalidOpEx, "Invalid operation completing message {MessageId} - message may already be settled", message.MessageId);
+            activity?.SetStatus(ActivityStatusCode.Error, "Invalid operation");
+            activity?.AddEvent(new ActivityEvent("exception", tags: new ActivityTagsCollection { { "exception.type", "InvalidOperationException" }, { "exception.message", invalidOpEx.Message } }));
+
+            return new MessageCompletionResult
+            {
+                Success = false,
+                ErrorMessage = "Message already settled"
+            };
+        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error completing message: MessageId={MessageId}", message.MessageId);
+            _logger.LogError(ex, "Unexpected error completing message: MessageId={MessageId}", message.MessageId);
             activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
             activity?.AddEvent(new ActivityEvent("exception", tags: new ActivityTagsCollection { { "exception.type", ex.GetType().FullName }, { "exception.message", ex.Message } }));
 
@@ -225,9 +302,45 @@ public sealed class ServiceBusInputConnector : IInputConnector, IAsyncDisposable
 
             return new MessageCompletionResult { Success = true };
         }
+        catch (Azure.Messaging.ServiceBus.ServiceBusException sbEx) when (sbEx.Reason == Azure.Messaging.ServiceBus.ServiceBusFailureReason.MessageLockLost)
+        {
+            _logger.LogWarning(sbEx, "Cannot abandon message {MessageId} - lock lost", message.MessageId);
+            activity?.SetStatus(ActivityStatusCode.Error, "Lock lost");
+            activity?.AddEvent(new ActivityEvent("exception", tags: new ActivityTagsCollection { { "exception.type", "ServiceBusException" }, { "exception.reason", "MessageLockLost" } }));
+
+            return new MessageCompletionResult
+            {
+                Success = false,
+                ErrorMessage = "Message lock lost"
+            };
+        }
+        catch (Azure.Messaging.ServiceBus.ServiceBusException sbEx)
+        {
+            _logger.LogError(sbEx, "Service Bus error abandoning message {MessageId}: {Reason}", message.MessageId, sbEx.Reason);
+            activity?.SetStatus(ActivityStatusCode.Error, $"Service Bus error: {sbEx.Reason}");
+            activity?.AddEvent(new ActivityEvent("exception", tags: new ActivityTagsCollection { { "exception.type", "ServiceBusException" }, { "exception.reason", sbEx.Reason.ToString() } }));
+
+            return new MessageCompletionResult
+            {
+                Success = false,
+                ErrorMessage = $"Service Bus error: {sbEx.Reason}"
+            };
+        }
+        catch (InvalidOperationException invalidOpEx)
+        {
+            _logger.LogError(invalidOpEx, "Invalid operation abandoning message {MessageId} - message may already be settled", message.MessageId);
+            activity?.SetStatus(ActivityStatusCode.Error, "Invalid operation");
+            activity?.AddEvent(new ActivityEvent("exception", tags: new ActivityTagsCollection { { "exception.type", "InvalidOperationException" }, { "exception.message", invalidOpEx.Message } }));
+
+            return new MessageCompletionResult
+            {
+                Success = false,
+                ErrorMessage = "Message already settled"
+            };
+        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error abandoning message: MessageId={MessageId}", message.MessageId);
+            _logger.LogError(ex, "Unexpected error abandoning message: MessageId={MessageId}", message.MessageId);
             activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
             activity?.AddEvent(new ActivityEvent("exception", tags: new ActivityTagsCollection { { "exception.type", ex.GetType().FullName }, { "exception.message", ex.Message } }));
 
@@ -277,11 +390,54 @@ public sealed class ServiceBusInputConnector : IInputConnector, IAsyncDisposable
 
             return new MessageCompletionResult { Success = true };
         }
+        catch (Azure.Messaging.ServiceBus.ServiceBusException sbEx) when (sbEx.Reason == Azure.Messaging.ServiceBus.ServiceBusFailureReason.MessageLockLost)
+        {
+            _logger.LogWarning(sbEx, "Cannot dead-letter message {MessageId} - lock lost", message.MessageId);
+            activity?.SetStatus(ActivityStatusCode.Error, "Lock lost");
+            activity?.AddEvent(new ActivityEvent("exception", tags: new ActivityTagsCollection { { "exception.type", "ServiceBusException" }, { "exception.reason", "MessageLockLost" } }));
+
+            return new MessageCompletionResult
+            {
+                Success = false,
+                ErrorMessage = "Message lock lost"
+            };
+        }
+        catch (Azure.Messaging.ServiceBus.ServiceBusException sbEx)
+        {
+            _logger.LogError(
+                sbEx,
+                "Service Bus error dead-lettering message {MessageId}: {Reason}",
+                message.MessageId,
+                sbEx.Reason);
+            activity?.SetStatus(ActivityStatusCode.Error, $"Service Bus error: {sbEx.Reason}");
+            activity?.AddEvent(new ActivityEvent("exception", tags: new ActivityTagsCollection { { "exception.type", "ServiceBusException" }, { "exception.reason", sbEx.Reason.ToString() } }));
+
+            return new MessageCompletionResult
+            {
+                Success = false,
+                ErrorMessage = $"Service Bus error: {sbEx.Reason}"
+            };
+        }
+        catch (InvalidOperationException invalidOpEx)
+        {
+            _logger.LogError(
+                invalidOpEx,
+                "Invalid operation dead-lettering message {MessageId} - message may already be settled",
+                message.MessageId);
+            activity?.SetStatus(ActivityStatusCode.Error, "Invalid operation");
+            activity?.AddEvent(new ActivityEvent("exception", tags: new ActivityTagsCollection { { "exception.type", "InvalidOperationException" }, { "exception.message", invalidOpEx.Message } }));
+
+            return new MessageCompletionResult
+            {
+                Success = false,
+                ErrorMessage = "Message already settled"
+            };
+        }
         catch (Exception ex)
         {
             _logger.LogError(
                 ex,
-                "Error dead-lettering message: MessageId={MessageId}, Reason={Reason}",
+                "Unexpected error dead-lettering message: MessageId={MessageId}, Reason={Reason}",
                 message.MessageId,
                 reason);
             activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
@@ -328,9 +484,22 @@ public sealed class ServiceBusInputConnector : IInputConnector, IAsyncDisposable
             _logger.LogInformation("Service Bus connector closed successfully");
             activity?.SetStatus(ActivityStatusCode.Ok);
         }
+        catch (Azure.Messaging.ServiceBus.ServiceBusException sbEx)
+        {
+            _logger.LogError(sbEx, "Service Bus error closing connector: {Reason}", sbEx.Reason);
+            activity?.SetStatus(ActivityStatusCode.Error, $"Service Bus error: {sbEx.Reason}");
+            activity?.AddEvent(new ActivityEvent("exception", tags: new ActivityTagsCollection { { "exception.type", "ServiceBusException" }, { "exception.reason", sbEx.Reason.ToString() } }));
+            throw;
+        }
+        catch (ObjectDisposedException)
+        {
+            _logger.LogWarning("Service Bus connector already disposed");
+            activity?.SetStatus(ActivityStatusCode.Ok);
+            // Don't throw - already disposed is acceptable
+        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error closing Service Bus connector");
+            _logger.LogError(ex, "Unexpected error closing Service Bus connector");
             activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
             activity?.AddEvent(new ActivityEvent("exception", tags: new ActivityTagsCollection { { "exception.type", ex.GetType().FullName }, { "exception.message", ex.Message } }));
             throw;

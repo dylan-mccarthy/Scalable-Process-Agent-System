@@ -96,9 +96,21 @@ public sealed class Worker : BackgroundService
 
             await _registrationService.SendHeartbeatAsync(activeRuns, availableSlots);
         }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogWarning(ex, "HTTP error sending heartbeat for node {NodeId}", _options.NodeId);
+        }
+        catch (TaskCanceledException ex)
+        {
+            _logger.LogWarning(ex, "Timeout sending heartbeat for node {NodeId}", _options.NodeId);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogError(ex, "Invalid operation sending heartbeat for node {NodeId}", _options.NodeId);
+        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error sending heartbeat for node {NodeId}", _options.NodeId);
+            _logger.LogError(ex, "Unexpected error sending heartbeat for node {NodeId}", _options.NodeId);
         }
     }
 }

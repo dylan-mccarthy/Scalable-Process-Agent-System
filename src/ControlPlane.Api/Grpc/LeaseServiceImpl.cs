@@ -60,12 +60,42 @@ public class LeaseServiceImpl : LeaseService.LeaseServiceBase
             activity?.SetStatus(ActivityStatusCode.Error);
             throw;
         }
+        catch (OperationCanceledException)
+        {
+            activity?.SetStatus(ActivityStatusCode.Error);
+            _logger.LogInformation("Pull request cancelled for node {NodeId}", request.NodeId);
+            throw new RpcException(new Status(StatusCode.Cancelled, "Request was cancelled"));
+        }
+        catch (Npgsql.NpgsqlException npgEx)
+        {
+            activity?.SetStatus(ActivityStatusCode.Error);
+            activity?.SetTag("error.type", "NpgsqlException");
+            activity?.SetTag("error.message", npgEx.Message);
+            _logger.LogError(npgEx, "Database error processing Pull request for node {NodeId}", request.NodeId);
+            throw new RpcException(new Status(StatusCode.Unavailable, "Database temporarily unavailable"));
+        }
+        catch (TimeoutException timeoutEx)
+        {
+            activity?.SetStatus(ActivityStatusCode.Error);
+            activity?.SetTag("error.type", "TimeoutException");
+            activity?.SetTag("error.message", timeoutEx.Message);
+            _logger.LogError(timeoutEx, "Timeout processing Pull request for node {NodeId}", request.NodeId);
+            throw new RpcException(new Status(StatusCode.DeadlineExceeded, "Request timeout"));
+        }
+        catch (InvalidOperationException invalidOpEx)
+        {
+            activity?.SetStatus(ActivityStatusCode.Error);
+            activity?.SetTag("error.type", "InvalidOperationException");
+            activity?.SetTag("error.message", invalidOpEx.Message);
+            _logger.LogError(invalidOpEx, "Invalid operation processing Pull request for node {NodeId}", request.NodeId);
+            throw new RpcException(new Status(StatusCode.FailedPrecondition, invalidOpEx.Message));
+        }
         catch (Exception ex)
         {
             activity?.SetStatus(ActivityStatusCode.Error);
             activity?.SetTag("error.type", ex.GetType().Name);
             activity?.SetTag("error.message", ex.Message);
-            _logger.LogError(ex, "Error processing Pull request for node {NodeId}", request.NodeId);
+            _logger.LogError(ex, "Unexpected error processing Pull request for node {NodeId}", request.NodeId);
             throw new RpcException(new Status(StatusCode.Internal, "Internal server error"));
         }
     }
@@ -106,9 +136,36 @@ public class LeaseServiceImpl : LeaseService.LeaseServiceBase
                 Message = success ? "Lease acknowledged" : "Failed to acknowledge lease"
             };
         }
+        catch (Npgsql.NpgsqlException npgEx)
+        {
+            _logger.LogError(npgEx, "Database error processing Ack request for lease {LeaseId}", request.LeaseId);
+            return new AckResponse
+            {
+                Success = false,
+                Message = "Database error processing acknowledgement"
+            };
+        }
+        catch (TimeoutException timeoutEx)
+        {
+            _logger.LogWarning(timeoutEx, "Timeout processing Ack request for lease {LeaseId}", request.LeaseId);
+            return new AckResponse
+            {
+                Success = false,
+                Message = "Timeout processing acknowledgement"
+            };
+        }
+        catch (InvalidOperationException invalidOpEx)
+        {
+            _logger.LogError(invalidOpEx, "Invalid operation processing Ack request for lease {LeaseId}", request.LeaseId);
+            return new AckResponse
+            {
+                Success = false,
+                Message = $"Invalid operation: {invalidOpEx.Message}"
+            };
+        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error processing Ack request for lease {LeaseId}", request.LeaseId);
+            _logger.LogError(ex, "Unexpected error processing Ack request for lease {LeaseId}", request.LeaseId);
             return new AckResponse
             {
                 Success = false,
@@ -165,9 +222,36 @@ public class LeaseServiceImpl : LeaseService.LeaseServiceBase
                 Message = success ? "Run completed successfully" : "Failed to complete run"
             };
         }
+        catch (Npgsql.NpgsqlException npgEx)
+        {
+            _logger.LogError(npgEx, "Database error processing Complete request for run {RunId}", request.RunId);
+            return new CompleteResponse
+            {
+                Success = false,
+                Message = "Database error processing completion"
+            };
+        }
+        catch (TimeoutException timeoutEx)
+        {
+            _logger.LogWarning(timeoutEx, "Timeout processing Complete request for run {RunId}", request.RunId);
+            return new CompleteResponse
+            {
+                Success = false,
+                Message = "Timeout processing completion"
+            };
+        }
+        catch (InvalidOperationException invalidOpEx)
+        {
+            _logger.LogError(invalidOpEx, "Invalid operation processing Complete request for run {RunId}", request.RunId);
+            return new CompleteResponse
+            {
+                Success = false,
+                Message = $"Invalid operation: {invalidOpEx.Message}"
+            };
+        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error processing Complete request for run {RunId}", request.RunId);
+            _logger.LogError(ex, "Unexpected error processing Complete request for run {RunId}", request.RunId);
             return new CompleteResponse
             {
                 Success = false,
@@ -229,9 +313,39 @@ public class LeaseServiceImpl : LeaseService.LeaseServiceBase
                 ShouldRetry = shouldRetry
             };
         }
+        catch (Npgsql.NpgsqlException npgEx)
+        {
+            _logger.LogError(npgEx, "Database error processing Fail request for run {RunId}", request.RunId);
+            return new FailResponse
+            {
+                Success = false,
+                Message = "Database error processing failure",
+                ShouldRetry = true // Retry on database errors
+            };
+        }
+        catch (TimeoutException timeoutEx)
+        {
+            _logger.LogWarning(timeoutEx, "Timeout processing Fail request for run {RunId}", request.RunId);
+            return new FailResponse
+            {
+                Success = false,
+                Message = "Timeout processing failure",
+                ShouldRetry = true // Retry on timeout
+            };
+        }
+        catch (InvalidOperationException invalidOpEx)
+        {
+            _logger.LogError(invalidOpEx, "Invalid operation processing Fail request for run {RunId}", request.RunId);
+            return new FailResponse
+            {
+                Success = false,
+                Message = $"Invalid operation: {invalidOpEx.Message}",
+                ShouldRetry = false // Don't retry on invalid operations
+            };
+        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error processing Fail request for run {RunId}", request.RunId);
+            _logger.LogError(ex, "Unexpected error processing Fail request for run {RunId}", request.RunId);
             return new FailResponse
             {
                 Success = false,
