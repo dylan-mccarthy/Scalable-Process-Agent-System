@@ -145,13 +145,85 @@ public sealed class LeasePullService : ILeasePullService
                 _logger.LogInformation("Lease pull cancelled for node {NodeId}", _options.NodeId);
                 break;
             }
+            catch (RpcException ex) when (ex.StatusCode == StatusCode.Unavailable)
+            {
+                TelemetryConfig.LeaseStreamErrorsCounter.Add(1,
+                    new KeyValuePair<string, object?>("node.id", _options.NodeId),
+                    new KeyValuePair<string, object?>("error.type", "RpcUnavailable"));
+
+                _logger.LogWarning(ex, "Control plane unavailable for node {NodeId}", _options.NodeId);
+
+                _reconnectAttempts++;
+                var delay = CalculateReconnectDelay(_reconnectAttempts);
+
+                TelemetryConfig.LeaseStreamReconnectsCounter.Add(1,
+                    new KeyValuePair<string, object?>("node.id", _options.NodeId),
+                    new KeyValuePair<string, object?>("attempt", _reconnectAttempts));
+
+                _logger.LogWarning("Reconnecting to lease stream in {DelaySeconds}s (attempt {Attempt})", delay, _reconnectAttempts);
+                await Task.Delay(TimeSpan.FromSeconds(delay), cancellationToken);
+            }
+            catch (RpcException ex) when (ex.StatusCode == StatusCode.DeadlineExceeded)
+            {
+                TelemetryConfig.LeaseStreamErrorsCounter.Add(1,
+                    new KeyValuePair<string, object?>("node.id", _options.NodeId),
+                    new KeyValuePair<string, object?>("error.type", "RpcDeadlineExceeded"));
+
+                _logger.LogWarning(ex, "gRPC deadline exceeded for node {NodeId}", _options.NodeId);
+
+                _reconnectAttempts++;
+                var delay = CalculateReconnectDelay(_reconnectAttempts);
+
+                TelemetryConfig.LeaseStreamReconnectsCounter.Add(1,
+                    new KeyValuePair<string, object?>("node.id", _options.NodeId),
+                    new KeyValuePair<string, object?>("attempt", _reconnectAttempts));
+
+                _logger.LogWarning("Reconnecting to lease stream in {DelaySeconds}s (attempt {Attempt})", delay, _reconnectAttempts);
+                await Task.Delay(TimeSpan.FromSeconds(delay), cancellationToken);
+            }
+            catch (RpcException ex)
+            {
+                TelemetryConfig.LeaseStreamErrorsCounter.Add(1,
+                    new KeyValuePair<string, object?>("node.id", _options.NodeId),
+                    new KeyValuePair<string, object?>("error.type", $"Rpc{ex.StatusCode}"));
+
+                _logger.LogError(ex, "gRPC error pulling leases for node {NodeId}: {StatusCode}", _options.NodeId, ex.StatusCode);
+
+                _reconnectAttempts++;
+                var delay = CalculateReconnectDelay(_reconnectAttempts);
+
+                TelemetryConfig.LeaseStreamReconnectsCounter.Add(1,
+                    new KeyValuePair<string, object?>("node.id", _options.NodeId),
+                    new KeyValuePair<string, object?>("attempt", _reconnectAttempts));
+
+                _logger.LogWarning("Reconnecting to lease stream in {DelaySeconds}s (attempt {Attempt})", delay, _reconnectAttempts);
+                await Task.Delay(TimeSpan.FromSeconds(delay), cancellationToken);
+            }
+            catch (InvalidOperationException invalidOpEx)
+            {
+                TelemetryConfig.LeaseStreamErrorsCounter.Add(1,
+                    new KeyValuePair<string, object?>("node.id", _options.NodeId),
+                    new KeyValuePair<string, object?>("error.type", "InvalidOperation"));
+
+                _logger.LogError(invalidOpEx, "Invalid operation pulling leases for node {NodeId}", _options.NodeId);
+
+                _reconnectAttempts++;
+                var delay = CalculateReconnectDelay(_reconnectAttempts);
+
+                TelemetryConfig.LeaseStreamReconnectsCounter.Add(1,
+                    new KeyValuePair<string, object?>("node.id", _options.NodeId),
+                    new KeyValuePair<string, object?>("attempt", _reconnectAttempts));
+
+                _logger.LogWarning("Reconnecting to lease stream in {DelaySeconds}s (attempt {Attempt})", delay, _reconnectAttempts);
+                await Task.Delay(TimeSpan.FromSeconds(delay), cancellationToken);
+            }
             catch (Exception ex)
             {
                 TelemetryConfig.LeaseStreamErrorsCounter.Add(1,
                     new KeyValuePair<string, object?>("node.id", _options.NodeId),
                     new KeyValuePair<string, object?>("error.type", ex.GetType().Name));
 
-                _logger.LogError(ex, "Error pulling leases for node {NodeId}", _options.NodeId);
+                _logger.LogError(ex, "Unexpected error pulling leases for node {NodeId}", _options.NodeId);
 
                 // Exponential backoff with jitter for reconnection
                 _reconnectAttempts++;
@@ -215,9 +287,21 @@ public sealed class LeasePullService : ILeasePullService
                 _logger.LogWarning("Failed to acknowledge lease {LeaseId}: {Message}", lease.LeaseId, response.Message);
             }
         }
+        catch (RpcException ex) when (ex.StatusCode == StatusCode.Cancelled)
+        {
+            _logger.LogInformation("Acknowledgement cancelled for lease {LeaseId}", lease.LeaseId);
+        }
+        catch (RpcException ex) when (ex.StatusCode == StatusCode.DeadlineExceeded)
+        {
+            _logger.LogWarning(ex, "Timeout acknowledging lease {LeaseId}", lease.LeaseId);
+        }
+        catch (RpcException ex)
+        {
+            _logger.LogError(ex, "gRPC error acknowledging lease {LeaseId}: {StatusCode}", lease.LeaseId, ex.StatusCode);
+        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error acknowledging lease {LeaseId}", lease.LeaseId);
+            _logger.LogError(ex, "Unexpected error acknowledging lease {LeaseId}", lease.LeaseId);
         }
     }
 
@@ -394,10 +478,76 @@ public sealed class LeasePullService : ILeasePullService
         {
             _logger.LogInformation("Processing cancelled for lease {LeaseId}", lease.LeaseId);
         }
+        catch (InvalidOperationException invalidOpEx)
+        {
+            stopwatch.Stop();
+            _logger.LogError(invalidOpEx, "Invalid operation processing lease {LeaseId} for run {RunId}", lease.LeaseId, lease.RunId);
+
+            // Report failure
+            try
+            {
+                var failRequest = new FailRequest
+                {
+                    LeaseId = lease.LeaseId,
+                    RunId = lease.RunId,
+                    NodeId = _options.NodeId,
+                    ErrorMessage = invalidOpEx.Message,
+                    ErrorDetails = invalidOpEx.ToString(),
+                    Retryable = false, // Don't retry invalid operations
+                    Timings = new TimingInfo
+                    {
+                        DurationMs = (long)stopwatch.ElapsedMilliseconds
+                    }
+                };
+
+                await _leaseClient.FailAsync(failRequest, cancellationToken: cancellationToken);
+            }
+            catch (RpcException rpcEx)
+            {
+                _logger.LogError(rpcEx, "gRPC error reporting failure for lease {LeaseId}: {StatusCode}", lease.LeaseId, rpcEx.StatusCode);
+            }
+            catch (Exception failEx)
+            {
+                _logger.LogError(failEx, "Unexpected error reporting failure for lease {LeaseId}", lease.LeaseId);
+            }
+        }
+        catch (RpcException ex)
+        {
+            stopwatch.Stop();
+            _logger.LogError(ex, "gRPC error processing lease {LeaseId} for run {RunId}: {StatusCode}", lease.LeaseId, lease.RunId, ex.StatusCode);
+
+            // Report failure
+            try
+            {
+                var failRequest = new FailRequest
+                {
+                    LeaseId = lease.LeaseId,
+                    RunId = lease.RunId,
+                    NodeId = _options.NodeId,
+                    ErrorMessage = $"gRPC error: {ex.StatusCode}",
+                    ErrorDetails = ex.ToString(),
+                    Retryable = ex.StatusCode == StatusCode.Unavailable || ex.StatusCode == StatusCode.DeadlineExceeded,
+                    Timings = new TimingInfo
+                    {
+                        DurationMs = (long)stopwatch.ElapsedMilliseconds
+                    }
+                };
+
+                await _leaseClient.FailAsync(failRequest, cancellationToken: cancellationToken);
+            }
+            catch (RpcException rpcEx)
+            {
+                _logger.LogError(rpcEx, "gRPC error reporting failure for lease {LeaseId}: {StatusCode}", lease.LeaseId, rpcEx.StatusCode);
+            }
+            catch (Exception failEx)
+            {
+                _logger.LogError(failEx, "Unexpected error reporting failure for lease {LeaseId}", lease.LeaseId);
+            }
+        }
         catch (Exception ex)
         {
             stopwatch.Stop();
-            _logger.LogError(ex, "Error processing lease {LeaseId} for run {RunId}", lease.LeaseId, lease.RunId);
+            _logger.LogError(ex, "Unexpected error processing lease {LeaseId} for run {RunId}", lease.LeaseId, lease.RunId);
 
             // Report failure
             try
@@ -418,9 +568,13 @@ public sealed class LeasePullService : ILeasePullService
 
                 await _leaseClient.FailAsync(failRequest, cancellationToken: cancellationToken);
             }
+            catch (RpcException rpcEx)
+            {
+                _logger.LogError(rpcEx, "gRPC error reporting failure for lease {LeaseId}: {StatusCode}", lease.LeaseId, rpcEx.StatusCode);
+            }
             catch (Exception failEx)
             {
-                _logger.LogError(failEx, "Error reporting failure for lease {LeaseId}", lease.LeaseId);
+                _logger.LogError(failEx, "Unexpected error reporting failure for lease {LeaseId}", lease.LeaseId);
             }
         }
         finally
