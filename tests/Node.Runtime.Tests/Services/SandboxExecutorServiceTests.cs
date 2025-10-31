@@ -24,45 +24,36 @@ public sealed class SandboxExecutorServiceTests
         };
     }
 
+    /// <summary>
+    /// Helper method to create service and skip test if Agent.Host is not available.
+    /// </summary>
+    private SandboxExecutorService CreateServiceOrSkip()
+    {
+        try
+        {
+            return new SandboxExecutorService(
+                Options.Create(_options),
+                _loggerMock.Object);
+        }
+        catch (FileNotFoundException ex)
+        {
+            throw new Xunit.SkipException($"Agent.Host executable not found: {ex.Message}");
+        }
+    }
+
     [Fact]
     public void Constructor_SucceedsWhenAgentHostIsAvailable()
     {
-        // Arrange & Act
-        var act = () => new SandboxExecutorService(
-            Options.Create(_options),
-            _loggerMock.Object);
-
-        // Assert
-        // If Agent.Host is built and available, construction should succeed
-        // If not, it will throw FileNotFoundException which is acceptable for this test
-        try
-        {
-            act.Should().NotThrow();
-        }
-        catch (FileNotFoundException)
-        {
-            // This is acceptable - Agent.Host may not be built in all test scenarios
-        }
+        // Arrange & Act & Assert
+        var service = CreateServiceOrSkip();
+        service.Should().NotBeNull();
     }
 
     [Fact]
     public async Task ExecuteAsync_AppliesBudgetConstraints_FromSpec()
     {
         // Arrange
-        // This test requires Agent.Host to be built
-        // We'll skip it if not available
-        SandboxExecutorService service;
-        try
-        {
-            service = new SandboxExecutorService(
-                Options.Create(_options),
-                _loggerMock.Object);
-        }
-        catch (FileNotFoundException)
-        {
-            // Agent.Host not available, skip test
-            return;
-        }
+        var service = CreateServiceOrSkip();
 
         var spec = new AgentSpec
         {
@@ -92,18 +83,7 @@ public sealed class SandboxExecutorServiceTests
     public async Task ExecuteAsync_AppliesDefaultBudgetConstraints_WhenNotSpecified()
     {
         // Arrange
-        SandboxExecutorService service;
-        try
-        {
-            service = new SandboxExecutorService(
-                Options.Create(_options),
-                _loggerMock.Object);
-        }
-        catch (FileNotFoundException)
-        {
-            // Agent.Host not available, skip test
-            return;
-        }
+        var service = CreateServiceOrSkip();
 
         var spec = new AgentSpec
         {
@@ -127,18 +107,7 @@ public sealed class SandboxExecutorServiceTests
     public async Task ExecuteAsync_ReturnsFailure_OnException()
     {
         // Arrange
-        SandboxExecutorService service;
-        try
-        {
-            service = new SandboxExecutorService(
-                Options.Create(_options),
-                _loggerMock.Object);
-        }
-        catch (FileNotFoundException)
-        {
-            // Agent.Host not available, skip test
-            return;
-        }
+        var service = CreateServiceOrSkip();
 
         var spec = new AgentSpec
         {
@@ -161,18 +130,7 @@ public sealed class SandboxExecutorServiceTests
     public async Task ExecuteAsync_RecordsDuration()
     {
         // Arrange
-        SandboxExecutorService service;
-        try
-        {
-            service = new SandboxExecutorService(
-                Options.Create(_options),
-                _loggerMock.Object);
-        }
-        catch (FileNotFoundException)
-        {
-            // Agent.Host not available, skip test
-            return;
-        }
+        var service = CreateServiceOrSkip();
 
         var spec = new AgentSpec
         {
@@ -193,18 +151,7 @@ public sealed class SandboxExecutorServiceTests
     public async Task ExecuteAsync_IncludesSandboxMetadata()
     {
         // Arrange
-        SandboxExecutorService service;
-        try
-        {
-            service = new SandboxExecutorService(
-                Options.Create(_options),
-                _loggerMock.Object);
-        }
-        catch (FileNotFoundException)
-        {
-            // Agent.Host not available, skip test
-            return;
-        }
+        var service = CreateServiceOrSkip();
 
         var spec = new AgentSpec
         {
@@ -227,18 +174,7 @@ public sealed class SandboxExecutorServiceTests
     public async Task ExecuteAsync_HandlesProcessTimeout()
     {
         // Arrange
-        SandboxExecutorService service;
-        try
-        {
-            service = new SandboxExecutorService(
-                Options.Create(_options),
-                _loggerMock.Object);
-        }
-        catch (FileNotFoundException)
-        {
-            // Agent.Host not available, skip test
-            return;
-        }
+        var service = CreateServiceOrSkip();
 
         var spec = new AgentSpec
         {
@@ -266,18 +202,7 @@ public sealed class SandboxExecutorServiceTests
     public async Task ExecuteAsync_HandlesCancellation()
     {
         // Arrange
-        SandboxExecutorService service;
-        try
-        {
-            service = new SandboxExecutorService(
-                Options.Create(_options),
-                _loggerMock.Object);
-        }
-        catch (FileNotFoundException)
-        {
-            // Agent.Host not available, skip test
-            return;
-        }
+        var service = CreateServiceOrSkip();
 
         var spec = new AgentSpec
         {
