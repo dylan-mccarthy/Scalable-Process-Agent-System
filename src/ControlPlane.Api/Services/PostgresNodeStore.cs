@@ -36,11 +36,11 @@ public class PostgresNodeStore : INodeStore
         var entity = new NodeEntity
         {
             NodeId = request.NodeId,
-            Metadata = request.Metadata != null 
-                ? JsonSerializer.Serialize(request.Metadata) 
+            Metadata = request.Metadata != null
+                ? JsonSerializer.Serialize(request.Metadata)
                 : null,
-            Capacity = request.Capacity != null 
-                ? JsonSerializer.Serialize(request.Capacity) 
+            Capacity = request.Capacity != null
+                ? JsonSerializer.Serialize(request.Capacity)
                 : null,
             Status = JsonSerializer.Serialize(new NodeStatus()),
             HeartbeatAt = DateTime.UtcNow
@@ -96,13 +96,13 @@ public class PostgresNodeStore : INodeStore
         return new Node
         {
             NodeId = entity.NodeId,
-            Metadata = entity.Metadata != null 
-                ? JsonSerializer.Deserialize<Dictionary<string, object>>(entity.Metadata) 
+            Metadata = entity.Metadata != null
+                ? JsonSerializer.Deserialize<Dictionary<string, object>>(entity.Metadata)
                 : null,
-            Capacity = entity.Capacity != null 
-                ? JsonSerializer.Deserialize<Dictionary<string, object>>(entity.Capacity) 
+            Capacity = entity.Capacity != null
+                ? JsonSerializer.Deserialize<Dictionary<string, object>>(entity.Capacity)
                 : null,
-            Status = entity.Status != null 
+            Status = entity.Status != null
                 ? JsonSerializer.Deserialize<NodeStatus>(entity.Status) ?? new NodeStatus()
                 : new NodeStatus(),
             HeartbeatAt = entity.HeartbeatAt

@@ -71,7 +71,7 @@ public class AgentRuntimeServiceTests
             Instructions = "temp",
             ModelProfile = new Dictionary<string, object> { { "model", "gpt-4" } }
         });
-        
+
         // Update to invalid state (empty name)
         await _agentStore.UpdateAgentAsync(agent.AgentId, new UpdateAgentRequest { Name = "" });
 

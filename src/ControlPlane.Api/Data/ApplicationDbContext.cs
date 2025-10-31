@@ -31,7 +31,7 @@ public class ApplicationDbContext : DbContext
         {
             entity.HasKey(e => e.VersionId);
             entity.HasIndex(e => new { e.AgentId, e.Version }).IsUnique();
-            
+
             entity.HasOne(e => e.Agent)
                 .WithMany(a => a.Versions)
                 .HasForeignKey(e => e.AgentId)
@@ -43,7 +43,7 @@ public class ApplicationDbContext : DbContext
         {
             entity.HasKey(e => e.DepId);
             entity.HasIndex(e => new { e.AgentId, e.Version, e.Env });
-            
+
             entity.HasOne(e => e.Agent)
                 .WithMany(a => a.Deployments)
                 .HasForeignKey(e => e.AgentId)
@@ -65,17 +65,17 @@ public class ApplicationDbContext : DbContext
             entity.HasIndex(e => e.CreatedAt);
             entity.HasIndex(e => new { e.AgentId, e.Status });
             entity.HasIndex(e => e.NodeId);
-            
+
             entity.HasOne(e => e.Agent)
                 .WithMany(a => a.Runs)
                 .HasForeignKey(e => e.AgentId)
                 .OnDelete(DeleteBehavior.Restrict);
-                
+
             entity.HasOne(e => e.Deployment)
                 .WithMany(d => d.Runs)
                 .HasForeignKey(e => e.DepId)
                 .OnDelete(DeleteBehavior.SetNull);
-                
+
             entity.HasOne(e => e.Node)
                 .WithMany(n => n.Runs)
                 .HasForeignKey(e => e.NodeId)

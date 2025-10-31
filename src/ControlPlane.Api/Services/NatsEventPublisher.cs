@@ -37,20 +37,20 @@ public class NatsEventPublisher : INatsEventPublisher
 
         var subject = GetSubjectForEvent(@event);
         var json = JsonSerializer.Serialize(@event, @event.GetType(), _jsonOptions);
-        
+
         _logger.LogInformation("Publishing event {EventType} to subject {Subject}", @event.EventType, subject);
 
         try
         {
             var js = new NatsJSContext(_natsConnection);
             var ack = await js.PublishAsync(subject, json, cancellationToken: cancellationToken);
-            
-            _logger.LogDebug("Event published successfully. Stream: {Stream}, Sequence: {Sequence}", 
+
+            _logger.LogDebug("Event published successfully. Stream: {Stream}, Sequence: {Sequence}",
                 ack.Stream, ack.Seq);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to publish event {EventType} to subject {Subject}", 
+            _logger.LogError(ex, "Failed to publish event {EventType} to subject {Subject}",
                 @event.EventType, subject);
             throw;
         }
@@ -64,7 +64,7 @@ public class NatsEventPublisher : INatsEventPublisher
         try
         {
             var js = new NatsJSContext(_natsConnection);
-            
+
             // Define the stream configuration
             var streamConfig = new StreamConfig(
                 name: StreamName,

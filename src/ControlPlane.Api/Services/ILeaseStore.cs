@@ -10,17 +10,17 @@ public class Lease
     /// Unique identifier for the run being leased
     /// </summary>
     public required string RunId { get; set; }
-    
+
     /// <summary>
     /// Node ID that holds the lease
     /// </summary>
     public required string NodeId { get; set; }
-    
+
     /// <summary>
     /// When the lease was acquired
     /// </summary>
     public DateTime AcquiredAt { get; set; }
-    
+
     /// <summary>
     /// When the lease expires (UTC)
     /// </summary>
@@ -42,21 +42,21 @@ public interface ILeaseStore
     /// <param name="ttlSeconds">Time-to-live in seconds for the lease</param>
     /// <returns>True if lease was acquired, false if already exists</returns>
     Task<bool> AcquireLeaseAsync(string runId, string nodeId, int ttlSeconds);
-    
+
     /// <summary>
     /// Release a lease, allowing it to be acquired by another node.
     /// </summary>
     /// <param name="runId">The run ID to release</param>
     /// <returns>True if lease was released, false if it didn't exist</returns>
     Task<bool> ReleaseLeaseAsync(string runId);
-    
+
     /// <summary>
     /// Get the current lease for a run, if it exists and hasn't expired.
     /// </summary>
     /// <param name="runId">The run ID to check</param>
     /// <returns>The lease if it exists and is valid, null otherwise</returns>
     Task<Lease?> GetLeaseAsync(string runId);
-    
+
     /// <summary>
     /// Extend an existing lease by adding more time to its TTL.
     /// Used for heartbeat/keepalive scenarios.

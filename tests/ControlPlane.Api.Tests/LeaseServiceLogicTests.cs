@@ -20,7 +20,7 @@ public class LeaseServiceLogicTests
         _mockNodeStore = new Mock<INodeStore>();
         _mockLeaseStore = new Mock<ILeaseStore>();
         _mockLogger = new Mock<ILogger<LeaseServiceLogic>>();
-        
+
         _service = new LeaseServiceLogic(
             _mockRunStore.Object,
             _mockNodeStore.Object,
@@ -62,10 +62,10 @@ public class LeaseServiceLogicTests
 
         _mockRunStore.Setup(s => s.GetRunAsync(runId))
             .ReturnsAsync(run);
-        
+
         _mockRunStore.Setup(s => s.CompleteRunAsync(runId, It.IsAny<CompleteRunRequest>()))
             .ReturnsAsync(run);
-        
+
         _mockLeaseStore.Setup(s => s.ReleaseLeaseAsync(runId))
             .ReturnsAsync(true);
 
@@ -156,10 +156,10 @@ public class LeaseServiceLogicTests
 
         _mockRunStore.Setup(s => s.GetRunAsync(runId))
             .ReturnsAsync(run);
-        
+
         _mockRunStore.Setup(s => s.FailRunAsync(runId, It.IsAny<FailRunRequest>()))
             .ReturnsAsync(run);
-        
+
         _mockLeaseStore.Setup(s => s.ReleaseLeaseAsync(runId))
             .ReturnsAsync(true);
 
@@ -220,10 +220,10 @@ public class LeaseServiceLogicTests
 
         _mockRunStore.Setup(s => s.GetRunAsync(runId))
             .ReturnsAsync(run);
-        
+
         _mockRunStore.Setup(s => s.FailRunAsync(runId, It.IsAny<FailRunRequest>()))
             .ReturnsAsync(run);
-        
+
         _mockLeaseStore.Setup(s => s.ReleaseLeaseAsync(runId))
             .ReturnsAsync(true);
 

@@ -39,7 +39,7 @@ public interface IMetricsService
 public class MetricsService : IMetricsService
 {
     private const int NodeHeartbeatTimeoutSeconds = 60;
-    
+
     private readonly IRunStore _runStore;
     private readonly INodeStore _nodeStore;
     private readonly ILogger<MetricsService> _logger;
@@ -76,7 +76,7 @@ public class MetricsService : IMetricsService
             var nodes = _nodeStore.GetAllNodesAsync().ConfigureAwait(false).GetAwaiter().GetResult();
             var now = DateTime.UtcNow;
             // Consider a node active if it has sent a heartbeat within the timeout period
-            return nodes.Count(n => n.Status?.State == "active" && 
+            return nodes.Count(n => n.Status?.State == "active" &&
                                    (now - n.HeartbeatAt).TotalSeconds < NodeHeartbeatTimeoutSeconds);
         }
         catch (Exception ex)
@@ -161,7 +161,7 @@ public class MetricsService : IMetricsService
                 // Safe conversion with bounds checking
                 if (longSlots > int.MaxValue)
                 {
-                    _logger.LogWarning("Slot count {LongSlots} exceeds int.MaxValue, capping at {MaxValue}", 
+                    _logger.LogWarning("Slot count {LongSlots} exceeds int.MaxValue, capping at {MaxValue}",
                         longSlots, int.MaxValue);
                     return int.MaxValue;
                 }

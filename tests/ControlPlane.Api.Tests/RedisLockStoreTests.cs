@@ -72,7 +72,7 @@ public class RedisLockStoreTests : IAsyncLifetime
         var ttlSeconds = 30;
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => 
+        await Assert.ThrowsAsync<ArgumentException>(() =>
             _store!.AcquireLockAsync(lockKey, ownerId, ttlSeconds));
     }
 
@@ -85,7 +85,7 @@ public class RedisLockStoreTests : IAsyncLifetime
         var ttlSeconds = 30;
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => 
+        await Assert.ThrowsAsync<ArgumentException>(() =>
             _store!.AcquireLockAsync(lockKey, ownerId, ttlSeconds));
     }
 
@@ -97,9 +97,9 @@ public class RedisLockStoreTests : IAsyncLifetime
         var ownerId = "owner-1";
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => 
+        await Assert.ThrowsAsync<ArgumentException>(() =>
             _store!.AcquireLockAsync(lockKey, ownerId, 0));
-        await Assert.ThrowsAsync<ArgumentException>(() => 
+        await Assert.ThrowsAsync<ArgumentException>(() =>
             _store!.AcquireLockAsync(lockKey, ownerId, -1));
     }
 
@@ -160,7 +160,7 @@ public class RedisLockStoreTests : IAsyncLifetime
         var ownerId = "owner-1";
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => 
+        await Assert.ThrowsAsync<ArgumentException>(() =>
             _store!.ReleaseLockAsync(lockKey, ownerId));
     }
 
@@ -172,7 +172,7 @@ public class RedisLockStoreTests : IAsyncLifetime
         var ownerId = "";
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => 
+        await Assert.ThrowsAsync<ArgumentException>(() =>
             _store!.ReleaseLockAsync(lockKey, ownerId));
     }
 
@@ -212,7 +212,7 @@ public class RedisLockStoreTests : IAsyncLifetime
         var lockKey = "";
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => 
+        await Assert.ThrowsAsync<ArgumentException>(() =>
             _store!.IsLockedAsync(lockKey));
     }
 
@@ -293,7 +293,7 @@ public class RedisLockStoreTests : IAsyncLifetime
         var additionalSeconds = 10;
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => 
+        await Assert.ThrowsAsync<ArgumentException>(() =>
             _store!.ExtendLockAsync(lockKey, ownerId, additionalSeconds));
     }
 
@@ -306,7 +306,7 @@ public class RedisLockStoreTests : IAsyncLifetime
         var additionalSeconds = 10;
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => 
+        await Assert.ThrowsAsync<ArgumentException>(() =>
             _store!.ExtendLockAsync(lockKey, ownerId, additionalSeconds));
     }
 
@@ -318,9 +318,9 @@ public class RedisLockStoreTests : IAsyncLifetime
         var ownerId = "owner-1";
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => 
+        await Assert.ThrowsAsync<ArgumentException>(() =>
             _store!.ExtendLockAsync(lockKey, ownerId, 0));
-        await Assert.ThrowsAsync<ArgumentException>(() => 
+        await Assert.ThrowsAsync<ArgumentException>(() =>
             _store!.ExtendLockAsync(lockKey, ownerId, -1));
     }
 

@@ -10,7 +10,7 @@ public interface IAgentStore
     Task<Agent> CreateAgentAsync(CreateAgentRequest request);
     Task<Agent?> UpdateAgentAsync(string agentId, UpdateAgentRequest request);
     Task<bool> DeleteAgentAsync(string agentId);
-    
+
     // Version management
     Task<AgentVersionResponse> CreateVersionAsync(string agentId, CreateAgentVersionRequest request);
     Task<AgentVersionResponse?> GetVersionAsync(string agentId, string version);
@@ -102,7 +102,7 @@ public class InMemoryAgentStore : IAgentStore
         }
 
         var versions = _versions.GetOrAdd(agentId, _ => new List<AgentVersionResponse>());
-        
+
         if (versions.Any(v => v.Version == request.Version))
         {
             throw new InvalidOperationException($"Version {request.Version} already exists for agent {agentId}");

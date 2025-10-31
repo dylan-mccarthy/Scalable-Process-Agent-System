@@ -65,7 +65,7 @@ public class RedisLeaseStore : ILeaseStore
             return null;
 
         var lease = JsonSerializer.Deserialize<Lease>(value.ToString());
-        
+
         // Double-check expiration (Redis should auto-expire, but defensive check)
         if (lease != null && lease.ExpiresAt < DateTime.UtcNow)
             return null;
@@ -81,7 +81,7 @@ public class RedisLeaseStore : ILeaseStore
             throw new ArgumentException("Additional seconds must be greater than 0", nameof(additionalSeconds));
 
         var key = GetLeaseKey(runId);
-        
+
         // Use Lua script to atomically check, update, and extend the lease
         // This prevents race conditions between checking TTL and updating the value
         const string script = @"

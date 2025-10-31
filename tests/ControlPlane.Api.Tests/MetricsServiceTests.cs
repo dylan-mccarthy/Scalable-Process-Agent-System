@@ -37,7 +37,7 @@ public class MetricsServiceTests
         var run1 = await runStore.CreateRunAsync("agent1", "1.0.0");
         var run2 = await runStore.CreateRunAsync("agent2", "1.0.0");
         var run3 = await runStore.CreateRunAsync("agent3", "1.0.0");
-        
+
         // Update statuses
         await runStore.CompleteRunAsync(run1.RunId, new CompleteRunRequest
         {

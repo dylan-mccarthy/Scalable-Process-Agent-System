@@ -89,7 +89,7 @@ public class AgentRuntimeService : IAgentRuntime
                 result.Metadata = context;
             }
 
-            _logger.LogInformation("Agent execution completed successfully in {Duration}ms", 
+            _logger.LogInformation("Agent execution completed successfully in {Duration}ms",
                 stopwatch.ElapsedMilliseconds);
         }
         catch (Exception ex)
@@ -156,7 +156,7 @@ public class AgentRuntimeService : IAgentRuntime
 public class AgentRuntimeOptions
 {
     public const string DefaultModelValue = "gpt-4";
-    
+
     public string? DefaultModel { get; set; } = DefaultModelValue;
     public double DefaultTemperature { get; set; } = 0.7;
     public int MaxTokens { get; set; } = 4000;
