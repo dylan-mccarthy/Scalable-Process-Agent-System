@@ -62,9 +62,24 @@ public class MetricsService : IMetricsService
             var runs = _runStore.GetAllRunsAsync().ConfigureAwait(false).GetAwaiter().GetResult();
             return runs.Count(r => r.Status == "running" || r.Status == "pending");
         }
+        catch (Npgsql.NpgsqlException npgEx)
+        {
+            _logger.LogError(npgEx, "Database error retrieving active runs count");
+            return 0;
+        }
+        catch (TimeoutException timeoutEx)
+        {
+            _logger.LogWarning(timeoutEx, "Timeout retrieving active runs count");
+            return 0;
+        }
+        catch (InvalidOperationException invalidOpEx)
+        {
+            _logger.LogError(invalidOpEx, "Invalid operation retrieving active runs count");
+            return 0;
+        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving active runs count");
+            _logger.LogError(ex, "Unexpected error retrieving active runs count");
             return 0;
         }
     }
@@ -79,9 +94,24 @@ public class MetricsService : IMetricsService
             return nodes.Count(n => n.Status?.State == "active" &&
                                    (now - n.HeartbeatAt).TotalSeconds < NodeHeartbeatTimeoutSeconds);
         }
+        catch (Npgsql.NpgsqlException npgEx)
+        {
+            _logger.LogError(npgEx, "Database error retrieving active nodes count");
+            return 0;
+        }
+        catch (TimeoutException timeoutEx)
+        {
+            _logger.LogWarning(timeoutEx, "Timeout retrieving active nodes count");
+            return 0;
+        }
+        catch (InvalidOperationException invalidOpEx)
+        {
+            _logger.LogError(invalidOpEx, "Invalid operation retrieving active nodes count");
+            return 0;
+        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving active nodes count");
+            _logger.LogError(ex, "Unexpected error retrieving active nodes count");
             return 0;
         }
     }
@@ -97,9 +127,24 @@ public class MetricsService : IMetricsService
                 .Where(n => n.Status?.State == "active" && (now - n.HeartbeatAt).TotalSeconds < NodeHeartbeatTimeoutSeconds)
                 .Sum(n => GetNodeTotalSlots(n));
         }
+        catch (Npgsql.NpgsqlException npgEx)
+        {
+            _logger.LogError(npgEx, "Database error retrieving total slots");
+            return 0;
+        }
+        catch (TimeoutException timeoutEx)
+        {
+            _logger.LogWarning(timeoutEx, "Timeout retrieving total slots");
+            return 0;
+        }
+        catch (InvalidOperationException invalidOpEx)
+        {
+            _logger.LogError(invalidOpEx, "Invalid operation retrieving total slots");
+            return 0;
+        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving total slots");
+            _logger.LogError(ex, "Unexpected error retrieving total slots");
             return 0;
         }
     }
@@ -114,9 +159,24 @@ public class MetricsService : IMetricsService
                 .Where(n => n.Status?.State == "active" && (now - n.HeartbeatAt).TotalSeconds < NodeHeartbeatTimeoutSeconds)
                 .Sum(n => n.Status?.ActiveRuns ?? 0);
         }
+        catch (Npgsql.NpgsqlException npgEx)
+        {
+            _logger.LogError(npgEx, "Database error retrieving used slots");
+            return 0;
+        }
+        catch (TimeoutException timeoutEx)
+        {
+            _logger.LogWarning(timeoutEx, "Timeout retrieving used slots");
+            return 0;
+        }
+        catch (InvalidOperationException invalidOpEx)
+        {
+            _logger.LogError(invalidOpEx, "Invalid operation retrieving used slots");
+            return 0;
+        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving used slots");
+            _logger.LogError(ex, "Unexpected error retrieving used slots");
             return 0;
         }
     }
@@ -131,9 +191,24 @@ public class MetricsService : IMetricsService
                 .Where(n => n.Status?.State == "active" && (now - n.HeartbeatAt).TotalSeconds < NodeHeartbeatTimeoutSeconds)
                 .Sum(n => n.Status?.AvailableSlots ?? 0);
         }
+        catch (Npgsql.NpgsqlException npgEx)
+        {
+            _logger.LogError(npgEx, "Database error retrieving available slots");
+            return 0;
+        }
+        catch (TimeoutException timeoutEx)
+        {
+            _logger.LogWarning(timeoutEx, "Timeout retrieving available slots");
+            return 0;
+        }
+        catch (InvalidOperationException invalidOpEx)
+        {
+            _logger.LogError(invalidOpEx, "Invalid operation retrieving available slots");
+            return 0;
+        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving available slots");
+            _logger.LogError(ex, "Unexpected error retrieving available slots");
             return 0;
         }
     }
@@ -183,8 +258,14 @@ public class MetricsService : IMetricsService
                     _logger.LogWarning(ex, "Slot count conversion overflow, using 0");
                     return 0;
                 }
-                catch
+                catch (FormatException formatEx)
                 {
+                    _logger.LogWarning(formatEx, "Invalid slot count format: {Value}, using 0", slotsObj);
+                    return 0;
+                }
+                catch (InvalidCastException castEx)
+                {
+                    _logger.LogWarning(castEx, "Cannot cast slot count to int: {Value}, using 0", slotsObj);
                     return 0;
                 }
             }

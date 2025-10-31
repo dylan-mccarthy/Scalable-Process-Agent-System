@@ -1,0 +1,1265 @@
+<Objs Version="1.1.0.1" xmlns="http://schemas.microsoft.com/powershell/2004/04">
+  <Obj RefId="0">
+    <TN RefId="0">
+      <T>System.Management.Automation.PSCustomObject</T>
+      <T>System.Object</T>
+    </TN>
+    <MS>
+      <S N="file">tests/E2E.Tests/ChaosTests.cs</S>
+      <I64 N="number">363</I64>
+      <S N="rule">cs/linq/missed-select</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="1">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/E2E.Tests/InvoiceProcessingE2ETests.cs</S>
+      <I64 N="number">362</I64>
+      <S N="rule">cs/catch-of-all-exceptions</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="2">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/ControlPlane.Api.Tests/MTlsIntegrationTests.cs</S>
+      <I64 N="number">360</I64>
+      <S N="rule">cs/catch-of-all-exceptions</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="3">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/Node.Runtime/Program.cs</S>
+      <I64 N="number">359</I64>
+      <S N="rule">cs/catch-of-all-exceptions</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="4">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/Node.Runtime/Program.cs</S>
+      <I64 N="number">358</I64>
+      <S N="rule">cs/catch-of-all-exceptions</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="5">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/ControlPlane.Api.Tests/MTlsIntegrationTests.cs</S>
+      <I64 N="number">357</I64>
+      <S N="rule">cs/nested-if-statements</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="6">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/Node.Runtime/Program.cs</S>
+      <I64 N="number">356</I64>
+      <S N="rule">cs/nested-if-statements</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="7">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/ControlPlane.Api.Tests/MTlsIntegrationTests.cs</S>
+      <I64 N="number">355</I64>
+      <S N="rule">cs/path-combine</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="8">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/ControlPlane.Api.Tests/MTlsIntegrationTests.cs</S>
+      <I64 N="number">354</I64>
+      <S N="rule">cs/path-combine</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="9">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/ControlPlane.Api.Tests/MTlsIntegrationTests.cs</S>
+      <I64 N="number">353</I64>
+      <S N="rule">cs/path-combine</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="10">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/ControlPlane.Api.Tests/MTlsIntegrationTests.cs</S>
+      <I64 N="number">352</I64>
+      <S N="rule">cs/path-combine</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="11">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/ControlPlane.Api.Tests/MTlsIntegrationTests.cs</S>
+      <I64 N="number">351</I64>
+      <S N="rule">cs/path-combine</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="12">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/ControlPlane.Api.Tests/MTlsIntegrationTests.cs</S>
+      <I64 N="number">350</I64>
+      <S N="rule">cs/path-combine</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="13">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/ControlPlane.Api.Tests/MTlsIntegrationTests.cs</S>
+      <I64 N="number">349</I64>
+      <S N="rule">cs/path-combine</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="14">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/ControlPlane.Api.Tests/MTlsIntegrationTests.cs</S>
+      <I64 N="number">348</I64>
+      <S N="rule">cs/path-combine</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="15">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/ControlPlane.Api.Tests/MTlsIntegrationTests.cs</S>
+      <I64 N="number">347</I64>
+      <S N="rule">cs/path-combine</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="16">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/ControlPlane.Api.Tests/MTlsIntegrationTests.cs</S>
+      <I64 N="number">346</I64>
+      <S N="rule">cs/path-combine</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="17">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/ControlPlane.Api.Tests/MTlsIntegrationTests.cs</S>
+      <I64 N="number">345</I64>
+      <S N="rule">cs/path-combine</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="18">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/ControlPlane.Api.Tests/MTlsIntegrationTests.cs</S>
+      <I64 N="number">344</I64>
+      <S N="rule">cs/path-combine</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="19">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/ControlPlane.Api.Tests/MTlsIntegrationTests.cs</S>
+      <I64 N="number">343</I64>
+      <S N="rule">cs/path-combine</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="20">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/ControlPlane.Api.Tests/MTlsIntegrationTests.cs</S>
+      <I64 N="number">342</I64>
+      <S N="rule">cs/path-combine</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="21">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/ControlPlane.Api.Tests/MTlsIntegrationTests.cs</S>
+      <I64 N="number">341</I64>
+      <S N="rule">cs/path-combine</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="22">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/Node.Runtime/Program.cs</S>
+      <I64 N="number">340</I64>
+      <S N="rule">cs/local-not-disposed</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="23">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/Node.Runtime/Program.cs</S>
+      <I64 N="number">339</I64>
+      <S N="rule">cs/linq/missed-where</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="24">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/Node.Runtime/Services/MessageProcessingService.cs</S>
+      <I64 N="number">338</I64>
+      <S N="rule">cs/catch-of-all-exceptions</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="25">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/Node.Runtime/Services/MessageProcessingService.cs</S>
+      <I64 N="number">337</I64>
+      <S N="rule">cs/catch-of-all-exceptions</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="26">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/Node.Runtime/Services/MessageProcessingService.cs</S>
+      <I64 N="number">336</I64>
+      <S N="rule">cs/catch-of-all-exceptions</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="27">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/Node.Runtime/Services/MessageProcessingService.cs</S>
+      <I64 N="number">335</I64>
+      <S N="rule">cs/catch-of-all-exceptions</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="28">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/Node.Runtime.Tests/Services/MessageProcessingServiceTests.cs</S>
+      <I64 N="number">334</I64>
+      <S N="rule">cs/local-not-disposed</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="29">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/Node.Runtime.Tests/Services/MessageProcessingServiceTests.cs</S>
+      <I64 N="number">333</I64>
+      <S N="rule">cs/local-not-disposed</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="30">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/Node.Runtime.Tests/Services/MessageProcessingServiceTests.cs</S>
+      <I64 N="number">332</I64>
+      <S N="rule">cs/local-not-disposed</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="31">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/Node.Runtime.Tests/Services/MessageProcessingServiceTests.cs</S>
+      <I64 N="number">331</I64>
+      <S N="rule">cs/local-not-disposed</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="32">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/Node.Runtime.Tests/Services/MessageProcessingServiceTests.cs</S>
+      <I64 N="number">330</I64>
+      <S N="rule">cs/local-not-disposed</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="33">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/Node.Runtime.Tests/Services/MessageProcessingServiceTests.cs</S>
+      <I64 N="number">329</I64>
+      <S N="rule">cs/local-not-disposed</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="34">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/Node.Runtime.Tests/Services/MessageProcessingServiceTests.cs</S>
+      <I64 N="number">328</I64>
+      <S N="rule">cs/local-not-disposed</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="35">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/Node.Runtime.Tests/Services/MessageProcessingServiceTests.cs</S>
+      <I64 N="number">327</I64>
+      <S N="rule">cs/local-not-disposed</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="36">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/Node.Runtime.Tests/Services/MessageProcessingServiceTests.cs</S>
+      <I64 N="number">326</I64>
+      <S N="rule">cs/local-not-disposed</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="37">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/Node.Runtime.Tests/Services/MessageProcessingServiceTests.cs</S>
+      <I64 N="number">325</I64>
+      <S N="rule">cs/local-not-disposed</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="38">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/Node.Runtime.Tests/Integration/DLQHandlingIntegrationTests.cs</S>
+      <I64 N="number">324</I64>
+      <S N="rule">cs/local-not-disposed</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="39">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/Node.Runtime.Tests/Integration/DLQHandlingIntegrationTests.cs</S>
+      <I64 N="number">323</I64>
+      <S N="rule">cs/local-not-disposed</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="40">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/Node.Runtime.Tests/Integration/DLQHandlingIntegrationTests.cs</S>
+      <I64 N="number">322</I64>
+      <S N="rule">cs/local-not-disposed</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="41">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/Node.Runtime.Tests/Integration/DLQHandlingIntegrationTests.cs</S>
+      <I64 N="number">321</I64>
+      <S N="rule">cs/local-not-disposed</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="42">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/Node.Runtime.Tests/Integration/DLQHandlingIntegrationTests.cs</S>
+      <I64 N="number">320</I64>
+      <S N="rule">cs/local-not-disposed</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="43">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/Node.Runtime.Tests/InvoiceClassifierIntegrationTests.cs</S>
+      <I64 N="number">319</I64>
+      <S N="rule">cs/useless-assignment-to-local</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="44">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/Node.Runtime.Tests/InvoiceClassifierIntegrationTests.cs</S>
+      <I64 N="number">318</I64>
+      <S N="rule">cs/useless-assignment-to-local</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="45">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/Node.Runtime.Tests/InvoiceClassifierIntegrationTests.cs</S>
+      <I64 N="number">317</I64>
+      <S N="rule">cs/path-combine</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="46">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/Node.Runtime.Tests/InvoiceClassifierIntegrationTests.cs</S>
+      <I64 N="number">316</I64>
+      <S N="rule">cs/path-combine</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="47">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/Node.Runtime.Tests/InvoiceClassifierIntegrationTests.cs</S>
+      <I64 N="number">315</I64>
+      <S N="rule">cs/local-not-disposed</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="48">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/Node.Runtime/Connectors/HttpOutputConnector.cs</S>
+      <I64 N="number">314</I64>
+      <S N="rule">cs/catch-of-all-exceptions</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="49">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/Node.Runtime/Connectors/HttpOutputConnector.cs</S>
+      <I64 N="number">313</I64>
+      <S N="rule">cs/useless-assignment-to-local</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="50">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/Node.Runtime.Tests/Connectors/HttpOutputConnectorTests.cs</S>
+      <I64 N="number">312</I64>
+      <S N="rule">cs/local-not-disposed</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="51">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/ControlPlane.Api.Tests/InvoiceClassifierAgentTests.cs</S>
+      <I64 N="number">311</I64>
+      <S N="rule">cs/inefficient-containskey</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="52">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/ControlPlane.Api.Tests/InvoiceClassifierAgentTests.cs</S>
+      <I64 N="number">310</I64>
+      <S N="rule">cs/inefficient-containskey</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="53">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/ControlPlane.Api.Tests/InvoiceClassifierAgentTests.cs</S>
+      <I64 N="number">309</I64>
+      <S N="rule">cs/inefficient-containskey</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="54">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/ControlPlane.Api.Tests/InvoiceClassifierAgentTests.cs</S>
+      <I64 N="number">308</I64>
+      <S N="rule">cs/inefficient-containskey</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="55">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/ControlPlane.Api.Tests/InvoiceClassifierAgentTests.cs</S>
+      <I64 N="number">307</I64>
+      <S N="rule">cs/inefficient-containskey</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="56">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/ControlPlane.Api.Tests/InvoiceClassifierAgentTests.cs</S>
+      <I64 N="number">306</I64>
+      <S N="rule">cs/inefficient-containskey</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="57">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/ControlPlane.Api.Tests/InvoiceClassifierAgentTests.cs</S>
+      <I64 N="number">305</I64>
+      <S N="rule">cs/inefficient-containskey</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="58">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/ControlPlane.Api.Tests/InvoiceClassifierAgentTests.cs</S>
+      <I64 N="number">304</I64>
+      <S N="rule">cs/inefficient-containskey</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="59">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/ControlPlane.Api.Tests/InvoiceClassifierAgentTests.cs</S>
+      <I64 N="number">303</I64>
+      <S N="rule">cs/inefficient-containskey</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="60">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/ControlPlane.Api.Tests/InvoiceClassifierAgentTests.cs</S>
+      <I64 N="number">302</I64>
+      <S N="rule">cs/inefficient-containskey</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="61">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/ControlPlane.Api.Tests/InvoiceClassifierAgentTests.cs</S>
+      <I64 N="number">301</I64>
+      <S N="rule">cs/inefficient-containskey</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="62">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/Node.Runtime.Tests/TelemetryConfigTests.cs</S>
+      <I64 N="number">300</I64>
+      <S N="rule">cs/dereferenced-value-may-be-null</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="63">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/Node.Runtime.Tests/TelemetryConfigTests.cs</S>
+      <I64 N="number">299</I64>
+      <S N="rule">cs/dereferenced-value-may-be-null</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="64">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/Node.Runtime.Tests/TelemetryConfigTests.cs</S>
+      <I64 N="number">298</I64>
+      <S N="rule">cs/dereferenced-value-may-be-null</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="65">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/Node.Runtime.Tests/TelemetryConfigTests.cs</S>
+      <I64 N="number">297</I64>
+      <S N="rule">cs/dereferenced-value-may-be-null</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="66">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/Node.Runtime/Connectors/ServiceBusInputConnector.cs</S>
+      <I64 N="number">296</I64>
+      <S N="rule">cs/catch-of-all-exceptions</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="67">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/Node.Runtime/Connectors/ServiceBusInputConnector.cs</S>
+      <I64 N="number">295</I64>
+      <S N="rule">cs/catch-of-all-exceptions</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="68">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/Node.Runtime/Connectors/ServiceBusInputConnector.cs</S>
+      <I64 N="number">294</I64>
+      <S N="rule">cs/catch-of-all-exceptions</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="69">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/Node.Runtime/Connectors/ServiceBusInputConnector.cs</S>
+      <I64 N="number">293</I64>
+      <S N="rule">cs/linq/missed-select</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="70">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/ControlPlane.Api/Services/MetricsService.cs</S>
+      <I64 N="number">292</I64>
+      <S N="rule">cs/catch-of-all-exceptions</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="71">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/ControlPlane.Api/Services/MetricsService.cs</S>
+      <I64 N="number">291</I64>
+      <S N="rule">cs/catch-of-all-exceptions</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="72">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/ControlPlane.Api/Services/MetricsService.cs</S>
+      <I64 N="number">290</I64>
+      <S N="rule">cs/catch-of-all-exceptions</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="73">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/ControlPlane.Api/Services/MetricsService.cs</S>
+      <I64 N="number">289</I64>
+      <S N="rule">cs/catch-of-all-exceptions</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="74">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/ControlPlane.Api/Services/MetricsService.cs</S>
+      <I64 N="number">288</I64>
+      <S N="rule">cs/catch-of-all-exceptions</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="75">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/ControlPlane.Api/Services/MetricsService.cs</S>
+      <I64 N="number">287</I64>
+      <S N="rule">cs/catch-of-all-exceptions</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="76">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/ControlPlane.Api.Tests/MetricsServiceTests.cs</S>
+      <I64 N="number">286</I64>
+      <S N="rule">cs/useless-assignment-to-local</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="77">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/ControlPlane.Api.Tests/MetricsServiceTests.cs</S>
+      <I64 N="number">285</I64>
+      <S N="rule">cs/useless-assignment-to-local</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="78">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/Node.Runtime/Services/SandboxExecutorService.cs</S>
+      <I64 N="number">284</I64>
+      <S N="rule">cs/catch-of-all-exceptions</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="79">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/Node.Runtime/Services/SandboxExecutorService.cs</S>
+      <I64 N="number">283</I64>
+      <S N="rule">cs/catch-of-all-exceptions</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="80">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/Agent.Host/Program.cs</S>
+      <I64 N="number">282</I64>
+      <S N="rule">cs/catch-of-all-exceptions</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="81">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/Agent.Host/Program.cs</S>
+      <I64 N="number">281</I64>
+      <S N="rule">cs/catch-of-all-exceptions</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="82">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/Node.Runtime/Services/SandboxExecutorService.cs</S>
+      <I64 N="number">280</I64>
+      <S N="rule">cs/missed-using-statement</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="83">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/Agent.Host/Program.cs</S>
+      <I64 N="number">279</I64>
+      <S N="rule">cs/useless-assignment-to-local</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="84">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/Node.Runtime/Services/SandboxExecutorService.cs</S>
+      <I64 N="number">278</I64>
+      <S N="rule">cs/path-combine</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="85">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/Node.Runtime/Services/SandboxExecutorService.cs</S>
+      <I64 N="number">277</I64>
+      <S N="rule">cs/path-combine</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="86">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/Node.Runtime/Services/SandboxExecutorService.cs</S>
+      <I64 N="number">276</I64>
+      <S N="rule">cs/path-combine</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="87">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/Node.Runtime/Services/SandboxExecutorService.cs</S>
+      <I64 N="number">275</I64>
+      <S N="rule">cs/path-combine</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="88">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/Node.Runtime/Services/SandboxExecutorService.cs</S>
+      <I64 N="number">274</I64>
+      <S N="rule">cs/path-combine</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="89">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/Node.Runtime.Tests/Services/SandboxExecutorServiceTests.cs</S>
+      <I64 N="number">273</I64>
+      <S N="rule">cs/local-not-disposed</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="90">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/Node.Runtime/Services/SandboxExecutorService.cs</S>
+      <I64 N="number">272</I64>
+      <S N="rule">cs/linq/missed-select</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="91">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/ControlPlane.Api.Tests/DeploymentEndpointsTests.cs</S>
+      <I64 N="number">271</I64>
+      <S N="rule">cs/inefficient-containskey</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="92">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/ControlPlane.Api.Tests/DeploymentEndpointsTests.cs</S>
+      <I64 N="number">270</I64>
+      <S N="rule">cs/local-not-disposed</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="93">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/ControlPlane.Api.Tests/NodeRegistrationIntegrationTests.cs</S>
+      <I64 N="number">269</I64>
+      <S N="rule">cs/local-not-disposed</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="94">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/ControlPlane.Api.Tests/NodeRegistrationIntegrationTests.cs</S>
+      <I64 N="number">268</I64>
+      <S N="rule">cs/linq/missed-select</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="95">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/Node.Runtime/Services/LeasePullService.cs</S>
+      <I64 N="number">267</I64>
+      <S N="rule">cs/catch-of-all-exceptions</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="96">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/Node.Runtime.Tests/Services/LeasePullServiceTests.cs</S>
+      <I64 N="number">266</I64>
+      <S N="rule">cs/local-not-disposed</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="97">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/Node.Runtime.Tests/Services/LeasePullServiceTests.cs</S>
+      <I64 N="number">265</I64>
+      <S N="rule">cs/local-not-disposed</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="98">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/Node.Runtime/Services/LeasePullService.cs</S>
+      <I64 N="number">264</I64>
+      <S N="rule">cs/useless-cast-to-self</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="99">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/Node.Runtime/Services/LeasePullService.cs</S>
+      <I64 N="number">263</I64>
+      <S N="rule">cs/useless-cast-to-self</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="100">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/Node.Runtime/Services/LeasePullService.cs</S>
+      <I64 N="number">262</I64>
+      <S N="rule">cs/useless-cast-to-self</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="101">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/Node.Runtime/Worker.cs</S>
+      <I64 N="number">261</I64>
+      <S N="rule">cs/catch-of-all-exceptions</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="102">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/Node.Runtime/Services/LeasePullService.cs</S>
+      <I64 N="number">260</I64>
+      <S N="rule">cs/catch-of-all-exceptions</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="103">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/Node.Runtime/Services/LeasePullService.cs</S>
+      <I64 N="number">259</I64>
+      <S N="rule">cs/catch-of-all-exceptions</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="104">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/Node.Runtime/Services/LeasePullService.cs</S>
+      <I64 N="number">258</I64>
+      <S N="rule">cs/catch-of-all-exceptions</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="105">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/Node.Runtime/Services/NodeRegistrationService.cs</S>
+      <I64 N="number">256</I64>
+      <S N="rule">cs/catch-of-all-exceptions</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="106">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/Node.Runtime/Services/NodeRegistrationService.cs</S>
+      <I64 N="number">255</I64>
+      <S N="rule">cs/catch-of-all-exceptions</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="107">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/Node.Runtime/Services/AgentExecutorService.cs</S>
+      <I64 N="number">254</I64>
+      <S N="rule">cs/catch-of-all-exceptions</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="108">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/ControlPlane.Api/Services/LeaseServiceLogic.cs</S>
+      <I64 N="number">253</I64>
+      <S N="rule">cs/catch-of-all-exceptions</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="109">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/ControlPlane.Api/Services/LeaseServiceLogic.cs</S>
+      <I64 N="number">252</I64>
+      <S N="rule">cs/catch-of-all-exceptions</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="110">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/ControlPlane.Api/Services/LeaseServiceLogic.cs</S>
+      <I64 N="number">251</I64>
+      <S N="rule">cs/catch-of-all-exceptions</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="111">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/ControlPlane.Api/Grpc/LeaseServiceImpl.cs</S>
+      <I64 N="number">250</I64>
+      <S N="rule">cs/catch-of-all-exceptions</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="112">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/ControlPlane.Api/Grpc/LeaseServiceImpl.cs</S>
+      <I64 N="number">249</I64>
+      <S N="rule">cs/catch-of-all-exceptions</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="113">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/ControlPlane.Api/Grpc/LeaseServiceImpl.cs</S>
+      <I64 N="number">248</I64>
+      <S N="rule">cs/catch-of-all-exceptions</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="114">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/ControlPlane.Api/Grpc/LeaseServiceImpl.cs</S>
+      <I64 N="number">247</I64>
+      <S N="rule">cs/catch-of-all-exceptions</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="115">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/ControlPlane.Api/AgentRuntime/AgentRuntimeService.cs</S>
+      <I64 N="number">246</I64>
+      <S N="rule">cs/catch-of-all-exceptions</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="116">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/ControlPlane.Api/AgentRuntime/AgentRuntimeService.cs</S>
+      <I64 N="number">245</I64>
+      <S N="rule">cs/catch-of-all-exceptions</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="117">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/ControlPlane.Api.Tests/LeaseServiceLogicTests.cs</S>
+      <I64 N="number">202</I64>
+      <S N="rule">cs/useless-upcast</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="118">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/ControlPlane.Api.Tests/LeaseServiceLogicTests.cs</S>
+      <I64 N="number">201</I64>
+      <S N="rule">cs/useless-upcast</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="119">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/ControlPlane.Api.Tests/LeaseServiceLogicTests.cs</S>
+      <I64 N="number">200</I64>
+      <S N="rule">cs/useless-upcast</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="120">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/ControlPlane.Api/Services/LeaseServiceLogic.cs</S>
+      <I64 N="number">198</I64>
+      <S N="rule">cs/useless-assignment-to-local</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="121">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/ControlPlane.Api/Services/NatsEventPublisher.cs</S>
+      <I64 N="number">197</I64>
+      <S N="rule">cs/useless-assignment-to-local</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="122">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/ControlPlane.Api/Services/LeastLoadedScheduler.cs</S>
+      <I64 N="number">194</I64>
+      <S N="rule">cs/inefficient-containskey</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="123">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/ControlPlane.Api/Services/LeastLoadedScheduler.cs</S>
+      <I64 N="number">193</I64>
+      <S N="rule">cs/inefficient-containskey</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="124">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/ControlPlane.Api/Services/LeastLoadedScheduler.cs</S>
+      <I64 N="number">192</I64>
+      <S N="rule">cs/inefficient-containskey</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="125">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">src/ControlPlane.Api/Services/LeastLoadedScheduler.cs</S>
+      <I64 N="number">191</I64>
+      <S N="rule">cs/inefficient-containskey</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="126">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/Node.Runtime.Tests/Services/NodeRegistrationServiceTests.cs</S>
+      <I64 N="number">172</I64>
+      <S N="rule">cs/local-not-disposed</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="127">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/Node.Runtime.Tests/Services/NodeRegistrationServiceTests.cs</S>
+      <I64 N="number">171</I64>
+      <S N="rule">cs/local-not-disposed</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="128">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/Node.Runtime.Tests/Services/NodeRegistrationServiceTests.cs</S>
+      <I64 N="number">170</I64>
+      <S N="rule">cs/local-not-disposed</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="129">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/Node.Runtime.Tests/Services/NodeRegistrationServiceTests.cs</S>
+      <I64 N="number">169</I64>
+      <S N="rule">cs/local-not-disposed</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="130">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/ControlPlane.Api.Tests/SchedulerIntegrationTests.cs</S>
+      <I64 N="number">168</I64>
+      <S N="rule">cs/local-not-disposed</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="131">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/ControlPlane.Api.Tests/RunEndpointsTests.cs</S>
+      <I64 N="number">167</I64>
+      <S N="rule">cs/local-not-disposed</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="132">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/ControlPlane.Api.Tests/NodeEndpointsTests.cs</S>
+      <I64 N="number">166</I64>
+      <S N="rule">cs/local-not-disposed</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="133">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/ControlPlane.Api.Tests/NatsEventPublisherTests.cs</S>
+      <I64 N="number">165</I64>
+      <S N="rule">cs/local-not-disposed</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="134">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/ControlPlane.Api.Tests/LeaseServiceLogicTests.cs</S>
+      <I64 N="number">164</I64>
+      <S N="rule">cs/local-not-disposed</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="135">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/ControlPlane.Api.Tests/LeaseServiceLogicTests.cs</S>
+      <I64 N="number">163</I64>
+      <S N="rule">cs/local-not-disposed</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="136">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/ControlPlane.Api.Tests/AgentVersioningEndpointsTests.cs</S>
+      <I64 N="number">162</I64>
+      <S N="rule">cs/local-not-disposed</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="137">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/ControlPlane.Api.Tests/AuthenticationTests.cs</S>
+      <I64 N="number">161</I64>
+      <S N="rule">cs/local-not-disposed</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="138">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/ControlPlane.Api.Tests/AuthenticationTests.cs</S>
+      <I64 N="number">160</I64>
+      <S N="rule">cs/local-not-disposed</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+  <Obj RefId="139">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="file">tests/ControlPlane.Api.Tests/AgentEndpointsTests.cs</S>
+      <I64 N="number">159</I64>
+      <S N="rule">cs/local-not-disposed</S>
+      <S N="state">open</S>
+    </MS>
+  </Obj>
+</Objs>
