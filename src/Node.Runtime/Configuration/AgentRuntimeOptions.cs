@@ -44,4 +44,38 @@ public class AgentRuntimeOptions
     /// Default temperature for model inference.
     /// </summary>
     public double DefaultTemperature { get; set; } = DefaultTemperatureValue;
+
+    /// <summary>
+    /// Azure AI Foundry configuration.
+    /// </summary>
+    public AzureAIFoundryOptions? AzureAIFoundry { get; set; }
+}
+
+/// <summary>
+/// Configuration options for Azure AI Foundry integration.
+/// </summary>
+public class AzureAIFoundryOptions
+{
+    /// <summary>
+    /// Azure AI Foundry endpoint URL.
+    /// Example: https://my-resource.services.ai.azure.com/models
+    /// </summary>
+    public string? Endpoint { get; set; }
+
+    /// <summary>
+    /// API key for authentication. If not provided, DefaultAzureCredential will be used.
+    /// </summary>
+    public string? ApiKey { get; set; }
+
+    /// <summary>
+    /// Model deployment name to use for chat completions.
+    /// This should match the deployment name in your Azure AI Foundry project.
+    /// </summary>
+    public string? DeploymentName { get; set; }
+
+    /// <summary>
+    /// Whether to use managed identity authentication instead of API key.
+    /// When true, DefaultAzureCredential will be used.
+    /// </summary>
+    public bool UseManagedIdentity { get; set; } = false;
 }
