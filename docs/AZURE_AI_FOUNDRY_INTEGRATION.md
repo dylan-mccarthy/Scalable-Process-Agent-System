@@ -45,7 +45,7 @@ az cognitiveservices account create \
    - Model: gpt-4o-mini (or your preferred model)
    - Deployment name: gpt-4o-mini
    - Version: Latest
-4. Note the endpoint URL: `https://your-resource.services.ai.azure.com/models`
+4. Note the endpoint URL: `https://your-resource.openai.azure.com/`
 
 ### 2. Node Runtime Configuration
 
@@ -61,7 +61,7 @@ Update `appsettings.json` in the Node.Runtime project:
     "MaxTokens": 4000,
     "MaxDurationSeconds": 60,
     "AzureAIFoundry": {
-      "Endpoint": "https://your-resource.services.ai.azure.com/models",
+      "Endpoint": "https://your-resource.openai.azure.com/",
       "DeploymentName": "gpt-4o-mini",
       "ApiKey": "your-api-key-here",
       "UseManagedIdentity": false
@@ -95,7 +95,7 @@ Update `appsettings.json` in the Node.Runtime project:
     "MaxTokens": 4000,
     "MaxDurationSeconds": 60,
     "AzureAIFoundry": {
-      "Endpoint": "https://your-resource.services.ai.azure.com/models",
+      "Endpoint": "https://your-resource.openai.azure.com/",
       "DeploymentName": "gpt-4o-mini",
       "UseManagedIdentity": true
     }
