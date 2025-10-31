@@ -275,10 +275,48 @@ dotnet test --verbosity normal
 }
 ```
 
+### Deployments
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/v1/deployments` | List all deployments |
+| GET | `/v1/deployments/{depId}` | Get a specific deployment |
+| GET | `/v1/agents/{agentId}/deployments` | Get deployments for an agent |
+| POST | `/v1/deployments` | Create a new deployment |
+| PUT | `/v1/deployments/{depId}` | Update deployment status |
+| DELETE | `/v1/deployments/{depId}` | Delete a deployment |
+
+**Create Deployment Request:**
+```json
+{
+  "agentId": "agent-123",
+  "version": "1.0.0",
+  "env": "production",
+  "target": {
+    "replicas": 3,
+    "placement": {
+      "region": "us-east-1",
+      "environment": "production"
+    }
+  }
+}
+```
+
+**Update Deployment Status Request:**
+```json
+{
+  "status": {
+    "state": "active",
+    "readyReplicas": 3,
+    "message": "All replicas ready"
+  }
+}
+```
+
 ## Architecture
 
 This is an ASP.NET Core Minimal API implementation using:
-- **Models**: Define the data structures for Agents, Nodes, and Runs
+- **Models**: Define the data structures for Agents, Nodes, Runs, and Deployments
 - **Services**: In-memory storage implementations (will be replaced with PostgreSQL in future tasks)
 - **Endpoints**: REST API endpoints following the design specified in the System Architecture Document
 
@@ -287,6 +325,8 @@ This is an ASP.NET Core Minimal API implementation using:
 This implementation provides:
 
 - ✅ Full CRUD operations for Agents
+- ✅ Agent versioning with semantic versioning validation (E3-T2)
+- ✅ **Deployment API with replicas and placement labels** (E3-T3)
 - ✅ Node registration and heartbeat endpoints
 - ✅ Run state management endpoints (complete, fail, cancel)
 - ✅ **Microsoft Agent Framework SDK integration** (E1-T2)
@@ -789,6 +829,15 @@ See `tasks.yaml` for the full project roadmap. The completed tasks include:
 - ✅ **E1-T9**: Authentication setup (Complete)
 - ✅ **E1-T10**: Containerization (Complete)
 - ✅ **E1-T11**: CI pipeline (Complete)
+
+**Epic 3 – Agent Definition & Deployment Flow:**
+- ✅ **E3-T1**: AgentDefinition model (Complete)
+- ✅ **E3-T2**: Versioning endpoint (Complete)
+- ✅ **E3-T3**: Deployment API (Complete)
+- ⏳ **E3-T4**: Azure AI Foundry integration (Next)
+- ⏳ **E3-T5**: Tool registry setup
+- ⏳ **E3-T6**: Invoice Classifier agent
+- ⏳ **E3-T7**: Integration test
 
 ## Authentication
 
