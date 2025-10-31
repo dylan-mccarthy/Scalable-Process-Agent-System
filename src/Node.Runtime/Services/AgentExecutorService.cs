@@ -268,6 +268,50 @@ public class AgentExecutorService : IAgentExecutor
                 "Agent execution timed out after {DurationMs}ms",
                 stopwatch.ElapsedMilliseconds);
         }
+        catch (InvalidOperationException ex)
+        {
+            stopwatch.Stop();
+            result.Success = false;
+            result.Error = ex.Message;
+            result.Duration = stopwatch.Elapsed;
+
+            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            activity?.AddEvent(new ActivityEvent("exception",
+                tags: new ActivityTagsCollection
+                {
+                    { "exception.type", ex.GetType().FullName },
+                    { "exception.message", ex.Message }
+                }));
+            activity?.SetTag("error.type", "invalid_operation");
+
+            TelemetryConfig.AgentExecutionErrorsCounter.Add(1,
+                new KeyValuePair<string, object?>("agent.id", spec.AgentId),
+                new KeyValuePair<string, object?>("error.type", "invalid_operation"));
+
+            _logger.LogError(ex, "Invalid operation during agent execution after {DurationMs}ms", stopwatch.ElapsedMilliseconds);
+        }
+        catch (TimeoutException ex)
+        {
+            stopwatch.Stop();
+            result.Success = false;
+            result.Error = ex.Message;
+            result.Duration = stopwatch.Elapsed;
+
+            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            activity?.AddEvent(new ActivityEvent("exception",
+                tags: new ActivityTagsCollection
+                {
+                    { "exception.type", ex.GetType().FullName },
+                    { "exception.message", ex.Message }
+                }));
+            activity?.SetTag("error.type", "timeout");
+
+            TelemetryConfig.AgentExecutionErrorsCounter.Add(1,
+                new KeyValuePair<string, object?>("agent.id", spec.AgentId),
+                new KeyValuePair<string, object?>("error.type", "timeout"));
+
+            _logger.LogError(ex, "Agent execution timeout after {DurationMs}ms", stopwatch.ElapsedMilliseconds);
+        }
         catch (Exception ex)
         {
             stopwatch.Stop();
@@ -288,7 +332,7 @@ public class AgentExecutorService : IAgentExecutor
                 new KeyValuePair<string, object?>("agent.id", spec.AgentId),
                 new KeyValuePair<string, object?>("error.type", ex.GetType().Name));
 
-            _logger.LogError(ex, "Agent execution failed after {DurationMs}ms", stopwatch.ElapsedMilliseconds);
+            _logger.LogError(ex, "Unexpected agent execution failure after {DurationMs}ms", stopwatch.ElapsedMilliseconds);
         }
 
         return result;
