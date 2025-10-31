@@ -248,6 +248,54 @@ This samples 10% of traces.
 5. **Resource limits**: Set memory and CPU limits for collectors
 6. **High availability**: Deploy multiple collector instances with load balancing
 
+## Testing the Observability Stack
+
+### Integration Tests
+
+The project includes automated tests to validate the observability stack configuration:
+
+#### Helm Chart Test
+
+Validates the Kubernetes/Helm deployment configuration:
+
+```bash
+./tests/helm-observability-test.sh
+```
+
+This test verifies:
+- Helm chart templates render correctly
+- OTel Collector deployment and service are configured
+- Prometheus, Tempo, and Loki exporters are enabled
+- All backend services (Prometheus, Tempo, Loki, Grafana) are deployed
+- Control Plane is configured to send telemetry to OTel Collector
+
+#### Docker Compose Test
+
+Validates the Docker Compose observability stack:
+
+```bash
+./tests/docker-compose-observability-test.sh
+```
+
+This test verifies:
+- Docker Compose configuration is syntactically valid
+- All required services are defined
+- OTel Collector configuration includes all exporters
+- Service ports are properly exposed
+- Persistent volumes are configured
+
+### Running Tests in CI/CD
+
+Add these tests to your CI/CD pipeline:
+
+```yaml
+# Example GitHub Actions step
+- name: Test Observability Stack
+  run: |
+    ./tests/helm-observability-test.sh
+    ./tests/docker-compose-observability-test.sh
+```
+
 ## Additional Resources
 
 - [OpenTelemetry Documentation](https://opentelemetry.io/docs/)
