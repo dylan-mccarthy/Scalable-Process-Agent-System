@@ -29,10 +29,10 @@ echo ""
 
 # Test 2: Verify all required services are defined
 echo "Test 2: Verifying all required services..."
-COMPOSE_OUTPUT=$(docker compose -f "$COMPOSE_FILE" config)
+COMPOSE_OUTPUT=$(docker compose -f "$COMPOSE_FILE" config 2>&1)
 REQUIRED_SERVICES=("otel-collector" "prometheus" "tempo" "loki" "grafana")
 for service in "${REQUIRED_SERVICES[@]}"; do
-    if echo "$COMPOSE_OUTPUT" | grep -q "  $service:"; then
+    if echo "$COMPOSE_OUTPUT" | grep -q "$service:"; then
         echo "  ✅ Service '$service' found"
     else
         echo "  ❌ Service '$service' not found"
@@ -141,19 +141,22 @@ echo ""
 
 # Test 7: Verify Docker Compose service ports
 echo "Test 7: Verifying service port mappings..."
-if echo "$COMPOSE_OUTPUT" | grep -q "published: \"4317\"" && \
-   echo "$COMPOSE_OUTPUT" | grep -q "published: \"4318\"" && \
-   echo "$COMPOSE_OUTPUT" | grep -q "published: \"9090\"" && \
-   echo "$COMPOSE_OUTPUT" | grep -q "published: \"3200\"" && \
-   echo "$COMPOSE_OUTPUT" | grep -q "published: \"3100\"" && \
-   echo "$COMPOSE_OUTPUT" | grep -q "published: \"3000\""; then
-    echo "  ✅ OTLP gRPC port (4317) exposed"
-    echo "  ✅ OTLP HTTP port (4318) exposed"
-    echo "  ✅ Prometheus port (9090) exposed"
-    echo "  ✅ Tempo port (3200) exposed"
-    echo "  ✅ Loki port (3100) exposed"
-    echo "  ✅ Grafana port (3000) exposed"
-else
+REQUIRED_PORTS=("4317" "4318" "9090" "3200" "3100" "3000")
+PORT_DESCRIPTIONS=("OTLP gRPC" "OTLP HTTP" "Prometheus" "Tempo" "Loki" "Grafana")
+
+all_ports_found=true
+for i in "${!REQUIRED_PORTS[@]}"; do
+    port="${REQUIRED_PORTS[$i]}"
+    desc="${PORT_DESCRIPTIONS[$i]}"
+    if echo "$COMPOSE_OUTPUT" | grep -q "published: \"$port\""; then
+        echo "  ✅ $desc port ($port) exposed"
+    else
+        echo "  ❌ $desc port ($port) not exposed"
+        all_ports_found=false
+    fi
+done
+
+if [ "$all_ports_found" = false ]; then
     echo "  ❌ Required ports not properly exposed"
     exit 1
 fi

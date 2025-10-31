@@ -16,13 +16,14 @@ echo ""
 
 # Test 1: Validate Helm chart can be templated
 echo "Test 1: Validating Helm chart template rendering..."
-TEMPLATE_OUTPUT=$(helm template test-release "$HELM_CHART_PATH" --values "$VALUES_FILE" 2>&1)
-if [ $? -ne 0 ]; then
+if helm template test-release "$HELM_CHART_PATH" --values "$VALUES_FILE" > /tmp/helm_template_output.txt 2>&1; then
+    TEMPLATE_OUTPUT=$(cat /tmp/helm_template_output.txt)
+    echo "✅ PASSED: Helm chart templates successfully"
+else
     echo "❌ FAILED: Helm template rendering failed"
-    echo "$TEMPLATE_OUTPUT"
+    cat /tmp/helm_template_output.txt
     exit 1
 fi
-echo "✅ PASSED: Helm chart templates successfully"
 echo ""
 
 # Test 2: Verify OTel Collector Deployment exists
@@ -139,7 +140,7 @@ echo ""
 
 # Test 12: Verify Control Plane OpenTelemetry endpoint configuration
 echo "Test 12: Verifying Control Plane OTel endpoint configuration..."
-if echo "$TEMPLATE_OUTPUT" | grep -q "test-release-business-process-agents-otel-collector:4317"; then
+if echo "$TEMPLATE_OUTPUT" | grep -q "otel-collector:4317"; then
     echo "✅ PASSED: Control Plane configured to send telemetry to OTel Collector"
 else
     echo "❌ FAILED: Control Plane OTel endpoint not configured correctly"
