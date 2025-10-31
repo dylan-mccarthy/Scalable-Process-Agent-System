@@ -190,15 +190,49 @@ Handles HTTP communication with the Control Plane for node lifecycle:
 - **RegisterNodeAsync**: Registers the node with capacity and metadata
 - **SendHeartbeatAsync**: Sends periodic heartbeat with active runs and available slots
 
-### AgentExecutorService
+### AgentExecutorService (Legacy - In-Process Execution)
 
-Executes agents using Microsoft Agent Framework SDK:
+Executes agents using Microsoft Agent Framework SDK in-process:
 
 - **ExecuteAsync**: Executes an agent with the given input and budget constraints
 - Applies token and duration limits from budget constraints
 - Estimates token usage and cost
 - Handles timeouts and errors gracefully
 - Returns detailed execution results with timing and cost information
+
+**Note**: This service is now superseded by SandboxExecutorService for production use. It is kept for reference and fallback scenarios.
+
+### SandboxExecutorService (E2-T5)
+
+**Primary agent execution service** that executes agents in isolated sandbox processes with comprehensive budget enforcement:
+
+**Features:**
+- **Process Isolation**: Spawns each agent execution in a separate `Agent.Host` process for security and resource isolation
+- **Budget Enforcement**: Enforces token limits and execution time budgets with process-level timeout
+- **Graceful Cleanup**: Automatically terminates processes that exceed budgets and cleans up resources
+- **IPC Communication**: Uses stdin/stdout with JSON serialization for inter-process communication
+- **Error Handling**: Robust error handling with process exit code validation and stderr capture
+- **Metadata Tracking**: Includes process ID and sandbox status in execution results
+
+**Architecture:**
+```
+Node.Runtime (Host Process)
+    ↓
+SandboxExecutorService
+    ↓ spawn
+Agent.Host (Isolated Process)
+    ↓ stdin: AgentExecutionRequest (JSON)
+    ↓ stdout: AgentExecutionResponse (JSON)
+    ↓ runs MAF SDK
+    ↓ enforces budgets
+    ↓ returns result
+```
+
+**Budget Enforcement:**
+- **Process Timeout**: Maximum duration enforced at process level with 5s buffer for IPC overhead
+- **Token Limits**: Passed to agent executor within the sandbox process
+- **Process Termination**: Entire process tree killed if timeout exceeded
+- **Resource Cleanup**: Automatic cleanup of process resources on completion or timeout
 
 **Note**: The agent executor requires Azure AI Foundry or OpenAI credentials to be configured (task E3-T4). Until then, execution will return a NotImplementedException indicating the chat client needs configuration.
 
@@ -391,7 +425,7 @@ Node Runtime core functionality is implemented and enhanced with comprehensive t
 - ✅ **E2-T2**: Integrate MAF runtime (Complete)
 - ✅ **E2-T3**: Node registration (Complete)
 - ✅ **E2-T4**: Lease pull loop (Complete)
-- ⏳ **E2-T5**: Sandbox process model with budget enforcement
+- ✅ **E2-T5**: Sandbox process model with budget enforcement (Complete)
 - ⏳ **E2-T6**: Service Bus connector
 - ⏳ **E2-T7**: HTTP output connector
 - ⏳ **E2-T8**: DLQ handling

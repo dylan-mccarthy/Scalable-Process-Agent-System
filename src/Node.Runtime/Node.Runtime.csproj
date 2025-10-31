@@ -30,4 +30,22 @@
   <ItemGroup>
     <Protobuf Include="../ControlPlane.Api/Protos/lease_service.proto" GrpcServices="Client" Link="Protos/lease_service.proto" />
   </ItemGroup>
+
+  <!-- Add Agent.Host as a project reference for deployment -->
+  <ItemGroup>
+    <ProjectReference Include="../Agent.Host/Agent.Host.csproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <OutputItemType>Content</OutputItemType>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </ProjectReference>
+  </ItemGroup>
+
+  <!-- Copy Agent.Host executable to output directory after build -->
+  <Target Name="CopyAgentHost" AfterTargets="Build">
+    <ItemGroup>
+      <AgentHostFiles Include="$(MSBuildProjectDirectory)/../Agent.Host/bin/$(Configuration)/$(TargetFramework)/**/*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(AgentHostFiles)" DestinationFolder="$(OutputPath)/%(RecursiveDir)" SkipUnchangedFiles="true" />
+  </Target>
+
 </Project>
