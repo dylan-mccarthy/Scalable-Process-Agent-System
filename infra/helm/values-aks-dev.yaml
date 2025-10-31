@@ -54,6 +54,8 @@ controlPlane:
     targetCPUUtilizationPercentage: 80
   
   env:
+    # Note: Production mode for ASP.NET Core (optimized, no dev error pages)
+    # The 'dev' designation refers to the Azure environment, not the runtime mode
     - name: ASPNETCORE_ENVIRONMENT
       value: "Production"
     - name: UseInMemoryStores
@@ -115,6 +117,8 @@ nodeRuntime:
     environment: "dev"
   
   env:
+    # Note: Production mode for ASP.NET Core (optimized, no dev error pages)
+    # The 'dev' designation refers to the Azure environment, not the runtime mode
     - name: ASPNETCORE_ENVIRONMENT
       value: "Production"
     # Azure OpenAI configuration from Key Vault

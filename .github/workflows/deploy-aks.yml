@@ -99,9 +99,7 @@ jobs:
   build-and-push:
     name: Build and Push Images
     runs-on: ubuntu-latest
-    if: ${{ github.event.inputs.deploy_application == 'true' }}
     needs: [deploy-infrastructure]
-    # Run even if infrastructure deployment is skipped
     if: ${{ always() && github.event.inputs.deploy_application == 'true' }}
     environment: ${{ github.event.inputs.environment }}
     
