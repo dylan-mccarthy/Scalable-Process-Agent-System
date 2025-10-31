@@ -126,7 +126,7 @@ public class NodeMetricsServiceTests
         // Arrange
         var options = Options.Create(_options);
         var service = new NodeMetricsService(options, _mockLogger.Object);
-        
+
         // Simulate an edge case where active leases somehow exceeds max
         for (int i = 0; i < 7; i++)
         {

@@ -174,11 +174,11 @@ if (mtlsConfig.Enabled)
         serverOptions.ConfigureHttpsDefaults(httpsOptions =>
         {
             httpsOptions.ServerCertificate = serverCertificate;
-            
+
             if (mtlsConfig.RequireClientCertificate)
             {
                 httpsOptions.ClientCertificateMode = ClientCertificateMode.RequireCertificate;
-                
+
                 // Custom certificate validation
                 httpsOptions.ClientCertificateValidation = (certificate, chain, sslPolicyErrors) =>
                 {
@@ -198,7 +198,7 @@ if (mtlsConfig.Enabled)
                     if (clientCaCertificate != null)
                     {
                         var clientCert = new X509Certificate2(certificate);
-                        
+
                         // Build chain with custom CA
                         using var customChain = new X509Chain();
                         customChain.ChainPolicy.RevocationMode = X509RevocationMode.NoCheck;

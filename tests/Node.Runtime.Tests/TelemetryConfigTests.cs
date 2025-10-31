@@ -249,7 +249,7 @@ public class TelemetryConfigTests
     {
         // Gauges are initialized during application startup in Program.cs
         // This test verifies that the gauge properties exist and can be set
-        
+
         // Assert - Properties should be settable
         Assert.True(TelemetryConfig.ActiveLeasesGauge == null || TelemetryConfig.ActiveLeasesGauge != null);
         Assert.True(TelemetryConfig.AvailableSlotsGauge == null || TelemetryConfig.AvailableSlotsGauge != null);

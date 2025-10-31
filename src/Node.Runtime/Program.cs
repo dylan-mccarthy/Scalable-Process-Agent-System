@@ -34,9 +34,9 @@ builder.Services.AddHttpClient<INodeRegistrationService, NodeRegistrationService
 builder.Services.AddSingleton(sp =>
 {
     var logger = sp.GetRequiredService<ILogger<Program>>();
-    
+
     GrpcChannel channel;
-    
+
     if (mtlsConfig.Enabled)
     {
         logger.LogInformation("mTLS is enabled for gRPC client connections");
@@ -285,13 +285,13 @@ if (otelConfig.Metrics.Enabled)
 {
     var metricsService = host.Services.GetRequiredService<INodeMetricsService>();
 
-    Node.Runtime.Observability.TelemetryConfig.ActiveLeasesGauge = 
+    Node.Runtime.Observability.TelemetryConfig.ActiveLeasesGauge =
         Node.Runtime.Observability.TelemetryConfig.Meter.CreateObservableGauge(
             "active_leases",
             () => metricsService.GetActiveLeases(),
             description: "Current number of active leases being processed");
 
-    Node.Runtime.Observability.TelemetryConfig.AvailableSlotsGauge = 
+    Node.Runtime.Observability.TelemetryConfig.AvailableSlotsGauge =
         Node.Runtime.Observability.TelemetryConfig.Meter.CreateObservableGauge(
             "available_slots",
             () => metricsService.GetAvailableSlots(),

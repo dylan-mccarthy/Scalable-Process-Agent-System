@@ -94,7 +94,7 @@ public class AzureAIFoundryIntegrationTests : IDisposable
         // Verify the mock server received the request
         var requests = _mockServer.LogEntries.ToList();
         requests.Should().HaveCountGreaterThan(0);
-        
+
         // Check what path was actually called
         var firstRequest = requests.First();
         firstRequest.RequestMessage.Method.Should().Be("POST");
@@ -151,7 +151,7 @@ public class AzureAIFoundryIntegrationTests : IDisposable
 
         // Assert
         response.Should().NotBeNull();
-        
+
         // Verify the request was made with the correct options
         var requests = _mockServer.LogEntries.ToList();
         requests.Should().HaveCount(1);

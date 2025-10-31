@@ -199,7 +199,7 @@ public class MTlsIntegrationTests : IDisposable
         // Arrange & Act
         // Test the Node.Runtime MTlsOptions structure through reflection
         var nodeRuntimeAssemblyPath = Path.Combine("..", "..", "..", "..", "..", "src", "Node.Runtime", "bin", "Debug", "net9.0", "Node.Runtime.dll");
-        
+
         // Skip test if Node.Runtime assembly is not built
         if (!File.Exists(Path.GetFullPath(nodeRuntimeAssemblyPath)))
         {
