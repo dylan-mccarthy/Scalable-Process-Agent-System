@@ -31,8 +31,8 @@ public class AzureAIFoundryToolProvider : IAzureAIFoundryToolProvider
     /// <summary>
     /// List of Azure AI Foundry built-in tool types.
     /// </summary>
-    private static readonly IReadOnlyList<string> AvailableToolTypes = new List<string>
-    {
+    private static readonly IReadOnlyList<string> AvailableToolTypes =
+    [
         "CodeInterpreter",
         "FileSearch",
         "AzureAISearch",
@@ -41,7 +41,7 @@ public class AzureAIFoundryToolProvider : IAzureAIFoundryToolProvider
         "AzureFunctions",
         "OpenAPI",
         "BrowserAutomation"
-    }.AsReadOnly();
+    ];
 
     public AzureAIFoundryToolProvider(
         IToolRegistry toolRegistry,
@@ -93,8 +93,10 @@ public class AzureAIFoundryToolProvider : IAzureAIFoundryToolProvider
         var tool = new ToolDefinition
         {
             Name = "CodeInterpreter",
-            Description = "Enables agents to write and run Python code in a sandboxed execution environment. " +
-                         "Can handle diverse data formats and generate files with data and visuals.",
+            Description = """
+                Enables agents to write and run Python code in a sandboxed execution environment. 
+                Can handle diverse data formats and generate files with data and visuals.
+                """,
             Type = "azure-ai-foundry",
             Configuration = new Dictionary<string, object>
             {
@@ -114,9 +116,11 @@ public class AzureAIFoundryToolProvider : IAzureAIFoundryToolProvider
         var tool = new ToolDefinition
         {
             Name = "FileSearch",
-            Description = "Augments agents with knowledge from outside its model, such as proprietary product " +
-                         "information or documents. Implements RAG (Retrieval Augmented Generation) with automatic " +
-                         "chunking, embedding, and semantic search.",
+            Description = """
+                Augments agents with knowledge from outside its model, such as proprietary product 
+                information or documents. Implements RAG (Retrieval Augmented Generation) with automatic 
+                chunking, embedding, and semantic search.
+                """,
             Type = "azure-ai-foundry",
             Configuration = new Dictionary<string, object>
             {
@@ -140,9 +144,11 @@ public class AzureAIFoundryToolProvider : IAzureAIFoundryToolProvider
         var tool = new ToolDefinition
         {
             Name = "AzureAISearch",
-            Description = "Enterprise search system for high-performance applications. Integrates with Azure OpenAI " +
-                         "Service offering vector search, full-text search, and hybrid search capabilities. " +
-                         "Ideal for knowledge base insights and information discovery.",
+            Description = """
+                Enterprise search system for high-performance applications. Integrates with Azure OpenAI 
+                Service offering vector search, full-text search, and hybrid search capabilities. 
+                Ideal for knowledge base insights and information discovery.
+                """,
             Type = "azure-ai-foundry",
             Configuration = new Dictionary<string, object>
             {
@@ -162,8 +168,10 @@ public class AzureAIFoundryToolProvider : IAzureAIFoundryToolProvider
         var tool = new ToolDefinition
         {
             Name = "BingGrounding",
-            Description = "Enables agents to use Grounding with Bing Search to access and return information " +
-                         "from the internet. Provides real-time web search capabilities for up-to-date information.",
+            Description = """
+                Enables agents to use Grounding with Bing Search to access and return information 
+                from the internet. Provides real-time web search capabilities for up-to-date information.
+                """,
             Type = "azure-ai-foundry",
             Configuration = new Dictionary<string, object>
             {
@@ -183,8 +191,10 @@ public class AzureAIFoundryToolProvider : IAzureAIFoundryToolProvider
         var tool = new ToolDefinition
         {
             Name = "FunctionCalling",
-            Description = "Describes the structure of custom functions to an agent and enables them to be called " +
-                         "when appropriate during interactions. Supports custom business logic integration.",
+            Description = """
+                Describes the structure of custom functions to an agent and enables them to be called 
+                when appropriate during interactions. Supports custom business logic integration.
+                """,
             Type = "azure-ai-foundry",
             Configuration = new Dictionary<string, object>
             {
@@ -204,9 +214,11 @@ public class AzureAIFoundryToolProvider : IAzureAIFoundryToolProvider
         var tool = new ToolDefinition
         {
             Name = "AzureFunctions",
-            Description = "Leverages Azure Functions to create intelligent, event-driven applications. " +
-                         "Enables agents to execute serverless code for synchronous, asynchronous, and " +
-                         "long-running operations.",
+            Description = """
+                Leverages Azure Functions to create intelligent, event-driven applications. 
+                Enables agents to execute serverless code for synchronous, asynchronous, and 
+                long-running operations.
+                """,
             Type = "azure-ai-foundry",
             Configuration = new Dictionary<string, object>
             {
@@ -226,8 +238,10 @@ public class AzureAIFoundryToolProvider : IAzureAIFoundryToolProvider
         var tool = new ToolDefinition
         {
             Name = "OpenAPI",
-            Description = "Connects agents to external APIs using OpenAPI 3.0 specification. " +
-                         "Enables integration with any REST API that provides an OpenAPI specification.",
+            Description = """
+                Connects agents to external APIs using OpenAPI 3.0 specification. 
+                Enables integration with any REST API that provides an OpenAPI specification.
+                """,
             Type = "azure-ai-foundry",
             Configuration = new Dictionary<string, object>
             {
@@ -248,8 +262,10 @@ public class AzureAIFoundryToolProvider : IAzureAIFoundryToolProvider
         var tool = new ToolDefinition
         {
             Name = "BrowserAutomation",
-            Description = "Performs real-world browser tasks through natural language prompts. " +
-                         "Enables automated browsing activities without human intervention.",
+            Description = """
+                Performs real-world browser tasks through natural language prompts. 
+                Enables automated browsing activities without human intervention.
+                """,
             Type = "azure-ai-foundry",
             Configuration = new Dictionary<string, object>
             {
