@@ -46,7 +46,7 @@ public sealed class AgentExecutorServiceTests
         // Assert
         result.Should().NotBeNull();
         result.Success.Should().BeFalse();
-        result.Error.Should().Contain("Chat client creation needs to be configured");
+        result.Error.Should().Contain("Azure AI Foundry configuration is not set");
     }
 
     [Fact]
