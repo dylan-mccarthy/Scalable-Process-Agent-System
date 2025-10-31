@@ -229,7 +229,7 @@ Azure AI Foundry supports various models for different use cases:
 | `ApiKey` | ✓* | - | API key for authentication |
 | `UseManagedIdentity` | | `false` | Use Azure Managed Identity instead of API key |
 
-\* Required if `UseManagedIdentity` is `false`
+*Required if `UseManagedIdentity` is `false`
 
 ### Using Managed Identity (Recommended for Production)
 
