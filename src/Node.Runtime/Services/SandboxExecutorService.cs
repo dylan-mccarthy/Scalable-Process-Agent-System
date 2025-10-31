@@ -233,11 +233,83 @@ public sealed class SandboxExecutorService : ISandboxExecutor, IAgentExecutor
 
             throw;
         }
+        catch (System.ComponentModel.Win32Exception ex)
+        {
+            stopwatch.Stop();
+            _logger.LogError(ex, "Process execution error for agent {AgentId} in sandbox", spec.AgentId);
+
+            if (process != null && !process.HasExited)
+            {
+                KillProcessTree(process);
+            }
+
+            return new AgentExecutionResult
+            {
+                Success = false,
+                Error = $"Process error: {ex.Message}",
+                Duration = stopwatch.Elapsed,
+                Metadata = new Dictionary<string, object>()
+            };
+        }
+        catch (TimeoutException ex)
+        {
+            stopwatch.Stop();
+            _logger.LogError(ex, "Sandbox execution timeout for agent {AgentId}", spec.AgentId);
+
+            if (process != null && !process.HasExited)
+            {
+                KillProcessTree(process);
+            }
+
+            return new AgentExecutionResult
+            {
+                Success = false,
+                Error = "Execution timeout",
+                Duration = stopwatch.Elapsed,
+                Metadata = new Dictionary<string, object>()
+            };
+        }
+        catch (InvalidOperationException ex)
+        {
+            stopwatch.Stop();
+            _logger.LogError(ex, "Invalid operation during sandbox execution for agent {AgentId}", spec.AgentId);
+
+            if (process != null && !process.HasExited)
+            {
+                KillProcessTree(process);
+            }
+
+            return new AgentExecutionResult
+            {
+                Success = false,
+                Error = ex.Message,
+                Duration = stopwatch.Elapsed,
+                Metadata = new Dictionary<string, object>()
+            };
+        }
+        catch (IOException ex)
+        {
+            stopwatch.Stop();
+            _logger.LogError(ex, "I/O error during sandbox execution for agent {AgentId}", spec.AgentId);
+
+            if (process != null && !process.HasExited)
+            {
+                KillProcessTree(process);
+            }
+
+            return new AgentExecutionResult
+            {
+                Success = false,
+                Error = $"I/O error: {ex.Message}",
+                Duration = stopwatch.Elapsed,
+                Metadata = new Dictionary<string, object>()
+            };
+        }
         catch (Exception ex)
         {
             stopwatch.Stop();
 
-            _logger.LogError(ex, "Error executing agent {AgentId} in sandbox", spec.AgentId);
+            _logger.LogError(ex, "Unexpected error executing agent {AgentId} in sandbox", spec.AgentId);
 
             if (process != null && !process.HasExited)
             {
@@ -287,9 +359,21 @@ public sealed class SandboxExecutorService : ISandboxExecutor, IAgentExecutor
                 _logger.LogDebug("Killed sandbox process {ProcessId} and its children", process.Id);
             }
         }
+        catch (System.ComponentModel.Win32Exception ex)
+        {
+            _logger.LogWarning(ex, "Win32 error killing sandbox process {ProcessId}", process.Id);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Invalid operation killing sandbox process {ProcessId}", process.Id);
+        }
+        catch (NotSupportedException ex)
+        {
+            _logger.LogWarning(ex, "Kill not supported for sandbox process {ProcessId}", process.Id);
+        }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error killing sandbox process {ProcessId}", process.Id);
+            _logger.LogWarning(ex, "Unexpected error killing sandbox process {ProcessId}", process.Id);
         }
     }
 
