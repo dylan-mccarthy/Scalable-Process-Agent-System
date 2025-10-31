@@ -29,6 +29,24 @@ This is the Business Process Agents MVP project, providing a complete platform f
 
 ## Quick Start
 
+### 🎬 Interactive Demo (NEW!)
+
+Experience the complete invoice classification workflow:
+
+```bash
+./demo-invoice-classifier.sh
+```
+
+This interactive demo walks you through:
+- ✅ Deploying the Invoice Classifier agent
+- ✅ Understanding the end-to-end processing flow
+- ✅ Exploring observability features
+- ✅ Testing with sample invoices
+
+**See [DEMO.md](DEMO.md) for detailed walkthrough documentation.**
+
+**For a faster start, see [QUICKSTART.md](QUICKSTART.md).**
+
 ### Option 1: Local Kubernetes with k3d (Recommended)
 
 The fastest way to get a complete environment running locally:
@@ -1171,6 +1189,7 @@ cd agents
 
 ## Documentation
 
+- **[Demo Walkthrough (DEMO.md)](DEMO.md)** - Interactive demo guide for invoice classification (E8-T3)
 - [System Architecture Document (SAD)](sad.md) - High-level system design and architecture
 - [Architecture Diagrams](docs/ARCHITECTURE_DIAGRAMS.md) - C4 context and container diagrams
 - [Invoice Classifier Agent](docs/INVOICE_CLASSIFIER.md) - Technical documentation for the MVP Invoice Classifier agent
