@@ -324,6 +324,6 @@ graph TB
 ## References
 
 - [System Architecture Document (SAD)](../sad.md)
-- [Microsoft Agent Framework Documentation](https://github.com/microsoft/autogen)
+- [Microsoft Agent Framework Documentation](https://learn.microsoft.com/en-us/agent-framework/)
 - [C4 Model](https://c4model.com/)
 - [Azure AI Foundry Integration](./AZURE_AI_FOUNDRY_INTEGRATION.md)
