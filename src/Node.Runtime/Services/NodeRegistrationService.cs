@@ -78,9 +78,24 @@ public sealed class NodeRegistrationService : INodeRegistrationService
                 _options.NodeId, response.StatusCode, errorContent);
             return false;
         }
+        catch (HttpRequestException httpEx)
+        {
+            _logger.LogError(httpEx, "HTTP error registering node {NodeId}: {Message}", _options.NodeId, httpEx.Message);
+            return false;
+        }
+        catch (TaskCanceledException)
+        {
+            _logger.LogWarning("Registration request timeout for node {NodeId}", _options.NodeId);
+            return false;
+        }
+        catch (System.Text.Json.JsonException jsonEx)
+        {
+            _logger.LogError(jsonEx, "JSON serialization error registering node {NodeId}", _options.NodeId);
+            return false;
+        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Exception occurred while registering node {NodeId}", _options.NodeId);
+            _logger.LogError(ex, "Unexpected error registering node {NodeId}", _options.NodeId);
             return false;
         }
     }
@@ -115,9 +130,24 @@ public sealed class NodeRegistrationService : INodeRegistrationService
                 _options.NodeId, response.StatusCode, errorContent);
             return false;
         }
+        catch (HttpRequestException httpEx)
+        {
+            _logger.LogWarning(httpEx, "HTTP error sending heartbeat for node {NodeId}: {Message}", _options.NodeId, httpEx.Message);
+            return false;
+        }
+        catch (TaskCanceledException)
+        {
+            _logger.LogDebug("Heartbeat request timeout for node {NodeId}", _options.NodeId);
+            return false;
+        }
+        catch (System.Text.Json.JsonException jsonEx)
+        {
+            _logger.LogWarning(jsonEx, "JSON serialization error sending heartbeat for node {NodeId}", _options.NodeId);
+            return false;
+        }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Exception occurred while sending heartbeat for node {NodeId}", _options.NodeId);
+            _logger.LogWarning(ex, "Unexpected error sending heartbeat for node {NodeId}", _options.NodeId);
             return false;
         }
     }
