@@ -120,10 +120,7 @@ var mtlsConfig = builder.Configuration.GetSection("MTls").Get<MTlsOptions>()
 
 if (mtlsConfig.Enabled)
 {
-    var logger = LoggerFactory.Create(loggingBuilder => loggingBuilder.AddConsole())
-        .CreateLogger("MTlsConfiguration");
-    
-    logger.LogInformation("mTLS is enabled for gRPC connections");
+    Console.WriteLine("INFO: mTLS is enabled for gRPC connections");
 
     // Validate required certificate paths
     if (string.IsNullOrWhiteSpace(mtlsConfig.ServerCertificatePath))
@@ -148,7 +145,7 @@ if (mtlsConfig.Enabled)
         var certPem = File.ReadAllText(mtlsConfig.ServerCertificatePath);
         var keyPem = File.ReadAllText(mtlsConfig.ServerKeyPath);
         serverCertificate = X509Certificate2.CreateFromPem(certPem, keyPem);
-        logger.LogInformation("Loaded server certificate from {CertPath}", mtlsConfig.ServerCertificatePath);
+        Console.WriteLine($"INFO: Loaded server certificate from {mtlsConfig.ServerCertificatePath}");
     }
     catch (Exception ex)
     {
@@ -163,7 +160,7 @@ if (mtlsConfig.Enabled)
         {
             var caPem = File.ReadAllText(mtlsConfig.ClientCaCertificatePath);
             clientCaCertificate = X509Certificate2.CreateFromPem(caPem);
-            logger.LogInformation("Loaded client CA certificate from {CertPath}", mtlsConfig.ClientCaCertificatePath);
+            Console.WriteLine($"INFO: Loaded client CA certificate from {mtlsConfig.ClientCaCertificatePath}");
         }
         catch (Exception ex)
         {
@@ -185,25 +182,15 @@ if (mtlsConfig.Enabled)
                 // Custom certificate validation
                 httpsOptions.ClientCertificateValidation = (certificate, chain, sslPolicyErrors) =>
                 {
-                    var validationLogger = LoggerFactory.Create(lb => lb.AddConsole())
-                        .CreateLogger("CertificateValidation");
-
                     // If no client certificate is provided and it's required, reject
                     if (certificate == null)
                     {
-                        validationLogger.LogWarning("Client certificate validation failed: No certificate provided");
                         return false;
                     }
-
-                    validationLogger.LogDebug("Validating client certificate: Subject={Subject}, Issuer={Issuer}",
-                        certificate.Subject, certificate.Issuer);
 
                     // Check for basic SSL policy errors if chain validation is enabled
                     if (mtlsConfig.ValidateCertificateChain && sslPolicyErrors != SslPolicyErrors.None)
                     {
-                        validationLogger.LogWarning(
-                            "Client certificate validation failed: SSL policy errors={Errors}",
-                            sslPolicyErrors);
                         return false;
                     }
 
@@ -222,8 +209,6 @@ if (mtlsConfig.Enabled)
 
                         if (!chainBuilt)
                         {
-                            validationLogger.LogWarning(
-                                "Client certificate validation failed: Chain validation failed");
                             return false;
                         }
 
@@ -240,8 +225,6 @@ if (mtlsConfig.Enabled)
 
                         if (!isSignedByCA)
                         {
-                            validationLogger.LogWarning(
-                                "Client certificate validation failed: Certificate not signed by trusted CA");
                             return false;
                         }
                     }
@@ -252,15 +235,10 @@ if (mtlsConfig.Enabled)
                         var subjectCN = certificate.GetNameInfo(X509NameType.SimpleName, false);
                         if (!mtlsConfig.AllowedClientCertificateSubjects.Contains(subjectCN))
                         {
-                            validationLogger.LogWarning(
-                                "Client certificate validation failed: Subject CN '{CN}' not in allowed list",
-                                subjectCN);
                             return false;
                         }
                     }
 
-                    validationLogger.LogInformation("Client certificate validated successfully: Subject={Subject}",
-                        certificate.Subject);
                     return true;
                 };
             }
