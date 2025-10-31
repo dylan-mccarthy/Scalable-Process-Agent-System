@@ -64,12 +64,37 @@ spec:
         volumeMounts:
         - name: datasources
           mountPath: /etc/grafana/provisioning/datasources
+        - name: dashboards-provisioning
+          mountPath: /etc/grafana/provisioning/dashboards
+        - name: dashboards
+          mountPath: /var/lib/grafana/dashboards
         - name: data
           mountPath: /var/lib/grafana
       volumes:
       - name: datasources
         configMap:
           name: {{ include "business-process-agents.fullname" . }}-grafana-datasources
+      - name: dashboards-provisioning
+        configMap:
+          name: {{ include "business-process-agents.fullname" . }}-grafana-dashboards
+          items:
+            - key: dashboards.yaml
+              path: dashboards.yaml
+      # Mount all dashboard JSON files from the ConfigMap
+      # New dashboards added to dashboards/ directory are automatically included
+      - name: dashboards
+        projected:
+          sources:
+            - configMap:
+                name: {{ include "business-process-agents.fullname" . }}-grafana-dashboards
+                {{- $files := .Files.Glob "dashboards/*.json" }}
+                {{- if $files }}
+                items:
+                {{- range $path, $_ := $files }}
+                - key: {{ base $path }}
+                  path: {{ base $path }}
+                {{- end }}
+                {{- end }}
       {{- if .Values.observability.grafana.persistence.enabled }}
       - name: data
         persistentVolumeClaim:
