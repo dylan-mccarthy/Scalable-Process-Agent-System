@@ -124,8 +124,8 @@ public class DeploymentEndpointsTests : IAsyncLifetime
         Assert.NotNull(deployment.Target);
         Assert.Equal(3, deployment.Target.Replicas);
         Assert.NotNull(deployment.Target.Placement);
-        Assert.True(deployment.Target.Placement.ContainsKey("region"));
-        Assert.Equal("us-east-1", deployment.Target.Placement["region"].ToString());
+        Assert.True(deployment.Target.Placement.TryGetValue("region", out var regionValue));
+        Assert.Equal("us-east-1", regionValue.ToString());
         Assert.NotNull(deployment.Status);
         Assert.Equal("pending", deployment.Status.State);
         Assert.Equal(0, deployment.Status.ReadyReplicas);
