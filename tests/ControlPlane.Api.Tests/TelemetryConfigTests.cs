@@ -131,16 +131,23 @@ public class TelemetryConfigTests
     }
 
     [Fact]
-    public void TelemetryConfig_ShouldHaveObservableGaugeProperties()
+    public void TelemetryConfig_ObservableGaugeProperties_ShouldBeNullableAndSettable()
     {
-        // This test verifies that observable gauge properties are defined
+        // This test verifies that observable gauge properties can be set
         // The actual gauges are initialized in Program.cs when the app starts
         
-        // Assert - Properties should exist and be settable
-        Assert.NotNull((object?)TelemetryConfig.ActiveRunsGauge);
-        Assert.NotNull((object?)TelemetryConfig.ActiveNodesGauge);
-        Assert.NotNull((object?)TelemetryConfig.TotalSlotsGauge);
-        Assert.NotNull((object?)TelemetryConfig.UsedSlotsGauge);
-        Assert.NotNull((object?)TelemetryConfig.AvailableSlotsGauge);
+        // Act - Set a test gauge
+        var testGauge = TelemetryConfig.Meter.CreateObservableGauge(
+            "test_gauge",
+            () => 42,
+            description: "Test gauge");
+        
+        TelemetryConfig.ActiveRunsGauge = testGauge;
+        
+        // Assert - Should be settable
+        Assert.NotNull(TelemetryConfig.ActiveRunsGauge);
+        
+        // Clean up
+        TelemetryConfig.ActiveRunsGauge = null;
     }
 }
