@@ -7,6 +7,8 @@ using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Logs;
+using System.Net.Security;
+using System.Security.Cryptography.X509Certificates;
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -14,10 +16,12 @@ var builder = Host.CreateApplicationBuilder(args);
 builder.Services.Configure<NodeRuntimeOptions>(builder.Configuration.GetSection("NodeRuntime"));
 builder.Services.Configure<AgentRuntimeOptions>(builder.Configuration.GetSection("AgentRuntime"));
 builder.Services.Configure<OpenTelemetryOptions>(builder.Configuration.GetSection("OpenTelemetry"));
+builder.Services.Configure<MTlsOptions>(builder.Configuration.GetSection("MTls"));
 
 // Get configuration values for service setup
 var nodeRuntimeConfig = builder.Configuration.GetSection("NodeRuntime").Get<NodeRuntimeOptions>() ?? new NodeRuntimeOptions();
 var otelConfig = builder.Configuration.GetSection("OpenTelemetry").Get<OpenTelemetryOptions>() ?? new OpenTelemetryOptions();
+var mtlsConfig = builder.Configuration.GetSection("MTls").Get<MTlsOptions>() ?? new MTlsOptions();
 
 // Configure HttpClient for Control Plane API
 builder.Services.AddHttpClient<INodeRegistrationService, NodeRegistrationService>(client =>
@@ -26,10 +30,149 @@ builder.Services.AddHttpClient<INodeRegistrationService, NodeRegistrationService
     client.DefaultRequestHeaders.Add("User-Agent", "Node.Runtime/1.0");
 });
 
-// Configure gRPC client for LeaseService
+// Configure gRPC client for LeaseService with mTLS support
 builder.Services.AddSingleton(sp =>
 {
-    var channel = GrpcChannel.ForAddress(nodeRuntimeConfig.ControlPlaneUrl);
+    var logger = sp.GetRequiredService<ILogger<Program>>();
+    
+    GrpcChannel channel;
+    
+    if (mtlsConfig.Enabled)
+    {
+        logger.LogInformation("mTLS is enabled for gRPC client connections");
+
+        // Validate required certificate paths
+        if (string.IsNullOrWhiteSpace(mtlsConfig.ClientCertificatePath))
+        {
+            throw new InvalidOperationException("MTls:ClientCertificatePath is required when mTLS is enabled");
+        }
+
+        if (string.IsNullOrWhiteSpace(mtlsConfig.ClientKeyPath))
+        {
+            throw new InvalidOperationException("MTls:ClientKeyPath is required when mTLS is enabled");
+        }
+
+        // Load client certificate
+        X509Certificate2 clientCertificate;
+        try
+        {
+            var certPem = File.ReadAllText(mtlsConfig.ClientCertificatePath);
+            var keyPem = File.ReadAllText(mtlsConfig.ClientKeyPath);
+            clientCertificate = X509Certificate2.CreateFromPem(certPem, keyPem);
+            logger.LogInformation("Loaded client certificate from {CertPath}", mtlsConfig.ClientCertificatePath);
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Failed to load client certificate from {mtlsConfig.ClientCertificatePath}", ex);
+        }
+
+        // Load server CA certificate if provided
+        X509Certificate2? serverCaCertificate = null;
+        if (!string.IsNullOrWhiteSpace(mtlsConfig.ServerCaCertificatePath))
+        {
+            try
+            {
+                var caPem = File.ReadAllText(mtlsConfig.ServerCaCertificatePath);
+                serverCaCertificate = X509Certificate2.CreateFromPem(caPem);
+                logger.LogInformation("Loaded server CA certificate from {CertPath}", mtlsConfig.ServerCaCertificatePath);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Failed to load server CA certificate from {mtlsConfig.ServerCaCertificatePath}", ex);
+            }
+        }
+
+        // Create HTTP handler with client certificate
+        var httpHandler = new HttpClientHandler();
+        httpHandler.ClientCertificates.Add(clientCertificate);
+
+        // Configure server certificate validation
+        if (serverCaCertificate != null)
+        {
+            httpHandler.ServerCertificateCustomValidationCallback = (message, certificate, chain, sslPolicyErrors) =>
+            {
+                if (certificate == null)
+                {
+                    logger.LogWarning("Server certificate validation failed: No certificate provided");
+                    return false;
+                }
+
+                logger.LogDebug("Validating server certificate: Subject={Subject}, Issuer={Issuer}",
+                    certificate.Subject, certificate.Issuer);
+
+                // Check for basic SSL policy errors if chain validation is enabled
+                if (mtlsConfig.ValidateCertificateChain && sslPolicyErrors != SslPolicyErrors.None)
+                {
+                    // Allow RemoteCertificateChainErrors as we'll validate against custom CA
+                    if (sslPolicyErrors != SslPolicyErrors.RemoteCertificateChainErrors)
+                    {
+                        logger.LogWarning("Server certificate validation failed: SSL policy errors={Errors}", sslPolicyErrors);
+                        return false;
+                    }
+                }
+
+                // Build chain with custom CA
+                using var customChain = new X509Chain();
+                customChain.ChainPolicy.RevocationMode = X509RevocationMode.NoCheck;
+                customChain.ChainPolicy.VerificationFlags = X509VerificationFlags.AllowUnknownCertificateAuthority;
+                customChain.ChainPolicy.ExtraStore.Add(serverCaCertificate);
+
+                var serverCert = new X509Certificate2(certificate);
+                var chainBuilt = customChain.Build(serverCert);
+
+                if (!chainBuilt)
+                {
+                    logger.LogWarning("Server certificate validation failed: Chain validation failed");
+                    return false;
+                }
+
+                // Check if the CA is in the chain
+                var isSignedByCA = false;
+                foreach (var chainElement in customChain.ChainElements)
+                {
+                    if (chainElement.Certificate.Thumbprint == serverCaCertificate.Thumbprint)
+                    {
+                        isSignedByCA = true;
+                        break;
+                    }
+                }
+
+                if (!isSignedByCA)
+                {
+                    logger.LogWarning("Server certificate validation failed: Certificate not signed by trusted CA");
+                    return false;
+                }
+
+                // Validate expected subject name if specified
+                if (!string.IsNullOrWhiteSpace(mtlsConfig.ExpectedServerCertificateSubject))
+                {
+                    var subjectCN = certificate.GetNameInfo(X509NameType.SimpleName, false);
+                    if (subjectCN != mtlsConfig.ExpectedServerCertificateSubject)
+                    {
+                        logger.LogWarning(
+                            "Server certificate validation failed: Expected subject '{Expected}' but got '{Actual}'",
+                            mtlsConfig.ExpectedServerCertificateSubject, subjectCN);
+                        return false;
+                    }
+                }
+
+                logger.LogInformation("Server certificate validated successfully: Subject={Subject}", certificate.Subject);
+                return true;
+            };
+        }
+
+        // Create gRPC channel with mTLS
+        channel = GrpcChannel.ForAddress(nodeRuntimeConfig.ControlPlaneUrl, new GrpcChannelOptions
+        {
+            HttpHandler = httpHandler
+        });
+    }
+    else
+    {
+        // Create standard gRPC channel without mTLS
+        channel = GrpcChannel.ForAddress(nodeRuntimeConfig.ControlPlaneUrl);
+    }
+
     return new LeaseService.LeaseServiceClient(channel);
 });
 

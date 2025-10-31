@@ -13,6 +13,10 @@ using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Microsoft.AspNetCore.Server.Kestrel.Https;
+using System.Security.Cryptography.X509Certificates;
+using System.Net.Security;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -109,6 +113,143 @@ builder.Logging.AddOpenTelemetry(logging =>
 
 // Add services to the container
 builder.Services.AddOpenApi();
+
+// Configure mTLS
+var mtlsConfig = builder.Configuration.GetSection("MTls").Get<MTlsOptions>()
+    ?? new MTlsOptions();
+
+if (mtlsConfig.Enabled)
+{
+    Console.WriteLine("INFO: mTLS is enabled for gRPC connections");
+
+    // Validate required certificate paths
+    if (string.IsNullOrWhiteSpace(mtlsConfig.ServerCertificatePath))
+    {
+        throw new InvalidOperationException("MTls:ServerCertificatePath is required when mTLS is enabled");
+    }
+
+    if (string.IsNullOrWhiteSpace(mtlsConfig.ServerKeyPath))
+    {
+        throw new InvalidOperationException("MTls:ServerKeyPath is required when mTLS is enabled");
+    }
+
+    if (mtlsConfig.RequireClientCertificate && string.IsNullOrWhiteSpace(mtlsConfig.ClientCaCertificatePath))
+    {
+        throw new InvalidOperationException("MTls:ClientCaCertificatePath is required when RequireClientCertificate is true");
+    }
+
+    // Load server certificate
+    X509Certificate2? serverCertificate = null;
+    try
+    {
+        var certPem = File.ReadAllText(mtlsConfig.ServerCertificatePath);
+        var keyPem = File.ReadAllText(mtlsConfig.ServerKeyPath);
+        serverCertificate = X509Certificate2.CreateFromPem(certPem, keyPem);
+        Console.WriteLine($"INFO: Loaded server certificate from {mtlsConfig.ServerCertificatePath}");
+    }
+    catch (Exception ex)
+    {
+        throw new InvalidOperationException($"Failed to load server certificate from {mtlsConfig.ServerCertificatePath}", ex);
+    }
+
+    // Load client CA certificate if client certificate validation is required
+    X509Certificate2? clientCaCertificate = null;
+    if (mtlsConfig.RequireClientCertificate && !string.IsNullOrWhiteSpace(mtlsConfig.ClientCaCertificatePath))
+    {
+        try
+        {
+            var caPem = File.ReadAllText(mtlsConfig.ClientCaCertificatePath);
+            clientCaCertificate = X509Certificate2.CreateFromPem(caPem);
+            Console.WriteLine($"INFO: Loaded client CA certificate from {mtlsConfig.ClientCaCertificatePath}");
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Failed to load client CA certificate from {mtlsConfig.ClientCaCertificatePath}", ex);
+        }
+    }
+
+    // Configure Kestrel for mTLS
+    builder.WebHost.ConfigureKestrel(serverOptions =>
+    {
+        serverOptions.ConfigureHttpsDefaults(httpsOptions =>
+        {
+            httpsOptions.ServerCertificate = serverCertificate;
+            
+            if (mtlsConfig.RequireClientCertificate)
+            {
+                httpsOptions.ClientCertificateMode = ClientCertificateMode.RequireCertificate;
+                
+                // Custom certificate validation
+                httpsOptions.ClientCertificateValidation = (certificate, chain, sslPolicyErrors) =>
+                {
+                    // If no client certificate is provided and it's required, reject
+                    if (certificate == null)
+                    {
+                        return false;
+                    }
+
+                    // Check for basic SSL policy errors if chain validation is enabled
+                    if (mtlsConfig.ValidateCertificateChain && sslPolicyErrors != SslPolicyErrors.None)
+                    {
+                        return false;
+                    }
+
+                    // Validate against CA certificate
+                    if (clientCaCertificate != null)
+                    {
+                        var clientCert = new X509Certificate2(certificate);
+                        
+                        // Build chain with custom CA
+                        using var customChain = new X509Chain();
+                        customChain.ChainPolicy.RevocationMode = X509RevocationMode.NoCheck;
+                        customChain.ChainPolicy.VerificationFlags = X509VerificationFlags.AllowUnknownCertificateAuthority;
+                        customChain.ChainPolicy.ExtraStore.Add(clientCaCertificate);
+
+                        var chainBuilt = customChain.Build(clientCert);
+
+                        if (!chainBuilt)
+                        {
+                            return false;
+                        }
+
+                        // Check if the CA is in the chain
+                        var isSignedByCA = false;
+                        foreach (var chainElement in customChain.ChainElements)
+                        {
+                            if (chainElement.Certificate.Thumbprint == clientCaCertificate.Thumbprint)
+                            {
+                                isSignedByCA = true;
+                                break;
+                            }
+                        }
+
+                        if (!isSignedByCA)
+                        {
+                            return false;
+                        }
+                    }
+
+                    // Validate subject name if specified
+                    if (mtlsConfig.AllowedClientCertificateSubjects?.Length > 0)
+                    {
+                        var subjectCN = certificate.GetNameInfo(X509NameType.SimpleName, false);
+                        if (!mtlsConfig.AllowedClientCertificateSubjects.Contains(subjectCN))
+                        {
+                            return false;
+                        }
+                    }
+
+                    return true;
+                };
+            }
+            else
+            {
+                httpsOptions.ClientCertificateMode = ClientCertificateMode.NoCertificate;
+            }
+        });
+    });
+}
+
 builder.Services.AddGrpc();
 
 // Configure authentication
