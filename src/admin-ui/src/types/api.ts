@@ -31,3 +31,50 @@ export interface Run {
   traceId?: string;
   createdAt: string;
 }
+
+export interface AgentBudget {
+  maxTokens?: number;
+  maxDurationSeconds?: number;
+}
+
+export interface ConnectorConfiguration {
+  type: string;
+  config?: Record<string, unknown>;
+}
+
+export interface Agent {
+  agentId: string;
+  name: string;
+  description?: string;
+  instructions: string;
+  modelProfile?: Record<string, unknown>;
+  budget?: AgentBudget;
+  tools?: string[];
+  input?: ConnectorConfiguration;
+  output?: ConnectorConfiguration;
+  metadata?: Record<string, string>;
+}
+
+export interface CreateAgentRequest {
+  name: string;
+  description?: string;
+  instructions: string;
+  modelProfile?: Record<string, unknown>;
+  budget?: AgentBudget;
+  tools?: string[];
+  input?: ConnectorConfiguration;
+  output?: ConnectorConfiguration;
+  metadata?: Record<string, string>;
+}
+
+export interface UpdateAgentRequest {
+  name?: string;
+  description?: string;
+  instructions?: string;
+  modelProfile?: Record<string, unknown>;
+  budget?: AgentBudget;
+  tools?: string[];
+  input?: ConnectorConfiguration;
+  output?: ConnectorConfiguration;
+  metadata?: Record<string, string>;
+}

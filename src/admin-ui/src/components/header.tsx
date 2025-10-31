@@ -25,6 +25,12 @@ export async function Header() {
             >
               Runs
             </Link>
+            <Link
+              className="text-foreground/60 hover:text-foreground transition-colors"
+              href="/agents"
+            >
+              Agents
+            </Link>
           </nav>
         </div>
         <div className="flex items-center space-x-4">
