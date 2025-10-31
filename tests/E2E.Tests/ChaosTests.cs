@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using System.Linq;
+using System.Threading.Tasks;
 using ControlPlane.Api.Models;
 using ControlPlane.Api.Services;
 using FluentAssertions;
@@ -134,9 +136,11 @@ public class ChaosTests
         var scheduler = new LeastLoadedScheduler(nodeStore, runStore, _schedulerLoggerMock.Object);
         var assignedToHealthyNodeCount = 0;
 
-        foreach (var run in runs)
+        var scheduleTasks = runs.Select(run => scheduler.ScheduleRunAsync(run)).ToList();
+        var nodeIds = await Task.WhenAll(scheduleTasks);
+
+        foreach (var nodeId in nodeIds)
         {
-            var nodeId = await scheduler.ScheduleRunAsync(run);
             nodeId.Should().NotBeNull("run should be assigned to a healthy node");
 
             // Since node-1 is failed, all runs should go to node-2
