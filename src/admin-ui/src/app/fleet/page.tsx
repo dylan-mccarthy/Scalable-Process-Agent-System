@@ -31,8 +31,13 @@ export default async function FleetDashboardPage() {
     console.error("Fleet dashboard error:", error);
   }
 
-  const totalActiveRuns = nodes.reduce((sum, node) => sum + node.status.activeRuns, 0);
-  const totalAvailableSlots = nodes.reduce((sum, node) => sum + node.status.availableSlots, 0);
+  // Calculate metrics only when we have valid data
+  const totalActiveRuns = !error
+    ? nodes.reduce((sum, node) => sum + node.status.activeRuns, 0)
+    : 0;
+  const totalAvailableSlots = !error
+    ? nodes.reduce((sum, node) => sum + node.status.availableSlots, 0)
+    : 0;
 
   return (
     <div className="bg-background min-h-screen">
@@ -88,7 +93,7 @@ export default async function FleetDashboardPage() {
                 <CardContent>
                   <div className="text-2xl font-bold">{totalActiveRuns}</div>
                   <p className="text-muted-foreground text-xs">
-                    {activeRuns.length} total in system
+                    From node status reports
                   </p>
                 </CardContent>
               </Card>

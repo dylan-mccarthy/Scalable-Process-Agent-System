@@ -7,6 +7,11 @@ import type { Node, Run } from "@/types/api";
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 /**
+ * Run statuses that are considered "active"
+ */
+export const ACTIVE_RUN_STATUSES = ["pending", "running", "scheduled"];
+
+/**
  * Fetch all nodes from the Control Plane API
  */
 export async function fetchNodes(): Promise<Node[]> {
@@ -45,6 +50,6 @@ export async function fetchRuns(): Promise<Run[]> {
  */
 export function getActiveRuns(runs: Run[]): Run[] {
   return runs.filter((run) =>
-    ["pending", "running", "scheduled"].includes(run.status.toLowerCase())
+    ACTIVE_RUN_STATUSES.includes(run.status.toLowerCase())
   );
 }
