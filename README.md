@@ -327,6 +327,7 @@ This implementation provides:
 - ✅ Full CRUD operations for Agents
 - ✅ Agent versioning with semantic versioning validation (E3-T2)
 - ✅ **Deployment API with replicas and placement labels** (E3-T3)
+- ✅ **Invoice Classifier agent definition with Service Bus input and HTTP output** (E3-T6)
 - ✅ Node registration and heartbeat endpoints
 - ✅ Run state management endpoints (complete, fail, cancel)
 - ✅ **Microsoft Agent Framework SDK integration** (E1-T2)
@@ -344,7 +345,7 @@ This implementation provides:
 - ✅ **gRPC LeaseService** for node communication (E1-T6)
 - ✅ **Scheduler service with least-loaded strategy** (E1-T7)
 - ✅ **OpenTelemetry instrumentation** with metrics, tracing, and logging (E1-T8)
-- ✅ Comprehensive integration tests (121 tests)
+- ✅ Comprehensive integration tests (302 tests)
 
 ### Database Schema
 
@@ -1083,9 +1084,45 @@ The Node Runtime executes business process agents on worker nodes. See [Node Run
 In development mode, OpenAPI documentation is available at:
 - `/openapi/v1.json` - OpenAPI specification
 
+## Agents
+
+The platform includes the following business process agents:
+
+### Invoice Classifier Agent
+
+The **Invoice Classifier** is the MVP demonstration agent that showcases end-to-end message processing:
+
+- **Agent ID**: `invoice-classifier`
+- **Purpose**: Classifies invoices by vendor category and routes to appropriate departments
+- **Input**: Azure Service Bus queue (`invoices`)
+- **Output**: HTTP POST to target API with idempotency
+- **Model**: GPT-4 with temperature 0.3 for consistent classification
+
+**Vendor Categories:**
+- Office Supplies → Procurement Department
+- Technology/Hardware → IT Department
+- Professional Services → Finance Department
+- Utilities → Facilities Management
+- Travel & Expenses → HR Department
+- Other → General Accounts Payable
+
+**Seeding the Agent:**
+
+```bash
+cd agents
+./seed-invoice-classifier.sh
+```
+
+**Documentation:**
+- [Invoice Classifier Technical Documentation](docs/INVOICE_CLASSIFIER.md)
+- [Agent Definition](agents/definitions/invoice-classifier.json)
+- [Agent Definitions Guide](agents/README.md)
+
 ## Documentation
 
 - [System Architecture Document (SAD)](sad.md) - High-level system design and architecture
+- [Invoice Classifier Agent](docs/INVOICE_CLASSIFIER.md) - Technical documentation for the MVP Invoice Classifier agent
+- [Agent Definitions Guide](agents/README.md) - Guide to agent definitions and seeding agents
 - [Agent Versioning and Validation](docs/VERSIONING.md) - Guide to agent versioning, semantic versioning, and spec validation
 - [Azure AI Foundry Tool Registry](docs/AZURE_AI_FOUNDRY_TOOLS.md) - Azure AI Foundry tool provider and MAF SDK integration
 - [Authentication](AUTHENTICATION.md) - Authentication and authorization setup
