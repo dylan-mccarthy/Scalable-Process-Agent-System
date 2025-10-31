@@ -1,0 +1,55 @@
+{
+  "agentId": "invoice-classifier",
+  "name": "Invoice Classifier",
+  "description": "Classifies invoices by vendor and routes them appropriately to downstream systems",
+  "instructions": "You are an invoice classification agent. Your task is to:\n\n1. Analyze the incoming invoice data from the Service Bus queue\n2. Extract key information including:\n   - Vendor name and identifier\n   - Invoice number and date\n   - Total amount\n   - Line items and descriptions\n3. Classify the vendor into one of these categories:\n   - Office Supplies\n   - Technology/Hardware\n   - Professional Services\n   - Utilities\n   - Travel & Expenses\n   - Other\n4. Determine the appropriate routing destination based on the classification:\n   - Office Supplies → Procurement Department\n   - Technology/Hardware → IT Department\n   - Professional Services → Finance Department\n   - Utilities → Facilities Management\n   - Travel & Expenses → HR Department\n   - Other → General Accounts Payable\n5. Format your output as a JSON object with the following structure:\n   {\n     \"vendorName\": \"string\",\n     \"vendorCategory\": \"string\",\n     \"invoiceNumber\": \"string\",\n     \"invoiceDate\": \"string\",\n     \"totalAmount\": number,\n     \"currency\": \"string\",\n     \"routingDestination\": \"string\",\n     \"confidence\": number (0.0 to 1.0)\n   }\n\nBe accurate and consistent in your classifications. If you are uncertain about a classification, set a lower confidence score.",
+  "modelProfile": {
+    "model": "gpt-4",
+    "temperature": 0.3,
+    "maxTokens": 4000
+  },
+  "budget": {
+    "maxTokens": 4000,
+    "maxDurationSeconds": 60
+  },
+  "tools": [
+    "http-post"
+  ],
+  "input": {
+    "type": "ServiceBus",
+    "config": {
+      "connectionString": "${SERVICE_BUS_CONNECTION_STRING}",
+      "queueName": "invoices",
+      "prefetchCount": 16,
+      "maxDeliveryCount": 3,
+      "receiveMode": "PeekLock",
+      "maxWaitTime": "00:00:30"
+    }
+  },
+  "output": {
+    "type": "Http",
+    "config": {
+      "endpoint": "${INVOICE_API_ENDPOINT}",
+      "method": "POST",
+      "headers": {
+        "Content-Type": "application/json",
+        "X-API-Key": "${INVOICE_API_KEY}"
+      },
+      "timeoutSeconds": 30,
+      "retryPolicy": {
+        "maxRetries": 3,
+        "retryDelayMs": 1000,
+        "useExponentialBackoff": true,
+        "maxRetryDelayMs": 10000
+      },
+      "idempotencyKeyFormat": "{RunId}-{MessageId}"
+    }
+  },
+  "metadata": {
+    "owner": "Platform Engineering",
+    "epic": "E3-T6",
+    "version": "1.0.0",
+    "tags": "invoice,classification,routing,mvp",
+    "documentation": "https://github.com/dylan-mccarthy/Scalable-Process-Agent-System/blob/main/docs/INVOICE_CLASSIFIER.md"
+  }
+}
