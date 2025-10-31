@@ -279,7 +279,15 @@ export function AgentEditorForm({ agent, mode }: AgentEditorFormProps) {
                 <FormItem>
                   <FormLabel>Temperature</FormLabel>
                   <FormControl>
-                    <Input type="number" step="0.1" min="0" max="2" {...field} />
+                    <Input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="2"
+                      {...field}
+                      onChange={(e) => field.onChange(parseFloat(e.target.value) || undefined)}
+                      value={field.value?.toString() || ""}
+                    />
                   </FormControl>
                   <FormDescription>
                     Controls randomness. Lower is more focused, higher is more creative (0-2, default
@@ -306,7 +314,14 @@ export function AgentEditorForm({ agent, mode }: AgentEditorFormProps) {
                 <FormItem>
                   <FormLabel>Max Tokens</FormLabel>
                   <FormControl>
-                    <Input type="number" min="1" max="100000" {...field} />
+                    <Input
+                      type="number"
+                      min="1"
+                      max="100000"
+                      {...field}
+                      onChange={(e) => field.onChange(parseInt(e.target.value, 10) || undefined)}
+                      value={field.value?.toString() || ""}
+                    />
                   </FormControl>
                   <FormDescription>
                     Maximum tokens the agent can use per run (default 4000)
@@ -323,7 +338,14 @@ export function AgentEditorForm({ agent, mode }: AgentEditorFormProps) {
                 <FormItem>
                   <FormLabel>Max Duration (seconds)</FormLabel>
                   <FormControl>
-                    <Input type="number" min="1" max="3600" {...field} />
+                    <Input
+                      type="number"
+                      min="1"
+                      max="3600"
+                      {...field}
+                      onChange={(e) => field.onChange(parseInt(e.target.value, 10) || undefined)}
+                      value={field.value?.toString() || ""}
+                    />
                   </FormControl>
                   <FormDescription>
                     Maximum time the agent can run in seconds (default 60)
