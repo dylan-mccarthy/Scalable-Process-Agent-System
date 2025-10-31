@@ -6,6 +6,7 @@ using Polly.Retry;
 using System.Diagnostics;
 using System.Net;
 using System.Text;
+using System.Text.Json;
 
 namespace Node.Runtime.Connectors;
 
@@ -98,9 +99,27 @@ public sealed class HttpOutputConnector : IOutputConnector, IAsyncDisposable
             activity?.SetTag("base.url", _options.BaseUrl);
             activity?.SetTag("max.retries", _options.MaxRetryAttempts);
         }
+        catch (UriFormatException ex)
+        {
+            _logger.LogError(ex, "Invalid base URL format: {BaseUrl}", _options.BaseUrl);
+            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            throw;
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogError(ex, "Invalid HTTP configuration: {Message}", ex.Message);
+            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            throw;
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogError(ex, "Invalid operation during HTTP connector initialization: {Message}", ex.Message);
+            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            throw;
+        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to initialize HTTP output connector");
+            _logger.LogError(ex, "Unexpected error initializing HTTP output connector");
             activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
             throw;
         }
@@ -194,6 +213,38 @@ public sealed class HttpOutputConnector : IOutputConnector, IAsyncDisposable
                 IsRetryable = true
             };
         }
+        catch (JsonException ex)
+        {
+            _logger.LogError(
+                ex,
+                "JSON serialization error while sending message: MessageId={MessageId}",
+                message.MessageId);
+
+            activity?.SetStatus(ActivityStatusCode.Error, "Serialization error");
+
+            return new SendMessageResult
+            {
+                Success = false,
+                ErrorMessage = $"JSON error: {ex.Message}",
+                IsRetryable = false
+            };
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogError(
+                ex,
+                "Invalid operation while sending message: MessageId={MessageId}",
+                message.MessageId);
+
+            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+
+            return new SendMessageResult
+            {
+                Success = false,
+                ErrorMessage = ex.Message,
+                IsRetryable = false
+            };
+        }
         catch (Exception ex)
         {
             _logger.LogError(
@@ -235,9 +286,20 @@ public sealed class HttpOutputConnector : IOutputConnector, IAsyncDisposable
 
             _logger.LogInformation("HTTP output connector closed successfully");
         }
+        catch (ObjectDisposedException ex)
+        {
+            _logger.LogWarning(ex, "HTTP client already disposed during close");
+            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogError(ex, "Invalid operation while closing HTTP output connector");
+            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            throw;
+        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error closing HTTP output connector");
+            _logger.LogError(ex, "Unexpected error closing HTTP output connector");
             activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
             throw;
         }
