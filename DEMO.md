@@ -552,13 +552,13 @@ After completing the demo:
 
 ## Documentation
 
-- [System Architecture Document](../sad.md) - High-level design
-- [Invoice Classifier Agent](../docs/INVOICE_CLASSIFIER.md) - Agent details
-- [Agent Definitions](../agents/README.md) - Agent configuration
+- [System Architecture Document](sad.md) - High-level design
+- [Invoice Classifier Agent](docs/INVOICE_CLASSIFIER.md) - Agent details
+- [Agent Definitions](agents/README.md) - Agent configuration
 - [Azure AI Foundry](docs/AZURE_AI_FOUNDRY_INTEGRATION.md) - LLM setup
-- [Deployment Guide](../DEPLOYMENT.md) - Production deployment
-- [Observability](../OBSERVABILITY.md) - Monitoring setup
-- [CI/CD](../CI-CD.md) - Pipeline configuration
+- [Deployment Guide](DEPLOYMENT.md) - Production deployment
+- [Observability](OBSERVABILITY.md) - Monitoring setup
+- [CI/CD](CI-CD.md) - Pipeline configuration
 
 ## Support
 
