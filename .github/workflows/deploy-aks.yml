@@ -190,7 +190,7 @@ jobs:
             --overwrite-existing
       
       - name: Setup Helm
-        uses: azure/setup-helm@v3
+        uses: azure/setup-helm@v4
         with:
           version: '3.13.0'
       
