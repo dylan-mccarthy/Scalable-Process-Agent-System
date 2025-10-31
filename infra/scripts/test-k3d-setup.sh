@@ -164,7 +164,7 @@ test_k3d_values_valid() {
         fi
     else
         # Fallback to basic YAML check with Python
-        if python3 -c "import yaml; yaml.safe_load(open('${SCRIPT_DIR}/../helm/values-k3d.yaml'))" 2>/dev/null; then
+        if python3 -c "import yaml; f = open('${SCRIPT_DIR}/../helm/values-k3d.yaml', 'r'); yaml.safe_load(f); f.close()" 2>/dev/null; then
             log_success "values-k3d.yaml is valid YAML"
         else
             log_error "values-k3d.yaml is invalid YAML (install yq or python3-yaml for better validation)"

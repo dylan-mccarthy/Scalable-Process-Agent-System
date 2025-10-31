@@ -268,15 +268,8 @@ deploy_application() {
     
     log_info "Installing Helm chart from: ${HELM_CHART_DIR}"
     
-    # Prepare Helm values
-    local helm_values=""
-    
     # Use k3d-specific values file if it exists
     local k3d_values_file="${PROJECT_ROOT}/infra/helm/values-k3d.yaml"
-    if [ -f "${k3d_values_file}" ]; then
-        helm_values="-f ${k3d_values_file}"
-        log_info "Using k3d values file: ${k3d_values_file}"
-    fi
     
     # Set appropriate values for k3d environment
     local set_values=(
@@ -313,8 +306,9 @@ deploy_application() {
     )
     
     # Add values file if it exists
-    if [ -n "${helm_values}" ]; then
-        helm_cmd+=("${helm_values}")
+    if [ -f "${k3d_values_file}" ]; then
+        log_info "Using k3d values file: ${k3d_values_file}"
+        helm_cmd+=(-f "${k3d_values_file}")
     fi
     
     # Add all set values
@@ -399,7 +393,7 @@ health_check() {
     local retry_count=0
     
     while [ $retry_count -lt $max_retries ]; do
-        if curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/health 2>/dev/null | grep -q "200"; then
+        if curl -s -f http://localhost:8080/health >/dev/null 2>&1; then
             log_success "Control Plane API is healthy"
             break
         fi
