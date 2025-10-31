@@ -54,6 +54,10 @@ public static class TelemetryConfig
         "lease_stream_reconnects_total",
         description: "Total number of lease stream reconnection attempts");
 
+    public static readonly Counter<long> MessagesDeadLetteredCounter = Meter.CreateCounter<long>(
+        "messages_deadlettered_total",
+        description: "Total number of messages moved to dead-letter queue");
+
     // Histograms
     public static readonly Histogram<double> LeaseProcessingDurationHistogram = Meter.CreateHistogram<double>(
         "lease_processing_duration_ms",

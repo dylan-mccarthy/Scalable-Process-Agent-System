@@ -221,7 +221,7 @@ public sealed class ServiceBusInputConnectorTests
             // This will throw because we're not initialized
             await connector.CompleteMessageAsync(message);
         };
-        
+
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 

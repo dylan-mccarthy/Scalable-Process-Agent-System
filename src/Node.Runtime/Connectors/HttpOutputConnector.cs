@@ -303,7 +303,7 @@ public sealed class HttpOutputConnector : IOutputConnector, IAsyncDisposable
                     var baseDelay = TimeSpan.FromMilliseconds(_options.BaseBackoffMs);
                     var exponentialDelay = TimeSpan.FromMilliseconds(
                         _options.BaseBackoffMs * Math.Pow(2, retryAttempt - 1));
-                    
+
                     // Cap at max delay
                     var delay = exponentialDelay > TimeSpan.FromMilliseconds(_options.MaxBackoffMs)
                         ? TimeSpan.FromMilliseconds(_options.MaxBackoffMs)
