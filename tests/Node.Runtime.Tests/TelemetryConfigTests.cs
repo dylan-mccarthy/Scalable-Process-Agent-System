@@ -122,7 +122,7 @@ public class TelemetryConfigTests
 
         // Assert
         Assert.NotNull(activity);
-        var tags = activity.Tags.ToList();
+        var tags = activity!.Tags.ToList();
         Assert.Contains(tags, tag => tag.Key == "agent.id" && tag.Value == "test-agent");
         Assert.Contains(tags, tag => tag.Key == "llm.model" && tag.Value == "gpt-4");
         Assert.Contains(tags, tag => tag.Key == "connector.type" && tag.Value == "ServiceBus");
@@ -191,7 +191,7 @@ public class TelemetryConfigTests
 
         // Assert
         Assert.NotNull(activity);
-        Assert.Equal(ActivityStatusCode.Ok, activity.Status);
+        Assert.Equal(ActivityStatusCode.Ok, activity!.Status);
     }
 
     [Fact]
@@ -211,7 +211,7 @@ public class TelemetryConfigTests
 
         // Assert
         Assert.NotNull(activity);
-        Assert.Equal(ActivityStatusCode.Error, activity.Status);
+        Assert.Equal(ActivityStatusCode.Error, activity!.Status);
         Assert.Equal("Test error message", activity.StatusDescription);
     }
 
@@ -238,7 +238,7 @@ public class TelemetryConfigTests
 
         // Assert
         Assert.NotNull(activity);
-        Assert.Single(activity.Events);
+        Assert.Single(activity!.Events);
         var activityEvent = activity.Events.First();
         Assert.Equal("exception", activityEvent.Name);
         Assert.Contains(activityEvent.Tags, tag => tag.Key == "exception.type" && tag.Value?.ToString() == "System.Exception");
