@@ -1,0 +1,327 @@
+# Helm values for k3d local development environment
+# Task: E6-T1 - Local environment
+#
+# This values file is optimized for k3d local development and testing.
+# It provides reasonable defaults for running all core services locally.
+
+# Global settings
+global:
+  environment: development
+
+# Control Plane API configuration
+controlPlane:
+  replicaCount: 1
+  
+  image:
+    repository: business-process-agents/control-plane
+    tag: latest
+    pullPolicy: IfNotPresent
+  
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  
+  service:
+    type: ClusterIP
+    port: 8080
+    grpcPort: 8081
+  
+  env:
+    ASPNETCORE_ENVIRONMENT: "Development"
+    UseInMemoryStores: "false"
+  
+  # Disable ingress for k3d (use port-forward instead)
+  ingress:
+    enabled: false
+
+# Node Runtime configuration
+nodeRuntime:
+  replicaCount: 2
+  
+  image:
+    repository: business-process-agents/node-runtime
+    tag: latest
+    pullPolicy: IfNotPresent
+  
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  
+  # Node metadata for placement
+  metadata:
+    region: local
+    environment: development
+  
+  # Node capacity
+  capacity:
+    slots: 8
+    cpu: "2"
+    memory: 2Gi
+  
+  # Disable autoscaling for local development
+  autoscaling:
+    enabled: false
+
+# Admin UI configuration
+adminUI:
+  replicaCount: 1
+  
+  image:
+    repository: business-process-agents/admin-ui
+    tag: latest
+    pullPolicy: IfNotPresent
+  
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+  
+  service:
+    type: ClusterIP
+    port: 3000
+  
+  env:
+    NODE_ENV: "production"
+    NEXT_PUBLIC_API_URL: "http://localhost:8080"
+  
+  # Disable ingress for k3d (use port-forward instead)
+  ingress:
+    enabled: false
+
+# PostgreSQL configuration
+postgresql:
+  enabled: true
+  
+  auth:
+    username: postgres
+    password: postgres
+    database: bpa
+  
+  primary:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    
+    persistence:
+      enabled: true
+      size: 5Gi
+      storageClass: local-path  # k3d default storage class
+  
+  # Disable replication for local development
+  architecture: standalone
+
+# Redis configuration
+redis:
+  enabled: true
+  
+  auth:
+    enabled: false  # Disable auth for local development
+  
+  master:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+    
+    persistence:
+      enabled: true
+      size: 1Gi
+      storageClass: local-path  # k3d default storage class
+  
+  # Disable replication for local development
+  architecture: standalone
+
+# NATS configuration
+nats:
+  enabled: true
+  
+  nats:
+    jetstream:
+      enabled: true
+      memStorage:
+        enabled: true
+        size: 1Gi
+      fileStorage:
+        enabled: true
+        size: 1Gi
+        storageClass: local-path  # k3d default storage class
+  
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+  
+  # Single replica for local development
+  replicas: 1
+
+# OpenTelemetry Collector configuration
+otelCollector:
+  enabled: false  # Disabled by default, enable with --observability flag
+  
+  image:
+    repository: otel/opentelemetry-collector-contrib
+    tag: 0.91.0
+  
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+  
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+    
+    exporters:
+      prometheus:
+        endpoint: 0.0.0.0:8889
+      logging:
+        loglevel: debug
+    
+    service:
+      pipelines:
+        metrics:
+          receivers: [otlp]
+          exporters: [prometheus, logging]
+        traces:
+          receivers: [otlp]
+          exporters: [logging]
+        logs:
+          receivers: [otlp]
+          exporters: [logging]
+
+# Prometheus configuration
+prometheus:
+  enabled: false  # Disabled by default, enable with --observability flag
+  
+  server:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 256Mi
+      limits:
+        cpu: 200m
+        memory: 512Mi
+    
+    persistentVolume:
+      enabled: true
+      size: 2Gi
+      storageClass: local-path  # k3d default storage class
+  
+  # Disable components not needed for local dev
+  alertmanager:
+    enabled: false
+  pushgateway:
+    enabled: false
+  nodeExporter:
+    enabled: false
+
+# Tempo configuration (distributed tracing)
+tempo:
+  enabled: false  # Disabled by default, enable with --observability flag
+  
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+  
+  persistence:
+    enabled: true
+    size: 1Gi
+    storageClass: local-path  # k3d default storage class
+
+# Loki configuration (log aggregation)
+loki:
+  enabled: false  # Disabled by default, enable with --observability flag
+  
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+  
+  persistence:
+    enabled: true
+    size: 1Gi
+    storageClass: local-path  # k3d default storage class
+
+# Grafana configuration
+grafana:
+  enabled: false  # Disabled by default, enable with --observability flag
+  
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+  
+  persistence:
+    enabled: true
+    size: 1Gi
+    storageClass: local-path  # k3d default storage class
+  
+  adminUser: admin
+  adminPassword: admin  # Change this in production!
+  
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+        - name: Prometheus
+          type: prometheus
+          url: http://bpa-prometheus-server:80
+          access: proxy
+          isDefault: true
+        - name: Tempo
+          type: tempo
+          url: http://bpa-tempo:3100
+          access: proxy
+        - name: Loki
+          type: loki
+          url: http://bpa-loki:3100
+          access: proxy
+  
+  # Disable ingress for k3d (use port-forward instead)
+  ingress:
+    enabled: false
+
+# Service Account configuration
+serviceAccount:
+  create: true
+  annotations: {}
+  name: bpa-service-account

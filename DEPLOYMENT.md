@@ -236,69 +236,150 @@ kubectl delete pvc -l app.kubernetes.io/instance=bpa
 
 ## Local Development with k3d
 
-### Setup k3d Cluster
+> **✨ Automated Setup Available!**
+>
+> We provide automated scripts for easy k3d setup and teardown.
+> See [infra/scripts/README.md](infra/scripts/README.md) for detailed documentation.
+
+### Quick Start (Automated)
+
+The easiest way to set up a local k3d environment:
 
 ```bash
-# Install k3d (if not already installed)
-curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
+# Basic setup (core services only)
+./infra/scripts/setup-k3d.sh
 
-# Create cluster
+# With observability stack (Prometheus, Grafana, etc.)
+./infra/scripts/setup-k3d.sh --observability
+
+# Custom configuration
+./infra/scripts/setup-k3d.sh --cluster-name my-cluster --namespace bpa-dev
+```
+
+The setup script will:
+1. ✓ Check prerequisites (Docker, k3d, kubectl, Helm)
+2. ✓ Create k3d cluster with appropriate port mappings
+3. ✓ Deploy all core services via Helm
+4. ✓ Wait for pods to be ready
+5. ✓ Perform health checks
+6. ✓ Display access information
+
+**Access Points:**
+- Control Plane API: http://localhost:8080
+- Admin UI: http://localhost:3000
+- Prometheus (if enabled): http://localhost:9090
+
+**Cleanup:**
+```bash
+# Interactive cleanup
+./infra/scripts/cleanup-k3d.sh
+
+# Force cleanup (no confirmation)
+./infra/scripts/cleanup-k3d.sh --force
+```
+
+### Manual Setup (Alternative)
+
+If you prefer manual control:
+
+#### 1. Install k3d
+
+```bash
+curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
+```
+
+#### 2. Create Cluster
+
+```bash
 k3d cluster create bpa-dev \
   --servers 1 \
   --agents 2 \
   --port "8080:80@loadbalancer" \
-  --port "8443:443@loadbalancer"
-
-# Verify cluster
-kubectl cluster-info
-kubectl get nodes
+  --port "8443:443@loadbalancer" \
+  --port "9090:9090@loadbalancer" \
+  --port "3000:3000@loadbalancer"
 ```
 
-### Deploy to k3d
+#### 3. Deploy Application
 
 ```bash
-# Install Helm chart
+# Install with k3d-optimized values
 helm install bpa ./helm/business-process-agents \
-  --set controlPlane.replicaCount=1 \
-  --set nodeRuntime.replicaCount=2
+  -f infra/helm/values-k3d.yaml
 
 # Wait for pods to be ready
 kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=bpa --timeout=300s
-
-# Port forward services
-kubectl port-forward svc/bpa-business-process-agents-control-plane 8080:8080 &
-kubectl port-forward svc/bpa-business-process-agents-admin-ui 3000:3000 &
 ```
 
-### Load Local Images into k3d
+#### 4. Verify Deployment
+
+```bash
+# Check pods
+kubectl get pods
+
+# Check services
+kubectl get svc
+
+# Test API
+curl http://localhost:8080/health
+```
+
+### Working with Local Images
+
+If you've built images locally and want to use them in k3d:
 
 ```bash
 # Build images
-docker build -t business-process-agents/control-plane:dev -f src/ControlPlane.Api/Dockerfile .
-docker build -t business-process-agents/node-runtime:dev -f src/Node.Runtime/Dockerfile .
-docker build -t business-process-agents/admin-ui:dev -f src/admin-ui/Dockerfile ./src/admin-ui
+docker build -t business-process-agents/control-plane:latest -f src/ControlPlane.Api/Dockerfile .
+docker build -t business-process-agents/node-runtime:latest -f src/Node.Runtime/Dockerfile .
+docker build -t business-process-agents/admin-ui:latest -f src/admin-ui/Dockerfile ./src/admin-ui
 
 # Import into k3d
-k3d image import business-process-agents/control-plane:dev -c bpa-dev
-k3d image import business-process-agents/node-runtime:dev -c bpa-dev
-k3d image import business-process-agents/admin-ui:dev -c bpa-dev
+k3d image import business-process-agents/control-plane:latest -c bpa-dev
+k3d image import business-process-agents/node-runtime:latest -c bpa-dev
+k3d image import business-process-agents/admin-ui:latest -c bpa-dev
 
-# Deploy with local images
-helm install bpa ./helm/business-process-agents \
-  --set controlPlane.image.tag=dev \
-  --set nodeRuntime.image.tag=dev \
-  --set adminUI.image.tag=dev \
-  --set controlPlane.image.pullPolicy=Never \
-  --set nodeRuntime.image.pullPolicy=Never \
-  --set adminUI.image.pullPolicy=Never
+# The k3d values file already uses pullPolicy: IfNotPresent
+# so the local images will be used automatically
+helm upgrade bpa ./helm/business-process-agents -f infra/helm/values-k3d.yaml
 ```
 
-### Clean Up
+### Common Tasks
 
 ```bash
-# Delete cluster
+# View logs
+kubectl logs -l app.kubernetes.io/component=control-plane -f
+
+# Scale node runtime
+kubectl scale deployment bpa-business-process-agents-node-runtime --replicas=5
+
+# Restart a service
+kubectl rollout restart deployment bpa-business-process-agents-control-plane
+
+# Execute in pod
+kubectl exec -it <pod-name> -- /bin/bash
+```
+
+### Cleanup
+
+```bash
+# Using automated script
+./infra/scripts/cleanup-k3d.sh
+
+# Manual cleanup
 k3d cluster delete bpa-dev
 ```
+
+### Documentation
+
+For comprehensive documentation on the k3d setup, including:
+- Prerequisites and installation
+- Configuration options
+- Troubleshooting guide
+- CI/CD integration
+- Performance tuning
+
+See: **[infra/scripts/README.md](infra/scripts/README.md)**
 
 ## Production Deployment on AKS
 
