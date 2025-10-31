@@ -64,7 +64,7 @@ public sealed class LeasePullServiceTests : IDisposable
     public async Task StartAsync_CompletesSuccessfully()
     {
         // Arrange
-        var cts = new CancellationTokenSource();
+        using var cts = new CancellationTokenSource();
 
         // Act
         await _service.StartAsync(cts.Token);
@@ -77,7 +77,7 @@ public sealed class LeasePullServiceTests : IDisposable
     public async Task StopAsync_CompletesSuccessfully()
     {
         // Arrange
-        var cts = new CancellationTokenSource();
+        using var cts = new CancellationTokenSource();
         await _service.StartAsync(cts.Token);
 
         // Act

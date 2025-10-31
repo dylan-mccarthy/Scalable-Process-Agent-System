@@ -14,6 +14,7 @@ public class NatsEventPublisherTests : IAsyncLifetime
     private INatsConnection? _natsConnection;
     private NatsEventPublisher? _publisher;
     private ILogger<NatsEventPublisher>? _logger;
+    private ILoggerFactory? _loggerFactory;
 
     public NatsEventPublisherTests()
     {
@@ -29,7 +30,8 @@ public class NatsEventPublisherTests : IAsyncLifetime
         var opts = NatsOpts.Default with { Url = _natsContainer.GetConnectionString() };
         _natsConnection = new NatsConnection(opts);
 
-        _logger = new LoggerFactory().CreateLogger<NatsEventPublisher>();
+        _loggerFactory = new LoggerFactory();
+        _logger = _loggerFactory.CreateLogger<NatsEventPublisher>();
         _publisher = new NatsEventPublisher(_natsConnection, _logger);
 
         // Initialize streams
@@ -38,6 +40,7 @@ public class NatsEventPublisherTests : IAsyncLifetime
 
     public async Task DisposeAsync()
     {
+        _loggerFactory?.Dispose();
         if (_natsConnection != null)
         {
             await _natsConnection.DisposeAsync();

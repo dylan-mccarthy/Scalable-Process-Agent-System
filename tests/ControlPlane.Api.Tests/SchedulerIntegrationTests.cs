@@ -80,7 +80,7 @@ public class SchedulerIntegrationTests
             .ReturnsAsync(true);
 
         // Act - Node-2 requests a lease
-        var cts = new CancellationTokenSource();
+        using var cts = new CancellationTokenSource();
         cts.CancelAfter(TimeSpan.FromSeconds(1));
 
         const int expectedLeaseCount = 1;

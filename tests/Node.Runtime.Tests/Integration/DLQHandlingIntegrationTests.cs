@@ -77,7 +77,7 @@ public sealed class DLQHandlingIntegrationTests
             Options.Create(_options),
             _loggerMock.Object);
 
-        var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
+        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
 
         // Act
         await service.StartAsync(cts.Token);
@@ -159,7 +159,7 @@ public sealed class DLQHandlingIntegrationTests
             Options.Create(_options),
             _loggerMock.Object);
 
-        var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
+        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
 
         // Act
         await service.StartAsync(cts.Token);
@@ -251,7 +251,7 @@ public sealed class DLQHandlingIntegrationTests
             Options.Create(_options),
             _loggerMock.Object);
 
-        var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
+        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
 
         // Act
         await service.StartAsync(cts.Token);
@@ -327,7 +327,7 @@ public sealed class DLQHandlingIntegrationTests
             Options.Create(_options),
             _loggerMock.Object);
 
-        var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
+        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
 
         // Act
         await service.StartAsync(cts.Token);
@@ -437,7 +437,7 @@ public sealed class DLQHandlingIntegrationTests
             Options.Create(_options),
             _loggerMock.Object);
 
-        var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
+        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
 
         // Act
         await service.StartAsync(cts.Token);
