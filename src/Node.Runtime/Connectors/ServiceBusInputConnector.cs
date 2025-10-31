@@ -2,6 +2,7 @@ using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Node.Runtime.Configuration;
+using Node.Runtime.Observability;
 using System.Diagnostics;
 
 namespace Node.Runtime.Connectors;
@@ -17,8 +18,6 @@ public sealed class ServiceBusInputConnector : IInputConnector, IAsyncDisposable
     private ServiceBusClient? _client;
     private ServiceBusReceiver? _receiver;
     private bool _isInitialized;
-
-    private static readonly ActivitySource ActivitySource = new("Node.Runtime.Connectors.ServiceBus", "1.0.0");
 
     /// <inheritdoc/>
     public string ConnectorType => "ServiceBus";
@@ -39,7 +38,8 @@ public sealed class ServiceBusInputConnector : IInputConnector, IAsyncDisposable
     /// <inheritdoc/>
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
-        using var activity = ActivitySource.StartActivity("ServiceBusInputConnector.Initialize");
+        using var activity = TelemetryConfig.ActivitySource.StartActivity("ServiceBusConnector.Initialize");
+        activity?.SetTag("connector.type", "ServiceBus");
 
         if (_isInitialized)
         {
@@ -84,11 +84,14 @@ public sealed class ServiceBusInputConnector : IInputConnector, IAsyncDisposable
 
             activity?.SetTag("queue.name", _options.QueueName);
             activity?.SetTag("prefetch.count", _options.PrefetchCount);
+            activity?.SetTag("receive.mode", receiverOptions.ReceiveMode.ToString());
+            activity?.SetStatus(ActivityStatusCode.Ok);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to initialize Service Bus connector");
             activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            activity?.AddEvent(new ActivityEvent("exception", tags: new ActivityTagsCollection { { "exception.type", ex.GetType().FullName }, { "exception.message", ex.Message } }));
             throw;
         }
 
@@ -101,7 +104,8 @@ public sealed class ServiceBusInputConnector : IInputConnector, IAsyncDisposable
         TimeSpan? maxWaitTime = null,
         CancellationToken cancellationToken = default)
     {
-        using var activity = ActivitySource.StartActivity("ServiceBusInputConnector.ReceiveMessages");
+        using var activity = TelemetryConfig.ActivitySource.StartActivity("ServiceBusConnector.ReceiveMessages");
+        activity?.SetTag("connector.type", "ServiceBus");
         activity?.SetTag("max.messages", maxMessages);
 
         EnsureInitialized();
@@ -137,11 +141,20 @@ public sealed class ServiceBusInputConnector : IInputConnector, IAsyncDisposable
                         receivedMessage.MessageId,
                         receivedMessage.DeliveryCount,
                         _options.MaxDeliveryCount);
+                    
+                    activity?.AddEvent(new ActivityEvent("poison_message_detected",
+                        tags: new ActivityTagsCollection
+                        {
+                            { "message.id", receivedMessage.MessageId },
+                            { "delivery.count", receivedMessage.DeliveryCount }
+                        }));
                 }
             }
 
             _logger.LogInformation("Received {MessageCount} messages from Service Bus", messages.Count);
             activity?.SetTag("messages.received", messages.Count);
+            activity?.SetTag("queue.name", _options.QueueName);
+            activity?.SetStatus(ActivityStatusCode.Ok);
 
             return messages;
         }
@@ -149,6 +162,7 @@ public sealed class ServiceBusInputConnector : IInputConnector, IAsyncDisposable
         {
             _logger.LogError(ex, "Error receiving messages from Service Bus");
             activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            activity?.AddEvent(new ActivityEvent("exception", tags: new ActivityTagsCollection { { "exception.type", ex.GetType().FullName }, { "exception.message", ex.Message } }));
             throw;
         }
     }
@@ -158,7 +172,8 @@ public sealed class ServiceBusInputConnector : IInputConnector, IAsyncDisposable
         ReceivedMessage message,
         CancellationToken cancellationToken = default)
     {
-        using var activity = ActivitySource.StartActivity("ServiceBusInputConnector.CompleteMessage");
+        using var activity = TelemetryConfig.ActivitySource.StartActivity("ServiceBusConnector.CompleteMessage");
+        activity?.SetTag("connector.type", "ServiceBus");
         activity?.SetTag("message.id", message.MessageId);
 
         EnsureInitialized();
@@ -170,6 +185,7 @@ public sealed class ServiceBusInputConnector : IInputConnector, IAsyncDisposable
             await _receiver!.CompleteMessageAsync(sbMessage, cancellationToken);
 
             _logger.LogDebug("Completed message: MessageId={MessageId}", message.MessageId);
+            activity?.SetStatus(ActivityStatusCode.Ok);
 
             return new MessageCompletionResult { Success = true };
         }
@@ -177,6 +193,7 @@ public sealed class ServiceBusInputConnector : IInputConnector, IAsyncDisposable
         {
             _logger.LogError(ex, "Error completing message: MessageId={MessageId}", message.MessageId);
             activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            activity?.AddEvent(new ActivityEvent("exception", tags: new ActivityTagsCollection { { "exception.type", ex.GetType().FullName }, { "exception.message", ex.Message } }));
 
             return new MessageCompletionResult
             {
@@ -191,7 +208,8 @@ public sealed class ServiceBusInputConnector : IInputConnector, IAsyncDisposable
         ReceivedMessage message,
         CancellationToken cancellationToken = default)
     {
-        using var activity = ActivitySource.StartActivity("ServiceBusInputConnector.AbandonMessage");
+        using var activity = TelemetryConfig.ActivitySource.StartActivity("ServiceBusConnector.AbandonMessage");
+        activity?.SetTag("connector.type", "ServiceBus");
         activity?.SetTag("message.id", message.MessageId);
 
         EnsureInitialized();
@@ -203,6 +221,7 @@ public sealed class ServiceBusInputConnector : IInputConnector, IAsyncDisposable
             await _receiver!.AbandonMessageAsync(sbMessage, cancellationToken: cancellationToken);
 
             _logger.LogDebug("Abandoned message: MessageId={MessageId}", message.MessageId);
+            activity?.SetStatus(ActivityStatusCode.Ok);
 
             return new MessageCompletionResult { Success = true };
         }
@@ -210,6 +229,7 @@ public sealed class ServiceBusInputConnector : IInputConnector, IAsyncDisposable
         {
             _logger.LogError(ex, "Error abandoning message: MessageId={MessageId}", message.MessageId);
             activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            activity?.AddEvent(new ActivityEvent("exception", tags: new ActivityTagsCollection { { "exception.type", ex.GetType().FullName }, { "exception.message", ex.Message } }));
 
             return new MessageCompletionResult
             {
@@ -226,9 +246,14 @@ public sealed class ServiceBusInputConnector : IInputConnector, IAsyncDisposable
         string? errorDescription = null,
         CancellationToken cancellationToken = default)
     {
-        using var activity = ActivitySource.StartActivity("ServiceBusInputConnector.DeadLetterMessage");
+        using var activity = TelemetryConfig.ActivitySource.StartActivity("ServiceBusConnector.DeadLetterMessage");
+        activity?.SetTag("connector.type", "ServiceBus");
         activity?.SetTag("message.id", message.MessageId);
-        activity?.SetTag("reason", reason);
+        activity?.SetTag("dlq.reason", reason);
+        if (!string.IsNullOrEmpty(errorDescription))
+        {
+            activity?.SetTag("dlq.error_description", errorDescription);
+        }
 
         EnsureInitialized();
 
@@ -247,6 +272,8 @@ public sealed class ServiceBusInputConnector : IInputConnector, IAsyncDisposable
                 message.MessageId,
                 reason,
                 errorDescription);
+            
+            activity?.SetStatus(ActivityStatusCode.Ok);
 
             return new MessageCompletionResult { Success = true };
         }
@@ -258,6 +285,7 @@ public sealed class ServiceBusInputConnector : IInputConnector, IAsyncDisposable
                 message.MessageId,
                 reason);
             activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            activity?.AddEvent(new ActivityEvent("exception", tags: new ActivityTagsCollection { { "exception.type", ex.GetType().FullName }, { "exception.message", ex.Message } }));
 
             return new MessageCompletionResult
             {
@@ -270,7 +298,8 @@ public sealed class ServiceBusInputConnector : IInputConnector, IAsyncDisposable
     /// <inheritdoc/>
     public async Task CloseAsync(CancellationToken cancellationToken = default)
     {
-        using var activity = ActivitySource.StartActivity("ServiceBusInputConnector.Close");
+        using var activity = TelemetryConfig.ActivitySource.StartActivity("ServiceBusConnector.Close");
+        activity?.SetTag("connector.type", "ServiceBus");
 
         if (!_isInitialized)
         {
@@ -297,11 +326,13 @@ public sealed class ServiceBusInputConnector : IInputConnector, IAsyncDisposable
             _isInitialized = false;
 
             _logger.LogInformation("Service Bus connector closed successfully");
+            activity?.SetStatus(ActivityStatusCode.Ok);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error closing Service Bus connector");
             activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            activity?.AddEvent(new ActivityEvent("exception", tags: new ActivityTagsCollection { { "exception.type", ex.GetType().FullName }, { "exception.message", ex.Message } }));
             throw;
         }
     }

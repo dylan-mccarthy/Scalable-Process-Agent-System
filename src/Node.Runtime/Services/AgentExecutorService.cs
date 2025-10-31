@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using Azure;
 using Azure.AI.Inference;
 using Azure.Identity;
+using Node.Runtime.Observability;
 
 namespace Node.Runtime.Services;
 
@@ -146,6 +147,11 @@ public class AgentExecutorService : IAgentExecutor
         string input,
         CancellationToken cancellationToken = default)
     {
+        using var activity = TelemetryConfig.ActivitySource.StartActivity("AgentExecutor.Execute");
+        activity?.SetTag("agent.id", spec.AgentId);
+        activity?.SetTag("agent.version", spec.Version);
+        activity?.SetTag("agent.name", spec.Name);
+        
         var stopwatch = Stopwatch.StartNew();
         var result = new AgentExecutionResult
         {
@@ -163,6 +169,9 @@ public class AgentExecutorService : IAgentExecutor
             var maxDurationSeconds = spec.Budget?.MaxDurationSeconds ?? _options.MaxDurationSeconds;
             var timeout = TimeSpan.FromSeconds(maxDurationSeconds);
 
+            activity?.SetTag("agent.budget.max_tokens", maxTokens);
+            activity?.SetTag("agent.budget.max_duration_seconds", maxDurationSeconds);
+
             // Create timeout cancellation token
             using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             timeoutCts.CancelAfter(timeout);
@@ -178,23 +187,60 @@ public class AgentExecutorService : IAgentExecutor
 
             _logger.LogDebug("Created AI agent for {AgentId}", spec.AgentId);
 
-            // Execute the agent with timeout
-            var response = await aiAgent.RunAsync(
-                input,
-                cancellationToken: timeoutCts.Token);
+            // Execute the agent with timeout - this is the LLM call
+            using (var llmActivity = TelemetryConfig.ActivitySource.StartActivity("LLM.Call"))
+            {
+                llmActivity?.SetTag("llm.model", _options.AzureAIFoundry?.DeploymentName ?? "unknown");
+                llmActivity?.SetTag("llm.endpoint", _options.AzureAIFoundry?.Endpoint ?? "unknown");
+                llmActivity?.SetTag("llm.input_length", input.Length);
+                
+                var response = await aiAgent.RunAsync(
+                    input,
+                    cancellationToken: timeoutCts.Token);
 
-            stopwatch.Stop();
+                stopwatch.Stop();
 
-            result.Success = true;
-            result.Output = response.Text;
-            result.Duration = stopwatch.Elapsed;
+                result.Success = true;
+                result.Output = response.Text;
+                result.Duration = stopwatch.Elapsed;
 
-            // Extract token usage from response metadata if available
-            // Note: Token usage extraction depends on the model provider
-            // For now, we'll use estimated values
-            result.TokensIn = EstimateTokens(input);
-            result.TokensOut = EstimateTokens(response.Text ?? string.Empty);
-            result.UsdCost = EstimateCost(result.TokensIn, result.TokensOut);
+                // Extract token usage from response metadata if available
+                // Note: Token usage extraction depends on the model provider
+                // For now, we'll use estimated values
+                result.TokensIn = EstimateTokens(input);
+                result.TokensOut = EstimateTokens(response.Text ?? string.Empty);
+                result.UsdCost = EstimateCost(result.TokensIn, result.TokensOut);
+
+                // Add LLM-specific trace attributes
+                llmActivity?.SetTag("llm.output_length", response.Text?.Length ?? 0);
+                llmActivity?.SetTag("llm.tokens.input", result.TokensIn);
+                llmActivity?.SetTag("llm.tokens.output", result.TokensOut);
+                llmActivity?.SetTag("llm.tokens.total", result.TokensIn + result.TokensOut);
+                llmActivity?.SetTag("llm.cost.usd", result.UsdCost);
+                llmActivity?.SetTag("llm.duration_ms", stopwatch.ElapsedMilliseconds);
+            }
+
+            // Record metrics
+            TelemetryConfig.AgentExecutionsCounter.Add(1, 
+                new KeyValuePair<string, object?>("agent.id", spec.AgentId),
+                new KeyValuePair<string, object?>("agent.version", spec.Version),
+                new KeyValuePair<string, object?>("status", "success"));
+            
+            TelemetryConfig.AgentExecutionDurationHistogram.Record(stopwatch.ElapsedMilliseconds,
+                new KeyValuePair<string, object?>("agent.id", spec.AgentId),
+                new KeyValuePair<string, object?>("status", "success"));
+            
+            TelemetryConfig.AgentTokensHistogram.Record(result.TokensIn + result.TokensOut,
+                new KeyValuePair<string, object?>("agent.id", spec.AgentId));
+            
+            TelemetryConfig.AgentCostHistogram.Record(result.UsdCost,
+                new KeyValuePair<string, object?>("agent.id", spec.AgentId));
+
+            activity?.SetTag("agent.tokens.input", result.TokensIn);
+            activity?.SetTag("agent.tokens.output", result.TokensOut);
+            activity?.SetTag("agent.cost.usd", result.UsdCost);
+            activity?.SetTag("agent.duration_ms", stopwatch.ElapsedMilliseconds);
+            activity?.SetStatus(ActivityStatusCode.Ok);
 
             _logger.LogInformation(
                 "Agent execution completed successfully in {DurationMs}ms (Tokens: {TokensIn}/{TokensOut}, Cost: ${Cost:F4})",
@@ -211,6 +257,13 @@ public class AgentExecutorService : IAgentExecutor
             result.Error = $"Agent execution exceeded maximum duration of {spec.Budget?.MaxDurationSeconds ?? _options.MaxDurationSeconds} seconds";
             result.Duration = stopwatch.Elapsed;
 
+            activity?.SetStatus(ActivityStatusCode.Error, result.Error);
+            activity?.SetTag("error.type", "timeout");
+            
+            TelemetryConfig.AgentExecutionErrorsCounter.Add(1,
+                new KeyValuePair<string, object?>("agent.id", spec.AgentId),
+                new KeyValuePair<string, object?>("error.type", "timeout"));
+
             _logger.LogWarning(
                 "Agent execution timed out after {DurationMs}ms",
                 stopwatch.ElapsedMilliseconds);
@@ -221,6 +274,19 @@ public class AgentExecutorService : IAgentExecutor
             result.Success = false;
             result.Error = ex.Message;
             result.Duration = stopwatch.Elapsed;
+
+            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            activity?.AddEvent(new ActivityEvent("exception",
+                tags: new ActivityTagsCollection
+                {
+                    { "exception.type", ex.GetType().FullName },
+                    { "exception.message", ex.Message }
+                }));
+            activity?.SetTag("error.type", ex.GetType().Name);
+            
+            TelemetryConfig.AgentExecutionErrorsCounter.Add(1,
+                new KeyValuePair<string, object?>("agent.id", spec.AgentId),
+                new KeyValuePair<string, object?>("error.type", ex.GetType().Name));
 
             _logger.LogError(ex, "Agent execution failed after {DurationMs}ms", stopwatch.ElapsedMilliseconds);
         }
