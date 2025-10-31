@@ -23,7 +23,7 @@ RED='\033[0;31m'
 NC='\033[0m'
 
 # Configuration
-CONTROL_PLANE_URL="${CONTROL_PLANE_URL:-http://localhost:8080}"
+CONTROL_PLANE_URL="${CONTROL_PLANE_URL:-http://localhost:8080}"  # Docker Compose port (local dev uses 5109)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TIMEOUT=120
 
@@ -95,9 +95,10 @@ sleep 5
 # Seed agent
 log_info "Seeding Invoice Classifier agent..."
 if [ -f "${SCRIPT_DIR}/agents/seed-invoice-classifier.sh" ]; then
-    cd "${SCRIPT_DIR}/agents"
-    CONTROL_PLANE_URL="${CONTROL_PLANE_URL}" ./seed-invoice-classifier.sh > /dev/null 2>&1
-    cd "${SCRIPT_DIR}"
+    (
+        cd "${SCRIPT_DIR}/agents" && \
+        CONTROL_PLANE_URL="${CONTROL_PLANE_URL}" ./seed-invoice-classifier.sh > /dev/null 2>&1
+    )
     log_success "Agent seeded"
 else
     log_error "Seed script not found"

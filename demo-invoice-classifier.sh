@@ -34,7 +34,7 @@ BOLD='\033[1m'
 NC='\033[0m' # No Color
 
 # Configuration
-CONTROL_PLANE_URL="${CONTROL_PLANE_URL:-http://localhost:8080}"
+CONTROL_PLANE_URL="${CONTROL_PLANE_URL:-http://localhost:8080}"  # Docker Compose port (local dev uses 5109)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Helper functions
@@ -157,9 +157,10 @@ seed_agent() {
     fi
     
     log_step "Running agent seed script..."
-    cd "${SCRIPT_DIR}/agents"
-    CONTROL_PLANE_URL="${CONTROL_PLANE_URL}" ./seed-invoice-classifier.sh
-    cd "${SCRIPT_DIR}"
+    (
+        cd "${SCRIPT_DIR}/agents" && \
+        CONTROL_PLANE_URL="${CONTROL_PLANE_URL}" ./seed-invoice-classifier.sh
+    )
     
     log_success "Invoice Classifier agent deployed successfully"
 }

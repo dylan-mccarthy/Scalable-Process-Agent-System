@@ -23,6 +23,10 @@ Before running the demo, ensure you have:
 - **curl** (command-line HTTP client)
 - **4GB+ RAM** available for containers
 
+> **Note**: This demo uses Docker Compose and accesses the Control Plane API on port 8080.  
+> If running services locally with `dotnet run`, the API uses port 5109 by default.  
+> Set `CONTROL_PLANE_URL` environment variable to override the default URL.
+
 ### Installation
 
 Install prerequisites on different platforms:
@@ -364,7 +368,7 @@ environment:
 docker compose restart control-plane node-runtime
 ```
 
-See [Azure AI Foundry Integration](../docs/AZURE_AI_FOUNDRY_INTEGRATION.md) for detailed setup.
+See [Azure AI Foundry Integration](docs/AZURE_AI_FOUNDRY_INTEGRATION.md) for detailed setup.
 
 ## Testing
 
@@ -528,7 +532,7 @@ After completing the demo:
    ```
 
 3. **Configure Azure AI Foundry**
-   - See [Azure AI Foundry Integration](../docs/AZURE_AI_FOUNDRY_INTEGRATION.md)
+   - See [Azure AI Foundry Integration](docs/AZURE_AI_FOUNDRY_INTEGRATION.md)
 
 4. **Run Performance Tests**
    ```bash
@@ -551,7 +555,7 @@ After completing the demo:
 - [System Architecture Document](../sad.md) - High-level design
 - [Invoice Classifier Agent](../docs/INVOICE_CLASSIFIER.md) - Agent details
 - [Agent Definitions](../agents/README.md) - Agent configuration
-- [Azure AI Foundry](../docs/AZURE_AI_FOUNDRY_INTEGRATION.md) - LLM setup
+- [Azure AI Foundry](docs/AZURE_AI_FOUNDRY_INTEGRATION.md) - LLM setup
 - [Deployment Guide](../DEPLOYMENT.md) - Production deployment
 - [Observability](../OBSERVABILITY.md) - Monitoring setup
 - [CI/CD](../CI-CD.md) - Pipeline configuration
