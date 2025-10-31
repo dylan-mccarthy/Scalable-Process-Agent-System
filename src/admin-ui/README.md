@@ -7,7 +7,7 @@ Admin interface for the Business Process Agents MVP platform. This Next.js appli
 - **Fleet Dashboard** - Monitor nodes and active runs
 - **Runs List** - View latest runs with status and duration
 - **Agent Editor** - Create and manage agent definitions
-- **OIDC Authentication** - Secure login via Keycloak (planned for E5-T2)
+- **OIDC Authentication** - Secure login via Keycloak
 
 ## Technology Stack
 
@@ -39,7 +39,36 @@ Copy the example environment file and configure:
 cp .env.example .env.local
 ```
 
-Edit `.env.local` to configure the API endpoint and authentication settings.
+Edit `.env.local` to configure the API endpoint and authentication settings:
+
+**Required Environment Variables:**
+
+```bash
+# API Configuration
+NEXT_PUBLIC_API_URL=http://localhost:5000
+
+# Authentication (Keycloak OIDC)
+# IMPORTANT: These variables are required for authentication to work
+AUTH_SECRET=your-secret-here-generate-with-openssl-rand-base64-32
+AUTH_KEYCLOAK_ID=admin-ui
+AUTH_KEYCLOAK_SECRET=your-keycloak-client-secret
+AUTH_KEYCLOAK_ISSUER=http://localhost:8080/realms/bpa
+```
+
+> **Note:** The application will build without these variables set, but authentication will not work at runtime. Make sure to configure them before starting the development server.
+
+**Generate AUTH_SECRET:**
+
+```bash
+openssl rand -base64 32
+```
+
+**Get Keycloak Client Secret:**
+
+1. Start Keycloak using docker-compose (see root AUTHENTICATION.md)
+2. Access http://localhost:8080 and login with admin/admin
+3. Navigate to Clients → admin-ui → Credentials tab
+4. Copy the client secret
 
 ### Development
 
@@ -67,27 +96,91 @@ Start the production server:
 npm run start
 ```
 
+## Authentication
+
+The Admin UI uses NextAuth.js v5 (Auth.js) with Keycloak as the OIDC provider.
+
+### Setup Keycloak for Development
+
+1. **Start Keycloak and dependencies:**
+
+```bash
+# From the repository root
+docker-compose -f docker-compose.dev.yml up -d
+```
+
+2. **Configure Keycloak:**
+
+Access http://localhost:8080 and login with `admin` / `admin`
+
+- Create realm: `bpa`
+- Create client: `admin-ui`
+  - Client Protocol: `openid-connect`
+  - Enable "Client authentication"
+  - Valid Redirect URIs: `http://localhost:3000/*`
+  - Web Origins: `http://localhost:3000`
+- Create test user (optional):
+  - Username: `testuser`
+  - Password: `testpass`
+
+3. **Configure environment variables:**
+
+Copy the client secret from Keycloak (Clients → admin-ui → Credentials) and add to `.env.local`
+
+4. **Start the application:**
+
+```bash
+npm run dev
+```
+
+Visit http://localhost:3000 - you'll be redirected to the login page and then to Keycloak for authentication.
+
+### Authentication Flow
+
+1. User visits protected route → redirected to `/login`
+2. Click "Sign in with Keycloak" → redirected to Keycloak
+3. Enter credentials → Keycloak validates
+4. Redirected back to app with session established
+5. User menu appears in header with logout option
+
+### Protected Routes
+
+All routes except `/login` are protected by the auth middleware. Unauthenticated users are automatically redirected to the login page.
+
+### Session Management
+
+- Sessions are managed by NextAuth.js
+- Access tokens and ID tokens are stored in the session
+- Token refresh is handled automatically
+- Logout clears the session and redirects to login page
+
 ## Project Structure
 
 ```
 src/admin-ui/
 ├── src/
-│   ├── app/              # Next.js App Router pages
-│   │   ├── layout.tsx    # Root layout
-│   │   ├── page.tsx      # Home page
-│   │   └── globals.css   # Global styles with Tailwind and shadcn/ui
-│   ├── components/       # React components
-│   │   └── ui/           # shadcn/ui components
-│   ├── lib/              # Utility libraries
-│   │   └── utils.ts      # Tailwind merge utility
-│   ├── hooks/            # Custom React hooks
-│   └── utils/            # Helper functions
-├── public/               # Static assets
-├── components.json       # shadcn/ui configuration
-├── tsconfig.json         # TypeScript configuration
-├── next.config.ts        # Next.js configuration
-├── postcss.config.mjs    # PostCSS configuration
-└── package.json          # Dependencies and scripts
+│   ├── app/                      # Next.js App Router pages
+│   │   ├── api/auth/[...nextauth]/  # NextAuth.js API routes
+│   │   ├── login/                # Login page
+│   │   ├── layout.tsx            # Root layout with SessionProvider
+│   │   ├── page.tsx              # Home page
+│   │   └── globals.css           # Global styles with Tailwind and shadcn/ui
+│   ├── components/               # React components
+│   │   ├── ui/                   # shadcn/ui components
+│   │   ├── header.tsx            # App header with user menu
+│   │   └── user-menu.tsx         # User dropdown menu
+│   ├── lib/                      # Utility libraries
+│   │   └── utils.ts              # Tailwind merge utility
+│   ├── types/                    # TypeScript type definitions
+│   │   └── next-auth.d.ts        # NextAuth.js type extensions
+│   ├── auth.ts                   # NextAuth.js configuration
+│   └── middleware.ts             # Route protection middleware
+├── public/                       # Static assets
+├── components.json               # shadcn/ui configuration
+├── tsconfig.json                 # TypeScript configuration
+├── next.config.ts                # Next.js configuration
+├── postcss.config.mjs            # PostCSS configuration
+└── package.json                  # Dependencies and scripts
 ```
 
 ## Available Scripts
@@ -132,9 +225,10 @@ src/admin-ui/
 
 ### Phase 2 - Authentication (E5-T2)
 
-- [ ] OIDC integration with Keycloak
-- [ ] Protected routes
-- [ ] Session management
+- [x] OIDC integration with Keycloak
+- [x] Protected routes
+- [x] Session management
+- [x] Login/logout functionality
 
 ### Phase 3 - Core Features (E5-T3, E5-T4, E5-T5)
 
