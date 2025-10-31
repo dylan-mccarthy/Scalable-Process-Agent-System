@@ -243,6 +243,66 @@ public sealed class MessageProcessingServiceTests
     }
 
     [Fact]
+    public async Task ProcessMessage_WithDeliveryCountAtMax_ShouldProcessAndHandleFailure()
+    {
+        // Arrange
+        var service = CreateService();
+        var message = CreateTestMessage("msg-1", deliveryCount: 3); // At MaxDeliveryCount of 3
+        var messages = new List<ReceivedMessage> { message };
+
+        var callCount = 0;
+        _inputConnectorMock.Setup(x => x.ReceiveMessagesAsync(
+            It.IsAny<int>(),
+            It.IsAny<TimeSpan?>(),
+            It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() =>
+            {
+                callCount++;
+                return callCount == 1 ? messages : new List<ReceivedMessage>();
+            });
+
+        // Simulate a failure during processing
+        _agentExecutorMock.Setup(x => x.ExecuteAsync(
+            It.IsAny<AgentSpec>(),
+            It.IsAny<string>(),
+            It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AgentExecutionResult
+            {
+                Success = false,
+                Error = "Temporary error"
+            });
+
+        _inputConnectorMock.Setup(x => x.DeadLetterMessageAsync(
+            It.IsAny<ReceivedMessage>(),
+            It.IsAny<string>(),
+            It.IsAny<string?>(),
+            It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MessageCompletionResult { Success = true });
+
+        var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
+
+        // Act
+        await service.StartAsync(cts.Token);
+        await Task.Delay(300);
+        await service.StopAsync();
+
+        // Assert - Message at max count should be processed, then dead-lettered on failure
+        _agentExecutorMock.Verify(
+            x => x.ExecuteAsync(It.IsAny<AgentSpec>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Once,
+            "Agent should execute for message at max delivery count");
+
+        _inputConnectorMock.Verify(
+            x => x.DeadLetterMessageAsync(
+                message,
+                "MaxDeliveryCountExceeded",
+                It.Is<string>(s => s.Contains("exceeded 3 delivery attempts")),
+                It.IsAny<CancellationToken>()),
+            Times.Once,
+            "Failed message at MaxDeliveryCount should be dead-lettered");
+    }
+
+    [Fact]
     public async Task ProcessMessage_WithNonRetryableError_ShouldDeadLetter()
     {
         // Arrange
@@ -392,7 +452,8 @@ public sealed class MessageProcessingServiceTests
                 "MaxDeliveryCountExceeded",
                 It.Is<string>(s => s.Contains("exceeded 3 delivery attempts")),
                 It.IsAny<CancellationToken>()),
-            Times.Once);
+            Times.Once,
+            "Message at max delivery count should be dead-lettered after failure");
 
         // Should not abandon
         _inputConnectorMock.Verify(

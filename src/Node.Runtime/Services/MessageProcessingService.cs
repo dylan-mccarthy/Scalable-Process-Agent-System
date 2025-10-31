@@ -153,7 +153,8 @@ public sealed class MessageProcessingService : IMessageProcessingService
                 message.MessageId,
                 message.DeliveryCount);
 
-            // Check for poison messages (exceeded max delivery count)
+            // Check for poison messages (should not occur with proper Service Bus config)
+            // This is a safety check in case DeliveryCount somehow exceeds MaxDeliveryCount
             if (message.DeliveryCount > _options.MaxDeliveryCount)
             {
                 await DeadLetterPoisonMessageAsync(message, cancellationToken);
