@@ -132,19 +132,22 @@ public class ChaosTests
 
         // Schedule all runs
         var scheduler = new LeastLoadedScheduler(nodeStore, runStore, _schedulerLoggerMock.Object);
-        var assignedToNode2Count = 0;
+        var assignedToHealthyNodeCount = 0;
 
         foreach (var run in runs)
         {
             var nodeId = await scheduler.ScheduleRunAsync(run);
+            nodeId.Should().NotBeNull("run should be assigned to a healthy node");
+            
+            // Since node-1 is failed, all runs should go to node-2
             if (nodeId == "node-2")
             {
-                assignedToNode2Count++;
+                assignedToHealthyNodeCount++;
             }
         }
 
         // Assert - All runs should go to node-2 since node-1 is failed
-        assignedToNode2Count.Should().Be(4, "all 4 runs should be assigned to node-2");
+        assignedToHealthyNodeCount.Should().Be(4, "all 4 runs should be assigned to node-2");
 
         // Verify node-2 can handle the load
         var nodeLoads = await scheduler.GetNodeLoadAsync();
@@ -199,11 +202,14 @@ public class ChaosTests
         // Attempt scheduling
         var scheduler = new LeastLoadedScheduler(nodeStore, runStore, _schedulerLoggerMock.Object);
         var successfulAssignments = 0;
+        var healthyNodeIds = new List<string> { "node-4", "node-5" };
 
         foreach (var run in runs)
         {
             var nodeId = await scheduler.ScheduleRunAsync(run);
-            if (nodeId != null && (nodeId == "node-4" || nodeId == "node-5"))
+            nodeId.Should().NotBeNull("run should be assigned to a healthy node");
+            
+            if (healthyNodeIds.Contains(nodeId!))
             {
                 successfulAssignments++;
             }
@@ -336,8 +342,11 @@ public class ChaosTests
             }
         });
 
-        // Try scheduling again
-        var recoveredNode = await scheduler.ScheduleRunAsync(run2);
+        // Create a new run for the recovery test to make it clear this is a separate scheduling attempt
+        var run3 = await runStore.CreateRunAsync("invoice-classifier", "1.0.0");
+        
+        // Try scheduling the new run to the recovered node
+        var recoveredNode = await scheduler.ScheduleRunAsync(run3);
 
         // Assert
         recoveredNode.Should().Be("node-recovery-1",
