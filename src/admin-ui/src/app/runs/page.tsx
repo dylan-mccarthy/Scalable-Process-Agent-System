@@ -61,7 +61,7 @@ function getStatusConfig(status: string) {
  */
 function calculateDuration(run: Run): string {
   // Check if timings object has duration
-  if (run.timings && typeof run.timings.duration === "number") {
+  if (run.timings?.duration && typeof run.timings.duration === "number") {
     const durationMs = run.timings.duration;
 
     if (durationMs < 1000) {
@@ -128,6 +128,13 @@ function formatTokens(run: Run): string | null {
   }
 
   return null;
+}
+
+/**
+ * Get error message from run's errorInfo
+ */
+function getErrorMessage(errorInfo: Record<string, unknown>): string {
+  return String(errorInfo.errorMessage || errorInfo.message || "Unknown error");
 }
 
 /**
@@ -317,13 +324,9 @@ export default async function RunsListPage() {
 
                               {/* Error Info for Failed Runs */}
                               {run.status.toLowerCase() === "failed" && run.errorInfo && (
-                                <div className="text-destructive bg-destructive/10 mt-2 rounded-md p-2 text-sm">
+                                <div className="bg-destructive/10 text-destructive mt-2 rounded-md p-2 text-sm">
                                   <span className="font-medium">Error:</span>{" "}
-                                  {String(
-                                    run.errorInfo.errorMessage ||
-                                      run.errorInfo.message ||
-                                      "Unknown error"
-                                  )}
+                                  {getErrorMessage(run.errorInfo)}
                                 </div>
                               )}
                             </div>
