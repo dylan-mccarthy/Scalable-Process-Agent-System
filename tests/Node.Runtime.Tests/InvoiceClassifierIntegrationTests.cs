@@ -406,10 +406,22 @@ public class InvoiceClassifierIntegrationTests
     public async Task InvoiceClassifierDefinition_MatchesExpectedConfiguration()
     {
         // Arrange - Load the invoice classifier definition
-        // Navigate from test bin directory back to repo root
-        var currentDir = Directory.GetCurrentDirectory();
-        var repoRoot = Path.GetFullPath(Path.Combine(currentDir, "../../../../.."));
-        var agentDefinitionPath = Path.Combine(repoRoot, "agents/definitions/invoice-classifier.json");
+        // Search for the agents directory starting from current directory upwards
+        var currentDir = new DirectoryInfo(Directory.GetCurrentDirectory());
+        DirectoryInfo? repoRoot = currentDir;
+        
+        // Navigate up until we find the directory containing "agents" folder
+        while (repoRoot != null && !Directory.Exists(Path.Combine(repoRoot.FullName, "agents")))
+        {
+            repoRoot = repoRoot.Parent;
+        }
+
+        if (repoRoot == null)
+        {
+            throw new InvalidOperationException("Could not find repository root with 'agents' directory");
+        }
+
+        var agentDefinitionPath = Path.Combine(repoRoot.FullName, "agents/definitions/invoice-classifier.json");
 
         // Act
         var jsonContent = await File.ReadAllTextAsync(agentDefinitionPath);
@@ -492,7 +504,7 @@ public class InvoiceClassifierIntegrationTests
                 requestCaptured = true;
 
                 // Verify the request has correct payload
-                var content = req.Content?.ReadAsStringAsync().Result;
+                var content = req.Content?.ReadAsStringAsync(ct).GetAwaiter().GetResult();
                 if (content != null && content.Contains("TechCorp") && content.Contains("IT Department"))
                 {
                     correctPayload = true;
