@@ -127,7 +127,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
       
       - name: Build and push Control Plane
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: src/ControlPlane.Api/Dockerfile
@@ -139,7 +139,7 @@ jobs:
           cache-to: type=gha,mode=max
       
       - name: Build and push Node Runtime
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: src/Node.Runtime/Dockerfile
@@ -151,7 +151,7 @@ jobs:
           cache-to: type=gha,mode=max
       
       - name: Build and push Admin UI
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./src/admin-ui
           file: src/admin-ui/Dockerfile
