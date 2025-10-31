@@ -417,6 +417,128 @@ The following MAF SDK packages are included:
 
 Until credentials are configured, the agent executor will return a `NotImplementedException` with a message indicating the chat client needs to be configured. The integration is ready to execute agents once the model provider is set up.
 
+## Connectors (E2-T6)
+
+The Node Runtime supports input and output connectors for external message sources and destinations.
+
+### Service Bus Input Connector
+
+The Azure Service Bus input connector (`ServiceBusInputConnector`) provides reliable message reception from Azure Service Bus queues with the following features:
+
+**Key Features:**
+- **Prefetch Support**: Configurable prefetch count (default: 16) for improved throughput
+- **PeekLock Mode**: Reliable message processing with manual completion/abandonment
+- **Dead-Letter Queue (DLQ)**: Automatic poison message detection and DLQ support
+- **Telemetry**: Full OpenTelemetry instrumentation with activities and metrics
+- **Error Handling**: Robust error handling with detailed logging
+
+**Architecture:**
+```
+Azure Service Bus Queue
+    ↓ ReceiveAsync (prefetch 16)
+ServiceBusInputConnector
+    ↓ Message Processing
+    ├─ Complete (success)
+    ├─ Abandon (retry)
+    └─ DeadLetter (poison/failure)
+```
+
+**Configuration:**
+
+Service Bus connector is configured via `ServiceBusConnector` section in `appsettings.json`:
+
+```json
+{
+  "ServiceBusConnector": {
+    "ConnectionString": "Endpoint=sb://...;SharedAccessKeyName=...;SharedAccessKey=...",
+    "QueueName": "invoices",
+    "PrefetchCount": 16,
+    "MaxConcurrentCalls": 5,
+    "MaxWaitTime": "00:00:05",
+    "MaxDeliveryCount": 3,
+    "AutoComplete": false,
+    "ReceiveMode": "PeekLock"
+  }
+}
+```
+
+**Configuration Options:**
+- **ConnectionString**: Azure Service Bus connection string or fully qualified namespace
+- **QueueName**: Name of the queue to receive messages from (required)
+- **PrefetchCount**: Number of messages to prefetch (default: 16, per SAD)
+- **MaxConcurrentCalls**: Maximum concurrent message processing operations (default: 5)
+- **MaxWaitTime**: Maximum wait time for receiving messages (default: 5 seconds)
+- **MaxDeliveryCount**: Maximum delivery attempts before DLQ (default: 3, per SAD)
+- **AutoComplete**: Auto-complete messages after processing (default: false for manual control)
+- **ReceiveMode**: "PeekLock" for reliable processing or "ReceiveAndDelete" for at-most-once delivery
+
+**Poison Message Detection:**
+
+The connector automatically detects poison messages (messages that exceed `MaxDeliveryCount`) and logs warnings. Applications can use the `DeadLetterMessageAsync` method to explicitly move messages to the DLQ:
+
+```csharp
+if (message.DeliveryCount > maxDeliveryCount)
+{
+    await connector.DeadLetterMessageAsync(
+        message,
+        "MaxDeliveryCountExceeded",
+        $"Message exceeded {maxDeliveryCount} delivery attempts");
+}
+```
+
+**Usage Example:**
+
+```csharp
+// Initialize connector
+var connector = serviceProvider.GetRequiredService<IInputConnector>();
+await connector.InitializeAsync();
+
+// Receive messages
+var messages = await connector.ReceiveMessagesAsync(
+    maxMessages: 10,
+    maxWaitTime: TimeSpan.FromSeconds(5));
+
+foreach (var message in messages)
+{
+    try
+    {
+        // Process message
+        await ProcessMessageAsync(message);
+        
+        // Complete on success
+        await connector.CompleteMessageAsync(message);
+    }
+    catch (Exception ex)
+    {
+        // Abandon for retry or dead-letter on permanent failure
+        if (IsPermanentError(ex))
+        {
+            await connector.DeadLetterMessageAsync(message, "ProcessingError", ex.Message);
+        }
+        else
+        {
+            await connector.AbandonMessageAsync(message);
+        }
+    }
+}
+
+// Close connector
+await connector.CloseAsync();
+```
+
+**Telemetry:**
+
+The Service Bus connector includes comprehensive observability:
+- **Activities**: `ServiceBusInputConnector.Initialize`, `ReceiveMessages`, `CompleteMessage`, `AbandonMessage`, `DeadLetterMessage`
+- **Tags**: `queue.name`, `prefetch.count`, `message.id`, `messages.received`, `reason`
+- **Error Tracking**: Automatic error status recording in activities
+
+**Dependencies:**
+- `Azure.Messaging.ServiceBus` (v7.18.3)
+
+**Next Connector:**
+- ⏳ **E2-T7**: HTTP output connector with retry/backoff and idempotency
+
 ## Next Steps
 
 Node Runtime core functionality is implemented and enhanced with comprehensive telemetry and error handling:
@@ -426,7 +548,7 @@ Node Runtime core functionality is implemented and enhanced with comprehensive t
 - ✅ **E2-T3**: Node registration (Complete)
 - ✅ **E2-T4**: Lease pull loop (Complete)
 - ✅ **E2-T5**: Sandbox process model with budget enforcement (Complete)
-- ⏳ **E2-T6**: Service Bus connector
+- ✅ **E2-T6**: Service Bus connector (Complete)
 - ⏳ **E2-T7**: HTTP output connector
 - ⏳ **E2-T8**: DLQ handling
 - ⏳ **E2-T9**: Node telemetry (Metrics complete, custom gauges pending)
@@ -442,7 +564,12 @@ src/Node.Runtime/
 ├── Configuration/          # Configuration options classes
 │   ├── NodeRuntimeOptions.cs
 │   ├── AgentRuntimeOptions.cs
+│   ├── ServiceBusConnectorOptions.cs
 │   └── OpenTelemetryOptions.cs
+├── Connectors/            # Message connectors (input/output)
+│   ├── IMessageConnector.cs
+│   ├── IInputConnector.cs
+│   └── ServiceBusInputConnector.cs
 ├── Services/              # Core services
 │   ├── NodeRegistrationService.cs
 │   ├── AgentExecutorService.cs
@@ -452,6 +579,8 @@ src/Node.Runtime/
 └── appsettings.json       # Configuration
 
 tests/Node.Runtime.Tests/
+├── Connectors/            # Connector tests
+│   └── ServiceBusInputConnectorTests.cs
 └── Services/              # Unit tests
     ├── NodeRegistrationServiceTests.cs
     └── AgentExecutorServiceTests.cs
