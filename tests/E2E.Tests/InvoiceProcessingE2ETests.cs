@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Net;
 using System.Text.Json;
+using System.Linq;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -412,9 +413,8 @@ public class InvoiceProcessingE2ETests
         capturedIdempotencyKeys.Should().OnlyHaveUniqueItems(
             "idempotency keys should be unique for each message");
         
-        foreach (var invoice in invoices)
+        foreach (var expectedMessageId in invoices.Select(invoice => $"{invoice.InvoiceNumber}-classified"))
         {
-            var expectedMessageId = $"{invoice.InvoiceNumber}-classified";
             capturedIdempotencyKeys.Should().Contain(expectedMessageId, 
                 "idempotency key should match message ID");
         }
