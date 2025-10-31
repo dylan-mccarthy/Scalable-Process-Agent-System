@@ -11,7 +11,7 @@ namespace ControlPlane.Api.Tests;
 public class MetricsServiceTests
 {
     [Fact]
-    public async Task GetActiveRunsCountAsync_ShouldReturnZero_WhenNoRuns()
+    public void GetActiveRunsCount_ShouldReturnZero_WhenNoRuns()
     {
         // Arrange
         var runStore = new InMemoryRunStore();
@@ -19,14 +19,14 @@ public class MetricsServiceTests
         var metricsService = new MetricsService(runStore, nodeStore, NullLogger<MetricsService>.Instance);
 
         // Act
-        var count = await metricsService.GetActiveRunsCountAsync();
+        var count = metricsService.GetActiveRunsCount();
 
         // Assert
         Assert.Equal(0, count);
     }
 
     [Fact]
-    public async Task GetActiveRunsCountAsync_ShouldCountRunningAndPendingRuns()
+    public async Task GetActiveRunsCount_ShouldCountRunningAndPendingRuns()
     {
         // Arrange
         var runStore = new InMemoryRunStore();
@@ -48,14 +48,14 @@ public class MetricsServiceTests
         // run2 and run3 remain in pending state
 
         // Act
-        var count = await metricsService.GetActiveRunsCountAsync();
+        var count = metricsService.GetActiveRunsCount();
 
         // Assert
         Assert.Equal(2, count); // Only pending runs
     }
 
     [Fact]
-    public async Task GetActiveNodesCountAsync_ShouldReturnZero_WhenNoNodes()
+    public void GetActiveNodesCount_ShouldReturnZero_WhenNoNodes()
     {
         // Arrange
         var runStore = new InMemoryRunStore();
@@ -63,14 +63,14 @@ public class MetricsServiceTests
         var metricsService = new MetricsService(runStore, nodeStore, NullLogger<MetricsService>.Instance);
 
         // Act
-        var count = await metricsService.GetActiveNodesCountAsync();
+        var count = metricsService.GetActiveNodesCount();
 
         // Assert
         Assert.Equal(0, count);
     }
 
     [Fact]
-    public async Task GetActiveNodesCountAsync_ShouldCountOnlyActiveNodes()
+    public async Task GetActiveNodesCount_ShouldCountOnlyActiveNodes()
     {
         // Arrange
         var runStore = new InMemoryRunStore();
@@ -93,14 +93,14 @@ public class MetricsServiceTests
         });
 
         // Act
-        var count = await metricsService.GetActiveNodesCountAsync();
+        var count = metricsService.GetActiveNodesCount();
 
         // Assert
         Assert.Equal(2, count);
     }
 
     [Fact]
-    public async Task GetActiveNodesCountAsync_ShouldNotCountStaleNodes()
+    public async Task GetActiveNodesCount_ShouldNotCountStaleNodes()
     {
         // Arrange
         var runStore = new InMemoryRunStore();
@@ -119,14 +119,14 @@ public class MetricsServiceTests
         node.HeartbeatAt = DateTime.UtcNow.AddSeconds(-120);
 
         // Act
-        var count = await metricsService.GetActiveNodesCountAsync();
+        var count = metricsService.GetActiveNodesCount();
 
         // Assert
         Assert.Equal(0, count); // Node should not be counted as active
     }
 
     [Fact]
-    public async Task GetTotalSlotsAsync_ShouldReturnZero_WhenNoNodes()
+    public void GetTotalSlots_ShouldReturnZero_WhenNoNodes()
     {
         // Arrange
         var runStore = new InMemoryRunStore();
@@ -134,14 +134,14 @@ public class MetricsServiceTests
         var metricsService = new MetricsService(runStore, nodeStore, NullLogger<MetricsService>.Instance);
 
         // Act
-        var slots = await metricsService.GetTotalSlotsAsync();
+        var slots = metricsService.GetTotalSlots();
 
         // Assert
         Assert.Equal(0, slots);
     }
 
     [Fact]
-    public async Task GetTotalSlotsAsync_ShouldSumAllActiveNodeSlots()
+    public async Task GetTotalSlots_ShouldSumAllActiveNodeSlots()
     {
         // Arrange
         var runStore = new InMemoryRunStore();
@@ -171,14 +171,14 @@ public class MetricsServiceTests
         });
 
         // Act
-        var totalSlots = await metricsService.GetTotalSlotsAsync();
+        var totalSlots = metricsService.GetTotalSlots();
 
         // Assert
         Assert.Equal(28, totalSlots); // 8 + 4 + 16
     }
 
     [Fact]
-    public async Task GetUsedSlotsAsync_ShouldReturnZero_WhenNoActiveRuns()
+    public async Task GetUsedSlots_ShouldReturnZero_WhenNoActiveRuns()
     {
         // Arrange
         var runStore = new InMemoryRunStore();
@@ -193,14 +193,14 @@ public class MetricsServiceTests
         });
 
         // Act
-        var usedSlots = await metricsService.GetUsedSlotsAsync();
+        var usedSlots = metricsService.GetUsedSlots();
 
         // Assert
         Assert.Equal(0, usedSlots);
     }
 
     [Fact]
-    public async Task GetUsedSlotsAsync_ShouldSumActiveRunsFromAllNodes()
+    public async Task GetUsedSlots_ShouldSumActiveRunsFromAllNodes()
     {
         // Arrange
         var runStore = new InMemoryRunStore();
@@ -244,14 +244,14 @@ public class MetricsServiceTests
         });
 
         // Act
-        var usedSlots = await metricsService.GetUsedSlotsAsync();
+        var usedSlots = metricsService.GetUsedSlots();
 
         // Assert
         Assert.Equal(5, usedSlots); // 3 + 2
     }
 
     [Fact]
-    public async Task GetAvailableSlotsAsync_ShouldReturnTotalSlots_WhenNoActiveRuns()
+    public async Task GetAvailableSlots_ShouldReturnTotalSlots_WhenNoActiveRuns()
     {
         // Arrange
         var runStore = new InMemoryRunStore();
@@ -266,14 +266,14 @@ public class MetricsServiceTests
         });
 
         // Act
-        var availableSlots = await metricsService.GetAvailableSlotsAsync();
+        var availableSlots = metricsService.GetAvailableSlots();
 
         // Assert
         Assert.Equal(8, availableSlots);
     }
 
     [Fact]
-    public async Task GetAvailableSlotsAsync_ShouldSumAvailableSlotsFromAllNodes()
+    public async Task GetAvailableSlots_ShouldSumAvailableSlotsFromAllNodes()
     {
         // Arrange
         var runStore = new InMemoryRunStore();
@@ -317,14 +317,14 @@ public class MetricsServiceTests
         });
 
         // Act
-        var availableSlots = await metricsService.GetAvailableSlotsAsync();
+        var availableSlots = metricsService.GetAvailableSlots();
 
         // Assert
         Assert.Equal(7, availableSlots); // 5 + 2
     }
 
     [Fact]
-    public async Task GetTotalSlotsAsync_ShouldHandleNodesWithoutSlotCapacity()
+    public async Task GetTotalSlots_ShouldHandleNodesWithoutSlotCapacity()
     {
         // Arrange
         var runStore = new InMemoryRunStore();
@@ -340,23 +340,23 @@ public class MetricsServiceTests
         });
 
         // Act
-        var totalSlots = await metricsService.GetTotalSlotsAsync();
+        var totalSlots = metricsService.GetTotalSlots();
 
         // Assert
         Assert.Equal(0, totalSlots);
     }
 
     [Fact]
-    public async Task MetricsService_ShouldHandleExceptions_AndReturnZero()
+    public void MetricsService_ShouldHandleExceptions_AndReturnZero()
     {
         // Arrange - Create a null store to force exceptions
         var metricsService = new MetricsService(null!, null!, NullLogger<MetricsService>.Instance);
 
         // Act & Assert - Should not throw, should return 0
-        Assert.Equal(0, await metricsService.GetActiveRunsCountAsync());
-        Assert.Equal(0, await metricsService.GetActiveNodesCountAsync());
-        Assert.Equal(0, await metricsService.GetTotalSlotsAsync());
-        Assert.Equal(0, await metricsService.GetUsedSlotsAsync());
-        Assert.Equal(0, await metricsService.GetAvailableSlotsAsync());
+        Assert.Equal(0, metricsService.GetActiveRunsCount());
+        Assert.Equal(0, metricsService.GetActiveNodesCount());
+        Assert.Equal(0, metricsService.GetTotalSlots());
+        Assert.Equal(0, metricsService.GetUsedSlots());
+        Assert.Equal(0, metricsService.GetAvailableSlots());
     }
 }

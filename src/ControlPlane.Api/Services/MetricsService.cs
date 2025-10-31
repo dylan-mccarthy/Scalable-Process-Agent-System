@@ -8,29 +8,29 @@ namespace ControlPlane.Api.Services;
 public interface IMetricsService
 {
     /// <summary>
-    /// Get the current number of active runs
+    /// Get the current number of active runs (synchronous for observable gauge callbacks)
     /// </summary>
-    Task<int> GetActiveRunsCountAsync(CancellationToken cancellationToken = default);
+    int GetActiveRunsCount();
 
     /// <summary>
-    /// Get the current number of active nodes
+    /// Get the current number of active nodes (synchronous for observable gauge callbacks)
     /// </summary>
-    Task<int> GetActiveNodesCountAsync(CancellationToken cancellationToken = default);
+    int GetActiveNodesCount();
 
     /// <summary>
-    /// Get the total number of slots across all nodes
+    /// Get the total number of slots across all nodes (synchronous for observable gauge callbacks)
     /// </summary>
-    Task<int> GetTotalSlotsAsync(CancellationToken cancellationToken = default);
+    int GetTotalSlots();
 
     /// <summary>
-    /// Get the number of slots currently in use
+    /// Get the number of slots currently in use (synchronous for observable gauge callbacks)
     /// </summary>
-    Task<int> GetUsedSlotsAsync(CancellationToken cancellationToken = default);
+    int GetUsedSlots();
 
     /// <summary>
-    /// Get the number of slots currently available
+    /// Get the number of slots currently available (synchronous for observable gauge callbacks)
     /// </summary>
-    Task<int> GetAvailableSlotsAsync(CancellationToken cancellationToken = default);
+    int GetAvailableSlots();
 }
 
 /// <summary>
@@ -52,11 +52,12 @@ public class MetricsService : IMetricsService
         _logger = logger;
     }
 
-    public async Task<int> GetActiveRunsCountAsync(CancellationToken cancellationToken = default)
+    public int GetActiveRunsCount()
     {
         try
         {
-            var runs = await _runStore.GetAllRunsAsync();
+            // Use synchronous method to avoid deadlocks in observable gauge callbacks
+            var runs = _runStore.GetAllRunsAsync().ConfigureAwait(false).GetAwaiter().GetResult();
             return runs.Count(r => r.Status == "running" || r.Status == "pending");
         }
         catch (Exception ex)
@@ -66,11 +67,11 @@ public class MetricsService : IMetricsService
         }
     }
 
-    public async Task<int> GetActiveNodesCountAsync(CancellationToken cancellationToken = default)
+    public int GetActiveNodesCount()
     {
         try
         {
-            var nodes = await _nodeStore.GetAllNodesAsync();
+            var nodes = _nodeStore.GetAllNodesAsync().ConfigureAwait(false).GetAwaiter().GetResult();
             var now = DateTime.UtcNow;
             // Consider a node active if it has sent a heartbeat in the last 60 seconds
             return nodes.Count(n => n.Status?.State == "active" && 
@@ -83,11 +84,11 @@ public class MetricsService : IMetricsService
         }
     }
 
-    public async Task<int> GetTotalSlotsAsync(CancellationToken cancellationToken = default)
+    public int GetTotalSlots()
     {
         try
         {
-            var nodes = await _nodeStore.GetAllNodesAsync();
+            var nodes = _nodeStore.GetAllNodesAsync().ConfigureAwait(false).GetAwaiter().GetResult();
             var now = DateTime.UtcNow;
             // Only count slots from active nodes
             return nodes
@@ -101,11 +102,11 @@ public class MetricsService : IMetricsService
         }
     }
 
-    public async Task<int> GetUsedSlotsAsync(CancellationToken cancellationToken = default)
+    public int GetUsedSlots()
     {
         try
         {
-            var nodes = await _nodeStore.GetAllNodesAsync();
+            var nodes = _nodeStore.GetAllNodesAsync().ConfigureAwait(false).GetAwaiter().GetResult();
             var now = DateTime.UtcNow;
             return nodes
                 .Where(n => n.Status?.State == "active" && (now - n.HeartbeatAt).TotalSeconds < 60)
@@ -118,11 +119,11 @@ public class MetricsService : IMetricsService
         }
     }
 
-    public async Task<int> GetAvailableSlotsAsync(CancellationToken cancellationToken = default)
+    public int GetAvailableSlots()
     {
         try
         {
-            var nodes = await _nodeStore.GetAllNodesAsync();
+            var nodes = _nodeStore.GetAllNodesAsync().ConfigureAwait(false).GetAwaiter().GetResult();
             var now = DateTime.UtcNow;
             return nodes
                 .Where(n => n.Status?.State == "active" && (now - n.HeartbeatAt).TotalSeconds < 60)
@@ -155,6 +156,18 @@ public class MetricsService : IMetricsService
             }
             else if (slotsObj is long longSlots)
             {
+                // Safe conversion with bounds checking
+                if (longSlots > int.MaxValue)
+                {
+                    _logger.LogWarning("Slot count {LongSlots} exceeds int.MaxValue, capping at {MaxValue}", 
+                        longSlots, int.MaxValue);
+                    return int.MaxValue;
+                }
+                if (longSlots < 0)
+                {
+                    _logger.LogWarning("Slot count {LongSlots} is negative, using 0", longSlots);
+                    return 0;
+                }
                 return (int)longSlots;
             }
             else
@@ -162,6 +175,11 @@ public class MetricsService : IMetricsService
                 try
                 {
                     return Convert.ToInt32(slotsObj);
+                }
+                catch (OverflowException ex)
+                {
+                    _logger.LogWarning(ex, "Slot count conversion overflow, using 0");
+                    return 0;
                 }
                 catch
                 {

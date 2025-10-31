@@ -250,27 +250,27 @@ var metricsService = app.Services.GetRequiredService<IMetricsService>();
 
 TelemetryConfig.ActiveRunsGauge = TelemetryConfig.Meter.CreateObservableGauge(
     "active_runs",
-    () => metricsService.GetActiveRunsCountAsync().GetAwaiter().GetResult(),
+    () => metricsService.GetActiveRunsCount(),
     description: "Current number of active runs (running or pending)");
 
 TelemetryConfig.ActiveNodesGauge = TelemetryConfig.Meter.CreateObservableGauge(
     "active_nodes",
-    () => metricsService.GetActiveNodesCountAsync().GetAwaiter().GetResult(),
+    () => metricsService.GetActiveNodesCount(),
     description: "Current number of active nodes");
 
 TelemetryConfig.TotalSlotsGauge = TelemetryConfig.Meter.CreateObservableGauge(
     "total_slots",
-    () => metricsService.GetTotalSlotsAsync().GetAwaiter().GetResult(),
+    () => metricsService.GetTotalSlots(),
     description: "Total number of slots across all active nodes");
 
 TelemetryConfig.UsedSlotsGauge = TelemetryConfig.Meter.CreateObservableGauge(
     "used_slots",
-    () => metricsService.GetUsedSlotsAsync().GetAwaiter().GetResult(),
+    () => metricsService.GetUsedSlots(),
     description: "Number of slots currently in use");
 
 TelemetryConfig.AvailableSlotsGauge = TelemetryConfig.Meter.CreateObservableGauge(
     "available_slots",
-    () => metricsService.GetAvailableSlotsAsync().GetAwaiter().GetResult(),
+    () => metricsService.GetAvailableSlots(),
     description: "Number of slots currently available");
 
 // Initialize NATS JetStream streams (optional - fail gracefully if NATS is not available)
