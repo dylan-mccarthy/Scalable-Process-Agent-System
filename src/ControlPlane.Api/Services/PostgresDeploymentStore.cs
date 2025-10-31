@@ -132,10 +132,10 @@ public class PostgresDeploymentStore : IDeploymentStore
             Env = entity.Env,
             Target = string.IsNullOrEmpty(entity.Target)
                 ? null
-                : JsonSerializer.Deserialize<DeploymentTarget>(entity.Target),
+                : JsonSerializer.Deserialize<DeploymentTarget>(entity.Target) ?? new DeploymentTarget { Replicas = 1 },
             Status = string.IsNullOrEmpty(entity.Status)
                 ? null
-                : JsonSerializer.Deserialize<DeploymentStatus>(entity.Status)
+                : JsonSerializer.Deserialize<DeploymentStatus>(entity.Status) ?? new DeploymentStatus { State = "unknown" }
         };
     }
 }
