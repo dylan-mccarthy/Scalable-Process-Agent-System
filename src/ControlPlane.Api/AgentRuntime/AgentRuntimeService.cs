@@ -119,6 +119,67 @@ public class AgentRuntimeService : IAgentRuntime
             _logger.LogInformation("Agent execution completed successfully in {Duration}ms",
                 stopwatch.ElapsedMilliseconds);
         }
+        catch (OperationCanceledException)
+        {
+            stopwatch.Stop();
+            result.Success = false;
+            result.Error = "Execution was cancelled";
+            result.Duration = stopwatch.Elapsed;
+
+            activity?.SetStatus(ActivityStatusCode.Error, "Cancelled");
+            _logger.LogWarning("Agent execution cancelled");
+        }
+        catch (TimeoutException ex)
+        {
+            stopwatch.Stop();
+            result.Success = false;
+            result.Error = $"Execution timeout: {ex.Message}";
+            result.Duration = stopwatch.Elapsed;
+
+            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            activity?.AddEvent(new ActivityEvent("exception",
+                tags: new ActivityTagsCollection
+                {
+                    { "exception.type", ex.GetType().FullName },
+                    { "exception.message", ex.Message }
+                }));
+
+            _logger.LogError(ex, "Agent execution timeout");
+        }
+        catch (InvalidOperationException ex)
+        {
+            stopwatch.Stop();
+            result.Success = false;
+            result.Error = ex.Message;
+            result.Duration = stopwatch.Elapsed;
+
+            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            activity?.AddEvent(new ActivityEvent("exception",
+                tags: new ActivityTagsCollection
+                {
+                    { "exception.type", ex.GetType().FullName },
+                    { "exception.message", ex.Message }
+                }));
+
+            _logger.LogError(ex, "Invalid operation during agent execution");
+        }
+        catch (NotImplementedException ex)
+        {
+            stopwatch.Stop();
+            result.Success = false;
+            result.Error = $"Not implemented: {ex.Message}";
+            result.Duration = stopwatch.Elapsed;
+
+            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            activity?.AddEvent(new ActivityEvent("exception",
+                tags: new ActivityTagsCollection
+                {
+                    { "exception.type", ex.GetType().FullName },
+                    { "exception.message", ex.Message }
+                }));
+
+            _logger.LogError(ex, "Feature not implemented for agent execution");
+        }
         catch (Exception ex)
         {
             stopwatch.Stop();
@@ -134,7 +195,7 @@ public class AgentRuntimeService : IAgentRuntime
                     { "exception.message", ex.Message }
                 }));
 
-            _logger.LogError(ex, "Agent execution failed");
+            _logger.LogError(ex, "Unexpected error during agent execution");
         }
 
         return result;
@@ -168,9 +229,19 @@ public class AgentRuntimeService : IAgentRuntime
             _logger.LogInformation("Agent {AgentId} validation successful", agentId);
             return true;
         }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogError(ex, "Invalid operation validating agent {AgentId}", agentId);
+            return false;
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogError(ex, "Invalid argument validating agent {AgentId}", agentId);
+            return false;
+        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error validating agent {AgentId}", agentId);
+            _logger.LogError(ex, "Unexpected error validating agent {AgentId}", agentId);
             return false;
         }
     }
