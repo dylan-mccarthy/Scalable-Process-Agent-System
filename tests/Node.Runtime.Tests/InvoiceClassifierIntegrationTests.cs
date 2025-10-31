@@ -409,7 +409,7 @@ public class InvoiceClassifierIntegrationTests
         // Search for the agents directory starting from current directory upwards
         var currentDir = new DirectoryInfo(Directory.GetCurrentDirectory());
         DirectoryInfo? repoRoot = currentDir;
-        
+
         // Navigate up until we find the directory containing "agents" folder
         while (repoRoot != null && !Directory.Exists(Path.Combine(repoRoot.FullName, "agents")))
         {
@@ -431,7 +431,7 @@ public class InvoiceClassifierIntegrationTests
         agentDefinition.Should().NotBeNull();
 
         var root = agentDefinition!.RootElement;
-        
+
         // Verify agent ID and name
         root.GetProperty("agentId").GetString().Should().Be("invoice-classifier");
         root.GetProperty("name").GetString().Should().Be("Invoice Classifier");

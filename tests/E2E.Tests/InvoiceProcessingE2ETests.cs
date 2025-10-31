@@ -42,7 +42,7 @@ public class InvoiceProcessingE2ETests
     {
         var invoices = new List<SyntheticInvoice>();
         var random = new Random(42); // Fixed seed for reproducibility
-        
+
         var vendors = new[]
         {
             new { Name = "Office Depot", Category = "Office Supplies", Department = "Procurement Department" },
@@ -57,7 +57,7 @@ public class InvoiceProcessingE2ETests
         {
             var vendor = vendors[i % vendors.Length];
             var amount = random.Next(100, 10000);
-            
+
             invoices.Add(new SyntheticInvoice
             {
                 InvoiceNumber = $"INV-E2E-{i + 1:D4}",
@@ -104,7 +104,7 @@ public class InvoiceProcessingE2ETests
             {
                 // Simulate realistic processing with slight delay
                 Task.Delay(Random.Shared.Next(10, 50), ct).Wait();
-                
+
                 return new HttpResponseMessage
                 {
                     StatusCode = HttpStatusCode.OK,
@@ -137,11 +137,11 @@ public class InvoiceProcessingE2ETests
 
         // Act - Process all 100 invoices
         var stopwatch = Stopwatch.StartNew();
-        
+
         foreach (var invoice in invoices)
         {
             var invoiceStopwatch = Stopwatch.StartNew();
-            
+
             try
             {
                 // Simulate classification (in real scenario, this would go through LLM)
@@ -190,34 +190,34 @@ public class InvoiceProcessingE2ETests
         await httpConnector.CloseAsync();
 
         // Assert - Validate acceptance criteria
-        
+
         // 1. All 100 invoices were processed
         processedCount.Should().Be(100, "all 100 invoices should have been processed");
-        
+
         // 2. Success rate should be ≥95% (SAD requirement)
         var successRate = (double)successCount / invoices.Count;
-        successRate.Should().BeGreaterThanOrEqualTo(0.95, 
+        successRate.Should().BeGreaterThanOrEqualTo(0.95,
             "success rate must be at least 95% as per SAD Section 10 acceptance criteria");
-        
+
         // 3. p95 latency should be < 2s (SAD requirement)
         var sortedLatencies = latencies.OrderBy(l => l).ToList();
         var p95Index = (int)Math.Ceiling(sortedLatencies.Count * 0.95) - 1;
         var p95Latency = sortedLatencies[p95Index];
-        
-        p95Latency.Should().BeLessThan(2.0, 
+
+        p95Latency.Should().BeLessThan(2.0,
             "p95 latency must be less than 2 seconds as per SAD Section 10 acceptance criteria");
-        
+
         // 4. Validate output accuracy - classified invoices should match input categories
         foreach (var output in capturedOutputs)
         {
             var originalInvoice = invoices.First(i => i.InvoiceNumber == output.InvoiceNumber);
-            output.VendorName.Should().Be(originalInvoice.VendorName, 
+            output.VendorName.Should().Be(originalInvoice.VendorName,
                 "vendor name should be preserved accurately");
-            output.VendorCategory.Should().Be(originalInvoice.VendorCategory, 
+            output.VendorCategory.Should().Be(originalInvoice.VendorCategory,
                 "vendor category should be classified correctly");
-            output.RoutingDestination.Should().Be(originalInvoice.RoutingDestination, 
+            output.RoutingDestination.Should().Be(originalInvoice.RoutingDestination,
                 "routing destination should be determined correctly");
-            output.Confidence.Should().BeGreaterThanOrEqualTo(0.0).And.BeLessThanOrEqualTo(1.0, 
+            output.Confidence.Should().BeGreaterThanOrEqualTo(0.0).And.BeLessThanOrEqualTo(1.0,
                 "confidence score should be between 0 and 1");
         }
 
@@ -225,7 +225,7 @@ public class InvoiceProcessingE2ETests
         var avgLatency = latencies.Average();
         var maxLatency = latencies.Max();
         var minLatency = latencies.Min();
-        
+
         // Log test results for observability
         Console.WriteLine($"E2E Test Results:");
         Console.WriteLine($"  Total Invoices: {invoices.Count}");
@@ -317,13 +317,13 @@ public class InvoiceProcessingE2ETests
         await httpConnector.CloseAsync();
 
         // Assert
-        capturedCorrelationIds.Should().HaveCount(invoices.Count, 
+        capturedCorrelationIds.Should().HaveCount(invoices.Count,
             "all correlation IDs should be captured");
-        
+
         foreach (var invoice in invoices)
         {
             var expectedCorrelationId = $"e2e-correlation-{invoice.InvoiceNumber}";
-            capturedCorrelationIds.Should().Contain(expectedCorrelationId, 
+            capturedCorrelationIds.Should().Contain(expectedCorrelationId,
                 "correlation ID should be preserved through the processing flow");
         }
     }
@@ -407,15 +407,15 @@ public class InvoiceProcessingE2ETests
         await httpConnector.CloseAsync();
 
         // Assert
-        capturedIdempotencyKeys.Should().HaveCount(invoices.Count, 
+        capturedIdempotencyKeys.Should().HaveCount(invoices.Count,
             "all idempotency keys should be captured");
-        
+
         capturedIdempotencyKeys.Should().OnlyHaveUniqueItems(
             "idempotency keys should be unique for each message");
-        
+
         foreach (var expectedMessageId in invoices.Select(invoice => $"{invoice.InvoiceNumber}-classified"))
         {
-            capturedIdempotencyKeys.Should().Contain(expectedMessageId, 
+            capturedIdempotencyKeys.Should().Contain(expectedMessageId,
                 "idempotency key should match message ID");
         }
     }

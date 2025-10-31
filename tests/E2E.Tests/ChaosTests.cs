@@ -138,7 +138,7 @@ public class ChaosTests
         {
             var nodeId = await scheduler.ScheduleRunAsync(run);
             nodeId.Should().NotBeNull("run should be assigned to a healthy node");
-            
+
             // Since node-1 is failed, all runs should go to node-2
             if (nodeId == "node-2")
             {
@@ -208,7 +208,7 @@ public class ChaosTests
         {
             var nodeId = await scheduler.ScheduleRunAsync(run);
             nodeId.Should().NotBeNull("run should be assigned to a healthy node");
-            
+
             if (healthyNodeIds.Contains(nodeId!))
             {
                 successfulAssignments++;
@@ -344,7 +344,7 @@ public class ChaosTests
 
         // Create a new run for the recovery test to make it clear this is a separate scheduling attempt
         var run3 = await runStore.CreateRunAsync("invoice-classifier", "1.0.0");
-        
+
         // Try scheduling the new run to the recovered node
         var recoveredNode = await scheduler.ScheduleRunAsync(run3);
 
