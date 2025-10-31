@@ -217,6 +217,7 @@ builder.Services.AddSingleton<INatsEventPublisher, NatsEventPublisher>();
 
 // Add Microsoft Agent Framework runtime services
 builder.Services.AddSingleton<IToolRegistry, InMemoryToolRegistry>();
+builder.Services.AddSingleton<IAzureAIFoundryToolProvider, AzureAIFoundryToolProvider>();
 builder.Services.AddSingleton(sp =>
 {
     var configuration = builder.Configuration.GetSection("AgentRuntime");
@@ -251,6 +252,20 @@ catch (Exception ex)
 {
     var logger = app.Services.GetRequiredService<ILogger<Program>>();
     logger.LogWarning(ex, "Failed to initialize NATS JetStream - events will not be published");
+}
+
+// Initialize Azure AI Foundry tools with the tool registry
+try
+{
+    var azureAIFoundryProvider = app.Services.GetRequiredService<IAzureAIFoundryToolProvider>();
+    await azureAIFoundryProvider.RegisterAzureAIFoundryToolsAsync();
+    var logger = app.Services.GetRequiredService<ILogger<Program>>();
+    logger.LogInformation("Azure AI Foundry tools registered successfully");
+}
+catch (Exception ex)
+{
+    var logger = app.Services.GetRequiredService<ILogger<Program>>();
+    logger.LogError(ex, "Failed to register Azure AI Foundry tools");
 }
 
 // Configure the HTTP request pipeline
