@@ -136,8 +136,8 @@ URL: http://localhost:3200
 Access via Grafana → Explore → Select "Tempo" datasource
 
 **Trace Search:**
-- Search by service name: `ControlPlane.Api`
-- Search by operation: `RunStore.CompleteRun`, `Scheduler.ScheduleRun`, etc.
+- Search by service name: `ControlPlane.Api`, `Node.Runtime`
+- Search by operation: `RunStore.CompleteRun`, `Scheduler.ScheduleRun`, `AgentExecutor.Execute`, `LLM.Call`, etc.
 - Filter by duration or status
 
 **Trace Flow:**
@@ -145,6 +145,36 @@ Access via Grafana → Explore → Select "Tempo" datasource
 2. RunStore.CreateRun → Database Insert
 3. Scheduler.ScheduleRun → Node Selection
 4. LeaseService.Pull → gRPC Stream
+5. AgentExecutor.Execute → LLM.Call → Response
+6. ServiceBusConnector → ReceiveMessages → CompleteMessage
+
+**LLM Call Tracing:**
+The system automatically traces all LLM interactions with detailed attributes:
+- `LLM.Call` spans capture:
+  - `llm.model` - The model deployment name
+  - `llm.endpoint` - Azure AI Foundry endpoint
+  - `llm.input_length` - Input text length
+  - `llm.output_length` - Output text length
+  - `llm.tokens.input` - Estimated input tokens
+  - `llm.tokens.output` - Estimated output tokens
+  - `llm.tokens.total` - Total tokens used
+  - `llm.cost.usd` - Estimated cost in USD
+  - `llm.duration_ms` - LLM call duration
+
+**Connector Operations Tracing:**
+Service Bus connector operations are fully traced:
+- `ServiceBusConnector.Initialize` - Connection setup
+- `ServiceBusConnector.ReceiveMessages` - Message reception with count
+- `ServiceBusConnector.CompleteMessage` - Message completion
+- `ServiceBusConnector.AbandonMessage` - Message abandonment
+- `ServiceBusConnector.DeadLetterMessage` - DLQ operations with reason
+- All operations include `connector.type`, `queue.name`, and error details
+
+**Agent Execution Tracing:**
+- `AgentRuntime.CreateAgent` - Agent initialization
+- `AgentRuntime.Execute` - Agent execution wrapper
+- `AgentExecutor.Execute` - Full execution with budget enforcement
+- Tags include agent ID, version, name, budget constraints, token usage, and costs
 
 ### Loki (Logs)
 

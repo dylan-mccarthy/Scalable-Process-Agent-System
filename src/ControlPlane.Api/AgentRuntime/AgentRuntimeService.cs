@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using ControlPlane.Api.Models;
 using ControlPlane.Api.Services;
+using ControlPlane.Api.Observability;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 
@@ -30,12 +31,17 @@ public class AgentRuntimeService : IAgentRuntime
 
     public async Task<AIAgent> CreateAgentAsync(string agentId, CancellationToken cancellationToken = default)
     {
+        using var activity = TelemetryConfig.ActivitySource.StartActivity("AgentRuntime.CreateAgent");
+        activity?.SetTag("agent.id", agentId);
+        
         var agent = await _agentStore.GetAgentAsync(agentId);
         if (agent == null)
         {
+            activity?.SetStatus(ActivityStatusCode.Error, "Agent not found");
             throw new InvalidOperationException($"Agent with ID {agentId} not found");
         }
 
+        activity?.SetTag("agent.name", agent.Name);
         _logger.LogInformation("Creating agent runtime for agent {AgentId}", agentId);
 
         // Get the chat client based on model profile
@@ -52,9 +58,11 @@ public class AgentRuntimeService : IAgentRuntime
         if (tools.Any())
         {
             _logger.LogInformation("Registering {ToolCount} tools for agent {AgentId}", tools.Count(), agentId);
+            activity?.SetTag("agent.tools.count", tools.Count());
             // Tool registration will be implemented based on MAF tool system
         }
 
+        activity?.SetStatus(ActivityStatusCode.Ok);
         return aiAgent;
     }
 
@@ -64,6 +72,9 @@ public class AgentRuntimeService : IAgentRuntime
         Dictionary<string, object>? context = null,
         CancellationToken cancellationToken = default)
     {
+        using var activity = TelemetryConfig.ActivitySource.StartActivity("AgentRuntime.Execute");
+        activity?.SetTag("agent.input_length", input.Length);
+        
         var stopwatch = Stopwatch.StartNew();
         var result = new AgentExecutionResult
         {
@@ -74,19 +85,35 @@ public class AgentRuntimeService : IAgentRuntime
         {
             _logger.LogInformation("Executing agent with input: {Input}", input);
 
-            // Execute the agent with the input message
-            var response = await agent.RunAsync(input, cancellationToken: cancellationToken);
-
-            stopwatch.Stop();
-
-            result.Success = true;
-            result.Output = response.Text;
-            result.Duration = stopwatch.Elapsed;
-
-            // Extract token usage if available from metadata
-            if (context != null)
+            // Execute the agent with the input message - this is the LLM call
+            using (var llmActivity = TelemetryConfig.ActivitySource.StartActivity("LLM.Call"))
             {
-                result.Metadata = context;
+                llmActivity?.SetTag("llm.model", _options.DefaultModel ?? "unknown");
+                llmActivity?.SetTag("llm.temperature", _options.DefaultTemperature);
+                llmActivity?.SetTag("llm.max_tokens", _options.MaxTokens);
+                llmActivity?.SetTag("llm.input_length", input.Length);
+                
+                var response = await agent.RunAsync(input, cancellationToken: cancellationToken);
+
+                stopwatch.Stop();
+
+                result.Success = true;
+                result.Output = response.Text;
+                result.Duration = stopwatch.Elapsed;
+
+                // Extract token usage if available from metadata
+                if (context != null)
+                {
+                    result.Metadata = context;
+                }
+
+                llmActivity?.SetTag("llm.output_length", response.Text?.Length ?? 0);
+                llmActivity?.SetTag("llm.duration_ms", stopwatch.ElapsedMilliseconds);
+                llmActivity?.SetStatus(ActivityStatusCode.Ok);
+                
+                activity?.SetTag("agent.duration_ms", stopwatch.ElapsedMilliseconds);
+                activity?.SetTag("agent.output_length", response.Text?.Length ?? 0);
+                activity?.SetStatus(ActivityStatusCode.Ok);
             }
 
             _logger.LogInformation("Agent execution completed successfully in {Duration}ms",
@@ -98,6 +125,14 @@ public class AgentRuntimeService : IAgentRuntime
             result.Success = false;
             result.Error = ex.Message;
             result.Duration = stopwatch.Elapsed;
+
+            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            activity?.AddEvent(new ActivityEvent("exception", 
+                tags: new ActivityTagsCollection 
+                { 
+                    { "exception.type", ex.GetType().FullName },
+                    { "exception.message", ex.Message }
+                }));
 
             _logger.LogError(ex, "Agent execution failed");
         }
