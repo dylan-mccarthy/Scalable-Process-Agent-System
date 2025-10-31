@@ -181,6 +181,7 @@ if (useInMemoryStores)
     builder.Services.AddSingleton<IAgentStore, InMemoryAgentStore>();
     builder.Services.AddSingleton<INodeStore, InMemoryNodeStore>();
     builder.Services.AddSingleton<IRunStore, InMemoryRunStore>();
+    builder.Services.AddSingleton<IDeploymentStore, InMemoryDeploymentStore>();
 }
 else
 {
@@ -191,6 +192,7 @@ else
     builder.Services.AddScoped<IAgentStore, PostgresAgentStore>();
     builder.Services.AddScoped<INodeStore, PostgresNodeStore>();
     builder.Services.AddScoped<IRunStore, PostgresRunStore>();
+    builder.Services.AddScoped<IDeploymentStore, PostgresDeploymentStore>();
 }
 
 // Add Redis connection
@@ -373,6 +375,78 @@ app.MapDelete("/v1/agents/{agentId}/versions/{version}", async (string agentId, 
 })
 .WithName("DeleteAgentVersion")
 .WithTags("Agents");
+
+// Deployment endpoints
+app.MapGet("/v1/deployments", async (IDeploymentStore store) =>
+{
+    var deployments = await store.GetAllDeploymentsAsync();
+    return Results.Ok(deployments);
+})
+.WithName("GetDeployments")
+.WithTags("Deployments");
+
+app.MapGet("/v1/deployments/{depId}", async (string depId, IDeploymentStore store) =>
+{
+    var deployment = await store.GetDeploymentAsync(depId);
+    return deployment != null ? Results.Ok(deployment) : Results.NotFound();
+})
+.WithName("GetDeployment")
+.WithTags("Deployments");
+
+app.MapGet("/v1/agents/{agentId}/deployments", async (string agentId, IDeploymentStore store) =>
+{
+    var deployments = await store.GetDeploymentsByAgentAsync(agentId);
+    return Results.Ok(deployments);
+})
+.WithName("GetAgentDeployments")
+.WithTags("Deployments");
+
+app.MapPost("/v1/deployments", async (CreateDeploymentRequest request, IDeploymentStore store, IAgentStore agentStore) =>
+{
+    if (string.IsNullOrWhiteSpace(request.AgentId))
+    {
+        return Results.BadRequest(new { error = "AgentId is required" });
+    }
+
+    if (string.IsNullOrWhiteSpace(request.Version))
+    {
+        return Results.BadRequest(new { error = "Version is required" });
+    }
+
+    if (string.IsNullOrWhiteSpace(request.Env))
+    {
+        return Results.BadRequest(new { error = "Env is required" });
+    }
+
+    // Validate that the agent version exists
+    var version = await agentStore.GetVersionAsync(request.AgentId, request.Version);
+    if (version == null)
+    {
+        return Results.NotFound(new { error = $"Agent version {request.AgentId}:{request.Version} not found" });
+    }
+
+    var deployment = await store.CreateDeploymentAsync(request);
+    return Results.Created($"/v1/deployments/{deployment.DepId}", deployment);
+})
+.WithName("CreateDeployment")
+.WithTags("Deployments");
+
+app.MapPut("/v1/deployments/{depId}", async (string depId, UpdateDeploymentStatusRequest request, IDeploymentStore store) =>
+{
+    var deployment = await store.UpdateDeploymentStatusAsync(depId, request);
+    return deployment != null ? Results.Ok(deployment) : Results.NotFound();
+})
+.WithName("UpdateDeploymentStatus")
+.WithTags("Deployments");
+
+app.MapDelete("/v1/deployments/{depId}", async (string depId, IDeploymentStore store) =>
+{
+    var deleted = await store.DeleteDeploymentAsync(depId);
+    return deleted ? Results.NoContent() : Results.NotFound();
+})
+.WithName("DeleteDeployment")
+.WithTags("Deployments");
+
 
 // Node endpoints
 app.MapGet("/v1/nodes", async (INodeStore store) =>
