@@ -102,7 +102,7 @@ public class InvoiceProcessingE2ETests
             .ReturnsAsync((HttpRequestMessage req, CancellationToken ct) =>
             {
                 // Simulate realistic processing with slight delay
-                Thread.Sleep(Random.Shared.Next(10, 50));
+                Task.Delay(Random.Shared.Next(10, 50), ct).Wait();
                 
                 return new HttpResponseMessage
                 {
