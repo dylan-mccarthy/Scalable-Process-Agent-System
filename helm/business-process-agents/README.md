@@ -508,6 +508,50 @@ kubectl exec -it <redis-pod> -- redis-cli ping
 kubectl exec -it <nats-pod> -- wget -qO- http://localhost:8222/healthz
 ```
 
+## Testing
+
+### Validate Helm Chart Configuration
+
+Before deploying, you can validate the Helm chart configuration using the provided integration tests:
+
+```bash
+# Test Helm chart template rendering and observability configuration
+./tests/helm-observability-test.sh
+```
+
+This test validates:
+- Helm chart templates render correctly
+- OTel Collector is properly configured with Prometheus, Tempo, and Loki exporters
+- All observability components are deployed correctly
+- Control Plane telemetry endpoints are configured
+
+### Validate Docker Compose Configuration
+
+For local development with Docker Compose:
+
+```bash
+# Test Docker Compose observability stack
+./tests/docker-compose-observability-test.sh
+```
+
+This test validates:
+- Docker Compose configuration is syntactically valid
+- All observability services are defined
+- OTel Collector configuration includes all exporters
+- Service ports and volumes are properly configured
+
+### Integration Tests in CI/CD
+
+Include these tests in your CI/CD pipeline to ensure configuration integrity:
+
+```yaml
+# Example GitHub Actions workflow
+- name: Validate Observability Stack
+  run: |
+    ./tests/helm-observability-test.sh
+    ./tests/docker-compose-observability-test.sh
+```
+
 ## Support
 
 For issues and questions, please open an issue on the [GitHub repository](https://github.com/dylan-mccarthy/Scalable-Process-Agent-System).

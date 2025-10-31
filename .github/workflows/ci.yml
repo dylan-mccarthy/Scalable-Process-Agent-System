@@ -131,11 +131,37 @@ jobs:
           name: nextjs-sbom
           path: sbom-admin-ui.spdx.json
   
+  # Test Helm Chart and Observability Configuration
+  helm-observability-test:
+    name: Helm Chart and Observability Test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: '3.13.0'
+      
+      - name: Run Helm observability test
+        run: |
+          chmod +x ./tests/helm-observability-test.sh
+          ./tests/helm-observability-test.sh
+      
+      - name: Run Docker Compose observability test
+        run: |
+          chmod +x ./tests/docker-compose-observability-test.sh
+          ./tests/docker-compose-observability-test.sh
+  
   # Build Container Images and Generate SBOMs
   docker-build:
     name: Build and Scan Container Images
     runs-on: ubuntu-latest
-    needs: [dotnet-build-test, nextjs-build-test]
+    needs: [dotnet-build-test, nextjs-build-test, helm-observability-test]
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
     permissions:
       contents: read
@@ -273,7 +299,7 @@ jobs:
   ci-summary:
     name: CI Summary
     runs-on: ubuntu-latest
-    needs: [dotnet-build-test, nextjs-build-test, docker-build]
+    needs: [dotnet-build-test, nextjs-build-test, helm-observability-test, docker-build]
     if: always()
     permissions:
       contents: read
@@ -284,10 +310,12 @@ jobs:
           echo "Build and Test Status:"
           echo "  .NET Build and Test: ${{ needs.dotnet-build-test.result }}"
           echo "  Next.js Build and Test: ${{ needs.nextjs-build-test.result }}"
+          echo "  Helm Observability Test: ${{ needs.helm-observability-test.result }}"
           echo "  Docker Build and Scan: ${{ needs.docker-build.result }}"
           
           if [[ "${{ needs.dotnet-build-test.result }}" != "success" ]] || \
              [[ "${{ needs.nextjs-build-test.result }}" != "success" ]] || \
+             [[ "${{ needs.helm-observability-test.result }}" != "success" ]] || \
              [[ "${{ needs.docker-build.result }}" != "success" ]]; then
             echo "❌ CI pipeline failed"
             exit 1
