@@ -29,7 +29,58 @@ This is the Business Process Agents MVP project, providing a complete platform f
 
 ## Quick Start
 
-### Building the Solution
+### Option 1: Local Kubernetes with k3d (Recommended)
+
+The fastest way to get a complete environment running locally:
+
+```bash
+# Clone the repository
+git clone https://github.com/dylan-mccarthy/Scalable-Process-Agent-System.git
+cd Scalable-Process-Agent-System
+
+# Run the k3d setup script
+./infra/scripts/setup-k3d.sh
+```
+
+This will create a local Kubernetes cluster and deploy all services:
+- ✅ PostgreSQL, Redis, NATS
+- ✅ Control Plane API
+- ✅ Node Runtime (2 replicas)
+- ✅ Admin UI
+
+**Access Points:**
+- Control Plane API: http://localhost:8080
+- Admin UI: http://localhost:3000
+
+**Cleanup:**
+```bash
+./infra/scripts/cleanup-k3d.sh
+```
+
+**See:** [infra/scripts/README.md](infra/scripts/README.md) for detailed k3d documentation.
+
+### Option 2: Docker Compose
+
+Run all services with Docker Compose:
+
+```bash
+# Start all services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop all services
+docker-compose down
+```
+
+**Access Points:**
+- Control Plane API: http://localhost:8080
+- Admin UI: http://localhost:3000
+
+### Option 3: Local Development (No Docker)
+
+Build and run individual services for development:
 
 ```bash
 # Clone the repository
@@ -43,15 +94,15 @@ dotnet build
 dotnet test
 ```
 
-### Running Control Plane API
+#### Running Control Plane API
 
 ```bash
-# Option 1: In-memory mode (no external dependencies)
+# Option A: In-memory mode (no external dependencies)
 cd src/ControlPlane.Api
 # Set UseInMemoryStores=true in appsettings.json
 dotnet run
 
-# Option 2: Full mode with PostgreSQL, Redis, and NATS
+# Option B: Full mode with PostgreSQL, Redis, and NATS
 # Start dependencies (requires Docker)
 docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=postgres postgres:14
 docker run -d -p 6379:6379 redis:6
@@ -65,7 +116,7 @@ dotnet run
 
 The API will be available at `http://localhost:5109`.
 
-### Running Node Runtime
+#### Running Node Runtime
 
 ```bash
 cd src/Node.Runtime
