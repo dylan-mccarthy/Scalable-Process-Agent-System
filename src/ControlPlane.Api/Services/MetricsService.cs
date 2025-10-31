@@ -1,0 +1,175 @@
+using ControlPlane.Api.Observability;
+
+namespace ControlPlane.Api.Services;
+
+/// <summary>
+/// Service for providing real-time metrics data to OpenTelemetry observable gauges
+/// </summary>
+public interface IMetricsService
+{
+    /// <summary>
+    /// Get the current number of active runs
+    /// </summary>
+    Task<int> GetActiveRunsCountAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Get the current number of active nodes
+    /// </summary>
+    Task<int> GetActiveNodesCountAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Get the total number of slots across all nodes
+    /// </summary>
+    Task<int> GetTotalSlotsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Get the number of slots currently in use
+    /// </summary>
+    Task<int> GetUsedSlotsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Get the number of slots currently available
+    /// </summary>
+    Task<int> GetAvailableSlotsAsync(CancellationToken cancellationToken = default);
+}
+
+/// <summary>
+/// Implementation of metrics service that queries stores for real-time data
+/// </summary>
+public class MetricsService : IMetricsService
+{
+    private readonly IRunStore _runStore;
+    private readonly INodeStore _nodeStore;
+    private readonly ILogger<MetricsService> _logger;
+
+    public MetricsService(
+        IRunStore runStore,
+        INodeStore nodeStore,
+        ILogger<MetricsService> logger)
+    {
+        _runStore = runStore;
+        _nodeStore = nodeStore;
+        _logger = logger;
+    }
+
+    public async Task<int> GetActiveRunsCountAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var runs = await _runStore.GetAllRunsAsync();
+            return runs.Count(r => r.Status == "running" || r.Status == "pending");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving active runs count");
+            return 0;
+        }
+    }
+
+    public async Task<int> GetActiveNodesCountAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var nodes = await _nodeStore.GetAllNodesAsync();
+            var now = DateTime.UtcNow;
+            // Consider a node active if it has sent a heartbeat in the last 60 seconds
+            return nodes.Count(n => n.Status?.State == "active" && 
+                                   (now - n.HeartbeatAt).TotalSeconds < 60);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving active nodes count");
+            return 0;
+        }
+    }
+
+    public async Task<int> GetTotalSlotsAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var nodes = await _nodeStore.GetAllNodesAsync();
+            var now = DateTime.UtcNow;
+            // Only count slots from active nodes
+            return nodes
+                .Where(n => n.Status?.State == "active" && (now - n.HeartbeatAt).TotalSeconds < 60)
+                .Sum(n => GetNodeTotalSlots(n));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving total slots");
+            return 0;
+        }
+    }
+
+    public async Task<int> GetUsedSlotsAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var nodes = await _nodeStore.GetAllNodesAsync();
+            var now = DateTime.UtcNow;
+            return nodes
+                .Where(n => n.Status?.State == "active" && (now - n.HeartbeatAt).TotalSeconds < 60)
+                .Sum(n => n.Status?.ActiveRuns ?? 0);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving used slots");
+            return 0;
+        }
+    }
+
+    public async Task<int> GetAvailableSlotsAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var nodes = await _nodeStore.GetAllNodesAsync();
+            var now = DateTime.UtcNow;
+            return nodes
+                .Where(n => n.Status?.State == "active" && (now - n.HeartbeatAt).TotalSeconds < 60)
+                .Sum(n => n.Status?.AvailableSlots ?? 0);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving available slots");
+            return 0;
+        }
+    }
+
+    /// <summary>
+    /// Extract total slots from node capacity
+    /// </summary>
+    private int GetNodeTotalSlots(Models.Node node)
+    {
+        if (node.Capacity?.TryGetValue("slots", out var slotsObj) == true && slotsObj != null)
+        {
+            if (slotsObj is System.Text.Json.JsonElement jsonElement)
+            {
+                if (jsonElement.ValueKind == System.Text.Json.JsonValueKind.Number)
+                {
+                    return jsonElement.GetInt32();
+                }
+            }
+            else if (slotsObj is int intSlots)
+            {
+                return intSlots;
+            }
+            else if (slotsObj is long longSlots)
+            {
+                return (int)longSlots;
+            }
+            else
+            {
+                try
+                {
+                    return Convert.ToInt32(slotsObj);
+                }
+                catch
+                {
+                    return 0;
+                }
+            }
+        }
+
+        return 0;
+    }
+}

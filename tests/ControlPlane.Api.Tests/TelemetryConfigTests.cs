@@ -129,4 +129,18 @@ public class TelemetryConfigTests
             new KeyValuePair<string, object?>("agent.id", "test-agent"),
             new KeyValuePair<string, object?>("status", "completed"));
     }
+
+    [Fact]
+    public void TelemetryConfig_ShouldHaveObservableGaugeProperties()
+    {
+        // This test verifies that observable gauge properties are defined
+        // The actual gauges are initialized in Program.cs when the app starts
+        
+        // Assert - Properties should exist and be settable
+        Assert.NotNull((object?)TelemetryConfig.ActiveRunsGauge);
+        Assert.NotNull((object?)TelemetryConfig.ActiveNodesGauge);
+        Assert.NotNull((object?)TelemetryConfig.TotalSlotsGauge);
+        Assert.NotNull((object?)TelemetryConfig.UsedSlotsGauge);
+        Assert.NotNull((object?)TelemetryConfig.AvailableSlotsGauge);
+    }
 }

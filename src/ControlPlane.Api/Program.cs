@@ -240,7 +240,38 @@ builder.Services.AddSingleton<ILeaseService, LeaseServiceLogic>();
 // Add Agent Spec Validator
 builder.Services.AddSingleton<IAgentSpecValidator, AgentSpecValidator>();
 
+// Add Metrics Service for observable gauges
+builder.Services.AddSingleton<IMetricsService, MetricsService>();
+
 var app = builder.Build();
+
+// Initialize observable gauges for metrics
+var metricsService = app.Services.GetRequiredService<IMetricsService>();
+
+TelemetryConfig.ActiveRunsGauge = TelemetryConfig.Meter.CreateObservableGauge(
+    "active_runs",
+    () => metricsService.GetActiveRunsCountAsync().GetAwaiter().GetResult(),
+    description: "Current number of active runs (running or pending)");
+
+TelemetryConfig.ActiveNodesGauge = TelemetryConfig.Meter.CreateObservableGauge(
+    "active_nodes",
+    () => metricsService.GetActiveNodesCountAsync().GetAwaiter().GetResult(),
+    description: "Current number of active nodes");
+
+TelemetryConfig.TotalSlotsGauge = TelemetryConfig.Meter.CreateObservableGauge(
+    "total_slots",
+    () => metricsService.GetTotalSlotsAsync().GetAwaiter().GetResult(),
+    description: "Total number of slots across all active nodes");
+
+TelemetryConfig.UsedSlotsGauge = TelemetryConfig.Meter.CreateObservableGauge(
+    "used_slots",
+    () => metricsService.GetUsedSlotsAsync().GetAwaiter().GetResult(),
+    description: "Number of slots currently in use");
+
+TelemetryConfig.AvailableSlotsGauge = TelemetryConfig.Meter.CreateObservableGauge(
+    "available_slots",
+    () => metricsService.GetAvailableSlotsAsync().GetAwaiter().GetResult(),
+    description: "Number of slots currently available");
 
 // Initialize NATS JetStream streams (optional - fail gracefully if NATS is not available)
 try
