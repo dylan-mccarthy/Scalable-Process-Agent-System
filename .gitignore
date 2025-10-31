@@ -501,6 +501,8 @@ TestResults/
 # Bicep build outputs
 *.bicepparam
 bicep-build/
+infra/bicep/*.json
+!infra/bicep/*.parameters.*.json
 
 # Azure deployment secrets (keep parameters template files)
 infra/bicep/*.local.json
