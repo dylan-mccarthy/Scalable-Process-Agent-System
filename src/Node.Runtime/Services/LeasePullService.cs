@@ -32,6 +32,7 @@ public sealed class LeasePullService : ILeasePullService
 {
     private readonly LeaseService.LeaseServiceClient _leaseClient;
     private readonly IAgentExecutor _agentExecutor;
+    private readonly INodeMetricsService _metricsService;
     private readonly NodeRuntimeOptions _options;
     private readonly ILogger<LeasePullService> _logger;
     private Task? _pullTask;
@@ -44,11 +45,13 @@ public sealed class LeasePullService : ILeasePullService
     public LeasePullService(
         LeaseService.LeaseServiceClient leaseClient,
         IAgentExecutor agentExecutor,
+        INodeMetricsService metricsService,
         IOptions<NodeRuntimeOptions> options,
         ILogger<LeasePullService> logger)
     {
         _leaseClient = leaseClient;
         _agentExecutor = agentExecutor;
+        _metricsService = metricsService;
         _options = options.Value;
         _logger = logger;
     }
@@ -224,6 +227,7 @@ public sealed class LeasePullService : ILeasePullService
         try
         {
             _activeLeases++;
+            _metricsService.IncrementActiveLeases();
         }
         finally
         {
@@ -425,6 +429,7 @@ public sealed class LeasePullService : ILeasePullService
             try
             {
                 _activeLeases--;
+                _metricsService.DecrementActiveLeases();
             }
             finally
             {

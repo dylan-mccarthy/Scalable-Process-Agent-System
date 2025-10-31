@@ -327,6 +327,10 @@ The following custom metrics are automatically collected:
 - `agent_tokens_total` - Total tokens used per agent execution
 - `agent_cost_usd` - Cost of agent execution in USD
 
+**Observable Gauges:**
+- `active_leases` - Current number of active leases being processed
+- `available_slots` - Current number of available slots for lease processing
+
 **Automatic Instrumentation:**
 - HTTP client calls to Control Plane
 - gRPC client calls to LeaseService
@@ -357,6 +361,24 @@ Structured logs are enhanced with OpenTelemetry context:
 - **Node context**: All logs include `node.id` for filtering
 - **Lease context**: Processing logs include `lease.id` and `run.id`
 - **JSON format**: Logs are structured for easy parsing and filtering
+- **OTLP export**: Logs are exported to the configured OTLP endpoint for aggregation
+
+**Configuration:**
+
+Logging instrumentation is configured in `Program.cs` to send logs to the OTLP collector:
+
+```csharp
+builder.Logging.AddOpenTelemetry(logging =>
+{
+    logging.SetResourceBuilder(resourceBuilder);
+    logging.IncludeFormattedMessage = true;
+    logging.IncludeScopes = true;
+    logging.AddOtlpExporter(options =>
+    {
+        options.Endpoint = new Uri(otelConfig.OtlpExporter.Endpoint);
+    });
+});
+```
 
 ### Integration with Observability Stack
 
@@ -551,7 +573,7 @@ Node Runtime core functionality is implemented and enhanced with comprehensive t
 - ✅ **E2-T6**: Service Bus connector (Complete)
 - ⏳ **E2-T7**: HTTP output connector
 - ⏳ **E2-T8**: DLQ handling
-- ⏳ **E2-T9**: Node telemetry (Metrics complete, custom gauges pending)
+- ✅ **E2-T9**: Node telemetry - Complete with metrics, traces, logs, and observable gauges
 - ⏳ **E2-T10**: Secure mTLS communication
 - ⏳ **E3-T4**: Configure Azure AI Foundry credentials for actual LLM execution
 

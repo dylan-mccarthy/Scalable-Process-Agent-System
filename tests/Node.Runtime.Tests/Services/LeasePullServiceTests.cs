@@ -16,6 +16,7 @@ public sealed class LeasePullServiceTests : IDisposable
 {
     private readonly Mock<LeaseService.LeaseServiceClient> _mockLeaseClient;
     private readonly Mock<IAgentExecutor> _mockAgentExecutor;
+    private readonly Mock<INodeMetricsService> _mockMetricsService;
     private readonly Mock<ILogger<LeasePullService>> _mockLogger;
     private readonly NodeRuntimeOptions _options;
     private readonly LeasePullService _service;
@@ -24,6 +25,7 @@ public sealed class LeasePullServiceTests : IDisposable
     {
         _mockLeaseClient = new Mock<LeaseService.LeaseServiceClient>();
         _mockAgentExecutor = new Mock<IAgentExecutor>();
+        _mockMetricsService = new Mock<INodeMetricsService>();
         _mockLogger = new Mock<ILogger<LeasePullService>>();
 
         _options = new NodeRuntimeOptions
@@ -48,6 +50,7 @@ public sealed class LeasePullServiceTests : IDisposable
         _service = new LeasePullService(
             _mockLeaseClient.Object,
             _mockAgentExecutor.Object,
+            _mockMetricsService.Object,
             Options.Create(_options),
             _mockLogger.Object);
     }

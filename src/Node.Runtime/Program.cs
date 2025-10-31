@@ -6,6 +6,7 @@ using Grpc.Net.Client;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using OpenTelemetry.Metrics;
+using OpenTelemetry.Logs;
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -38,18 +39,21 @@ builder.Services.AddSingleton<IAgentExecutor, SandboxExecutorService>();
 builder.Services.AddSingleton<ISandboxExecutor, SandboxExecutorService>();
 builder.Services.AddSingleton<ILeasePullService, LeasePullService>();
 
+// Add Metrics Service for observable gauges
+builder.Services.AddSingleton<INodeMetricsService, NodeMetricsService>();
+
 // Configure OpenTelemetry
+var resourceBuilder = ResourceBuilder.CreateDefault()
+    .AddService(otelConfig.ServiceName, serviceVersion: otelConfig.ServiceVersion)
+    .AddAttributes(new Dictionary<string, object>
+    {
+        ["node.id"] = nodeRuntimeConfig.NodeId,
+        ["node.region"] = nodeRuntimeConfig.Metadata.GetValueOrDefault("Region", "unknown"),
+        ["node.environment"] = nodeRuntimeConfig.Metadata.GetValueOrDefault("Environment", "unknown")
+    });
+
 if (otelConfig.Traces.Enabled || otelConfig.Metrics.Enabled)
 {
-    var resourceBuilder = ResourceBuilder.CreateDefault()
-        .AddService(otelConfig.ServiceName, serviceVersion: otelConfig.ServiceVersion)
-        .AddAttributes(new Dictionary<string, object>
-        {
-            ["node.id"] = nodeRuntimeConfig.NodeId,
-            ["node.region"] = nodeRuntimeConfig.Metadata.GetValueOrDefault("Region", "unknown"),
-            ["node.environment"] = nodeRuntimeConfig.Metadata.GetValueOrDefault("Environment", "unknown")
-        });
-
     if (otelConfig.Traces.Enabled)
     {
         builder.Services.AddOpenTelemetry()
@@ -104,6 +108,27 @@ if (otelConfig.Traces.Enabled || otelConfig.Metrics.Enabled)
     }
 }
 
+// Configure Logging
+builder.Logging.AddOpenTelemetry(logging =>
+{
+    logging.SetResourceBuilder(resourceBuilder);
+    logging.IncludeFormattedMessage = true;
+    logging.IncludeScopes = true;
+
+    if (otelConfig.ConsoleExporter.Enabled)
+    {
+        logging.AddConsoleExporter();
+    }
+
+    if (!string.IsNullOrEmpty(otelConfig.OtlpExporter.Endpoint))
+    {
+        logging.AddOtlpExporter(options =>
+        {
+            options.Endpoint = new Uri(otelConfig.OtlpExporter.Endpoint);
+        });
+    }
+});
+
 // Add the Worker as a hosted service
 builder.Services.AddHostedService<Worker>();
 
@@ -111,6 +136,26 @@ var host = builder.Build();
 
 var logger = host.Services.GetRequiredService<ILogger<Program>>();
 logger.LogInformation("Node Runtime starting with NodeId: {NodeId}", nodeRuntimeConfig.NodeId);
+
+// Initialize observable gauges for metrics
+if (otelConfig.Metrics.Enabled)
+{
+    var metricsService = host.Services.GetRequiredService<INodeMetricsService>();
+
+    Node.Runtime.Observability.TelemetryConfig.ActiveLeasesGauge = 
+        Node.Runtime.Observability.TelemetryConfig.Meter.CreateObservableGauge(
+            "active_leases",
+            () => metricsService.GetActiveLeases(),
+            description: "Current number of active leases being processed");
+
+    Node.Runtime.Observability.TelemetryConfig.AvailableSlotsGauge = 
+        Node.Runtime.Observability.TelemetryConfig.Meter.CreateObservableGauge(
+            "available_slots",
+            () => metricsService.GetAvailableSlots(),
+            description: "Current number of available slots for lease processing");
+
+    logger.LogInformation("Observable gauges initialized for Node.Runtime metrics");
+}
 
 host.Run();
 
