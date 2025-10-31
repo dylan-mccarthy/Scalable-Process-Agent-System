@@ -38,6 +38,8 @@ public interface IMetricsService
 /// </summary>
 public class MetricsService : IMetricsService
 {
+    private const int NodeHeartbeatTimeoutSeconds = 60;
+    
     private readonly IRunStore _runStore;
     private readonly INodeStore _nodeStore;
     private readonly ILogger<MetricsService> _logger;
@@ -73,9 +75,9 @@ public class MetricsService : IMetricsService
         {
             var nodes = _nodeStore.GetAllNodesAsync().ConfigureAwait(false).GetAwaiter().GetResult();
             var now = DateTime.UtcNow;
-            // Consider a node active if it has sent a heartbeat in the last 60 seconds
+            // Consider a node active if it has sent a heartbeat within the timeout period
             return nodes.Count(n => n.Status?.State == "active" && 
-                                   (now - n.HeartbeatAt).TotalSeconds < 60);
+                                   (now - n.HeartbeatAt).TotalSeconds < NodeHeartbeatTimeoutSeconds);
         }
         catch (Exception ex)
         {
@@ -92,7 +94,7 @@ public class MetricsService : IMetricsService
             var now = DateTime.UtcNow;
             // Only count slots from active nodes
             return nodes
-                .Where(n => n.Status?.State == "active" && (now - n.HeartbeatAt).TotalSeconds < 60)
+                .Where(n => n.Status?.State == "active" && (now - n.HeartbeatAt).TotalSeconds < NodeHeartbeatTimeoutSeconds)
                 .Sum(n => GetNodeTotalSlots(n));
         }
         catch (Exception ex)
@@ -109,7 +111,7 @@ public class MetricsService : IMetricsService
             var nodes = _nodeStore.GetAllNodesAsync().ConfigureAwait(false).GetAwaiter().GetResult();
             var now = DateTime.UtcNow;
             return nodes
-                .Where(n => n.Status?.State == "active" && (now - n.HeartbeatAt).TotalSeconds < 60)
+                .Where(n => n.Status?.State == "active" && (now - n.HeartbeatAt).TotalSeconds < NodeHeartbeatTimeoutSeconds)
                 .Sum(n => n.Status?.ActiveRuns ?? 0);
         }
         catch (Exception ex)
@@ -126,7 +128,7 @@ public class MetricsService : IMetricsService
             var nodes = _nodeStore.GetAllNodesAsync().ConfigureAwait(false).GetAwaiter().GetResult();
             var now = DateTime.UtcNow;
             return nodes
-                .Where(n => n.Status?.State == "active" && (now - n.HeartbeatAt).TotalSeconds < 60)
+                .Where(n => n.Status?.State == "active" && (now - n.HeartbeatAt).TotalSeconds < NodeHeartbeatTimeoutSeconds)
                 .Sum(n => n.Status?.AvailableSlots ?? 0);
         }
         catch (Exception ex)
