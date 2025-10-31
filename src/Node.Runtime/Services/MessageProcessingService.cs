@@ -293,6 +293,20 @@ public sealed class MessageProcessingService : IMessageProcessingService
             stopwatch.Stop();
             _logger.LogError(invalidOpEx, "Invalid operation while processing MessageId={MessageId}", message.MessageId);
             
+            // For unexpected InvalidOperationExceptions, abandon the message for retry
+            try
+            {
+                await _inputConnector.AbandonMessageAsync(message, cancellationToken);
+            }
+            catch (Azure.Messaging.ServiceBus.ServiceBusException abandonEx) when (abandonEx.Reason == Azure.Messaging.ServiceBus.ServiceBusFailureReason.MessageLockLost)
+            {
+                _logger.LogWarning("Cannot abandon MessageId={MessageId} - lock already lost", message.MessageId);
+            }
+            catch (InvalidOperationException)
+            {
+                _logger.LogWarning("Cannot abandon MessageId={MessageId} - already settled", message.MessageId);
+            }
+            
             activity?.SetStatus(ActivityStatusCode.Error, invalidOpEx.Message);
             activity?.AddEvent(new ActivityEvent("exception",
                 tags: new ActivityTagsCollection
