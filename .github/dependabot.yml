@@ -9,7 +9,8 @@ updates:
     open-pull-requests-limit: 10
     labels:
       - "dependencies"
-      - "security"
+      - "nuget"
+      - ".NET"
     commit-message:
       prefix: "chore(deps)"
       include: "scope"
@@ -23,8 +24,8 @@ updates:
     open-pull-requests-limit: 10
     labels:
       - "dependencies"
-      - "security"
-      - "admin-ui"
+      - "javascript"
+      - "npm"
     commit-message:
       prefix: "chore(deps)"
       include: "scope"
@@ -38,7 +39,7 @@ updates:
     open-pull-requests-limit: 5
     labels:
       - "dependencies"
-      - "ci/cd"
+      - "github_actions"
     commit-message:
       prefix: "chore(deps)"
       include: "scope"
