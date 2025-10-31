@@ -1059,7 +1059,7 @@
             "type": "prometheus",
             "uid": "Prometheus"
           },
-          "expr": "(sum(increase(runs_completed_total[5m])) / (sum(increase(runs_started_total[5m])) > 0 or vector(1))) * 100",
+          "expr": "(sum(increase(runs_completed_total[5m])) or vector(0)) / (sum(increase(runs_started_total[5m])) or vector(1)) * 100",
           "refId": "A"
         }
       ],

@@ -339,7 +339,7 @@
             "type": "prometheus",
             "uid": "Prometheus"
           },
-          "expr": "(used_slots / (total_slots > 0 or vector(1))) * 100",
+          "expr": "(used_slots or vector(0)) / (total_slots or vector(1)) * 100",
           "refId": "A"
         }
       ],
@@ -649,7 +649,7 @@
             "type": "prometheus",
             "uid": "Prometheus"
           },
-          "expr": "(used_slots / (total_slots > 0 or vector(1))) * 100",
+          "expr": "(used_slots or vector(0)) / (total_slots or vector(1)) * 100",
           "legendFormat": "Utilization %",
           "refId": "A"
         }
