@@ -141,7 +141,7 @@ public sealed class ServiceBusInputConnector : IInputConnector, IAsyncDisposable
                         receivedMessage.MessageId,
                         receivedMessage.DeliveryCount,
                         _options.MaxDeliveryCount);
-                    
+
                     activity?.AddEvent(new ActivityEvent("poison_message_detected",
                         tags: new ActivityTagsCollection
                         {
@@ -272,7 +272,7 @@ public sealed class ServiceBusInputConnector : IInputConnector, IAsyncDisposable
                 message.MessageId,
                 reason,
                 errorDescription);
-            
+
             activity?.SetStatus(ActivityStatusCode.Ok);
 
             return new MessageCompletionResult { Success = true };

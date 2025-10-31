@@ -151,7 +151,7 @@ public class AgentExecutorService : IAgentExecutor
         activity?.SetTag("agent.id", spec.AgentId);
         activity?.SetTag("agent.version", spec.Version);
         activity?.SetTag("agent.name", spec.Name);
-        
+
         var stopwatch = Stopwatch.StartNew();
         var result = new AgentExecutionResult
         {
@@ -193,7 +193,7 @@ public class AgentExecutorService : IAgentExecutor
                 llmActivity?.SetTag("llm.model", _options.AzureAIFoundry?.DeploymentName ?? "unknown");
                 llmActivity?.SetTag("llm.endpoint", _options.AzureAIFoundry?.Endpoint ?? "unknown");
                 llmActivity?.SetTag("llm.input_length", input.Length);
-                
+
                 var response = await aiAgent.RunAsync(
                     input,
                     cancellationToken: timeoutCts.Token);
@@ -221,18 +221,18 @@ public class AgentExecutorService : IAgentExecutor
             }
 
             // Record metrics
-            TelemetryConfig.AgentExecutionsCounter.Add(1, 
+            TelemetryConfig.AgentExecutionsCounter.Add(1,
                 new KeyValuePair<string, object?>("agent.id", spec.AgentId),
                 new KeyValuePair<string, object?>("agent.version", spec.Version),
                 new KeyValuePair<string, object?>("status", "success"));
-            
+
             TelemetryConfig.AgentExecutionDurationHistogram.Record(stopwatch.ElapsedMilliseconds,
                 new KeyValuePair<string, object?>("agent.id", spec.AgentId),
                 new KeyValuePair<string, object?>("status", "success"));
-            
+
             TelemetryConfig.AgentTokensHistogram.Record(result.TokensIn + result.TokensOut,
                 new KeyValuePair<string, object?>("agent.id", spec.AgentId));
-            
+
             TelemetryConfig.AgentCostHistogram.Record(result.UsdCost,
                 new KeyValuePair<string, object?>("agent.id", spec.AgentId));
 
@@ -259,7 +259,7 @@ public class AgentExecutorService : IAgentExecutor
 
             activity?.SetStatus(ActivityStatusCode.Error, result.Error);
             activity?.SetTag("error.type", "timeout");
-            
+
             TelemetryConfig.AgentExecutionErrorsCounter.Add(1,
                 new KeyValuePair<string, object?>("agent.id", spec.AgentId),
                 new KeyValuePair<string, object?>("error.type", "timeout"));
@@ -283,7 +283,7 @@ public class AgentExecutorService : IAgentExecutor
                     { "exception.message", ex.Message }
                 }));
             activity?.SetTag("error.type", ex.GetType().Name);
-            
+
             TelemetryConfig.AgentExecutionErrorsCounter.Add(1,
                 new KeyValuePair<string, object?>("agent.id", spec.AgentId),
                 new KeyValuePair<string, object?>("error.type", ex.GetType().Name));

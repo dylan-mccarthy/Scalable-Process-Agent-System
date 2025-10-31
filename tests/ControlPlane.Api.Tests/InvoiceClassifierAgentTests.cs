@@ -11,10 +11,10 @@ namespace ControlPlane.Api.Tests;
 public class InvoiceClassifierAgentTests
 {
     private const string AgentDefinitionPath = "../../../../../agents/definitions/invoice-classifier.json";
-    
-    private static readonly JsonSerializerOptions JsonOptions = new() 
-    { 
-        PropertyNameCaseInsensitive = true 
+
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
     };
 
     private async Task<Agent> LoadAgentDefinitionAsync()
@@ -109,20 +109,20 @@ public class InvoiceClassifierAgentTests
         Assert.NotNull(agent);
         Assert.NotNull(agent.Input);
         Assert.NotNull(agent.Input.Config);
-        
+
         // Verify Service Bus specific configuration
         Assert.True(agent.Input.Config.ContainsKey("connectionString"));
         Assert.True(agent.Input.Config.ContainsKey("prefetchCount"));
         Assert.True(agent.Input.Config.ContainsKey("maxDeliveryCount"));
         Assert.True(agent.Input.Config.ContainsKey("receiveMode"));
-        
+
         // Verify values
         var prefetchCount = ((JsonElement)agent.Input.Config["prefetchCount"]).GetInt32();
         Assert.Equal(16, prefetchCount);
-        
+
         var maxDeliveryCount = ((JsonElement)agent.Input.Config["maxDeliveryCount"]).GetInt32();
         Assert.Equal(3, maxDeliveryCount);
-        
+
         var receiveMode = agent.Input.Config["receiveMode"].ToString();
         Assert.Equal("PeekLock", receiveMode);
     }
@@ -153,11 +153,11 @@ public class InvoiceClassifierAgentTests
         Assert.NotNull(agent.Output);
         Assert.NotNull(agent.Output.Config);
         Assert.True(agent.Output.Config.ContainsKey("retryPolicy"));
-        
+
         var retryPolicyJson = (JsonElement)agent.Output.Config["retryPolicy"];
         var maxRetries = retryPolicyJson.GetProperty("maxRetries").GetInt32();
         Assert.Equal(3, maxRetries);
-        
+
         var useExponentialBackoff = retryPolicyJson.GetProperty("useExponentialBackoff").GetBoolean();
         Assert.True(useExponentialBackoff);
     }
@@ -173,7 +173,7 @@ public class InvoiceClassifierAgentTests
         Assert.NotNull(agent.Output);
         Assert.NotNull(agent.Output.Config);
         Assert.True(agent.Output.Config.ContainsKey("idempotencyKeyFormat"));
-        
+
         var idempotencyKeyFormat = agent.Output.Config["idempotencyKeyFormat"].ToString();
         Assert.Contains("RunId", idempotencyKeyFormat);
         Assert.Contains("MessageId", idempotencyKeyFormat);
@@ -216,7 +216,7 @@ public class InvoiceClassifierAgentTests
         // Assert
         Assert.NotNull(agent);
         Assert.False(string.IsNullOrWhiteSpace(agent.Instructions));
-        
+
         // Verify instructions contain all expected vendor categories
         var expectedCategories = new[]
         {
@@ -243,7 +243,7 @@ public class InvoiceClassifierAgentTests
         // Assert
         Assert.NotNull(agent);
         Assert.False(string.IsNullOrWhiteSpace(agent.Instructions));
-        
+
         // Verify instructions contain all expected routing destinations
         var expectedDestinations = new[]
         {
@@ -270,7 +270,7 @@ public class InvoiceClassifierAgentTests
         // Assert
         Assert.NotNull(agent);
         Assert.False(string.IsNullOrWhiteSpace(agent.Instructions));
-        
+
         // Verify instructions specify the expected output format
         Assert.Contains("JSON", agent.Instructions);
         Assert.Contains("vendorName", agent.Instructions);
@@ -289,9 +289,9 @@ public class InvoiceClassifierAgentTests
         Assert.NotNull(agent);
         Assert.NotNull(agent.ModelProfile);
         Assert.True(agent.ModelProfile.ContainsKey("temperature"));
-        
+
         var temperature = ((JsonElement)agent.ModelProfile["temperature"]).GetDouble();
-        Assert.True(temperature <= 0.5, 
+        Assert.True(temperature <= 0.5,
             $"Temperature should be low (≤0.5) for consistent classification results, but was {temperature}");
     }
 
@@ -304,16 +304,16 @@ public class InvoiceClassifierAgentTests
         // Assert
         Assert.NotNull(agent);
         Assert.NotNull(agent.Budget);
-        
+
         // Verify budget is reasonable for invoice processing
-        Assert.True(agent.Budget.MaxTokens >= 1000, 
+        Assert.True(agent.Budget.MaxTokens >= 1000,
             "Max tokens should be sufficient for processing invoice data");
-        Assert.True(agent.Budget.MaxTokens <= 10000, 
+        Assert.True(agent.Budget.MaxTokens <= 10000,
             "Max tokens should not be excessive for simple classification");
-        
-        Assert.True(agent.Budget.MaxDurationSeconds >= 30, 
+
+        Assert.True(agent.Budget.MaxDurationSeconds >= 30,
             "Max duration should allow time for LLM processing");
-        Assert.True(agent.Budget.MaxDurationSeconds <= 120, 
+        Assert.True(agent.Budget.MaxDurationSeconds <= 120,
             "Max duration should not be too long to prevent timeout issues");
     }
 }

@@ -170,7 +170,7 @@ public class AzureAIFoundryChatClientTests
         capturedOptions.NucleusSamplingFactor.Should().Be(0.9f);
     }
 
-    [Fact (Skip = "Streaming test requires complex mocking - integration test recommended")]
+    [Fact(Skip = "Streaming test requires complex mocking - integration test recommended")]
     public async Task GetStreamingResponseAsync_WithValidMessages_StreamsResponses()
     {
         // This test is skipped because mocking StreamingResponse is complex

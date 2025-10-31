@@ -33,7 +33,7 @@ public class AgentRuntimeService : IAgentRuntime
     {
         using var activity = TelemetryConfig.ActivitySource.StartActivity("AgentRuntime.CreateAgent");
         activity?.SetTag("agent.id", agentId);
-        
+
         var agent = await _agentStore.GetAgentAsync(agentId);
         if (agent == null)
         {
@@ -74,7 +74,7 @@ public class AgentRuntimeService : IAgentRuntime
     {
         using var activity = TelemetryConfig.ActivitySource.StartActivity("AgentRuntime.Execute");
         activity?.SetTag("agent.input_length", input.Length);
-        
+
         var stopwatch = Stopwatch.StartNew();
         var result = new AgentExecutionResult
         {
@@ -92,7 +92,7 @@ public class AgentRuntimeService : IAgentRuntime
                 llmActivity?.SetTag("llm.temperature", _options.DefaultTemperature);
                 llmActivity?.SetTag("llm.max_tokens", _options.MaxTokens);
                 llmActivity?.SetTag("llm.input_length", input.Length);
-                
+
                 var response = await agent.RunAsync(input, cancellationToken: cancellationToken);
 
                 stopwatch.Stop();
@@ -110,7 +110,7 @@ public class AgentRuntimeService : IAgentRuntime
                 llmActivity?.SetTag("llm.output_length", response.Text?.Length ?? 0);
                 llmActivity?.SetTag("llm.duration_ms", stopwatch.ElapsedMilliseconds);
                 llmActivity?.SetStatus(ActivityStatusCode.Ok);
-                
+
                 activity?.SetTag("agent.duration_ms", stopwatch.ElapsedMilliseconds);
                 activity?.SetTag("agent.output_length", response.Text?.Length ?? 0);
                 activity?.SetStatus(ActivityStatusCode.Ok);
@@ -127,9 +127,9 @@ public class AgentRuntimeService : IAgentRuntime
             result.Duration = stopwatch.Elapsed;
 
             activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
-            activity?.AddEvent(new ActivityEvent("exception", 
-                tags: new ActivityTagsCollection 
-                { 
+            activity?.AddEvent(new ActivityEvent("exception",
+                tags: new ActivityTagsCollection
+                {
                     { "exception.type", ex.GetType().FullName },
                     { "exception.message", ex.Message }
                 }));

@@ -166,7 +166,7 @@ public class TelemetryConfigTests
         TelemetryConfig.AgentExecutionDurationHistogram.Record(1500.0,
             new KeyValuePair<string, object?>("agent.id", "test-agent"),
             new KeyValuePair<string, object?>("status", "success"));
-        
+
         TelemetryConfig.AgentTokensHistogram.Record(100,
             new KeyValuePair<string, object?>("agent.id", "test-agent"));
 
