@@ -52,6 +52,8 @@ This will create a local Kubernetes cluster and deploy all services:
 - Control Plane API: http://localhost:8080
 - Admin UI: http://localhost:3000
 
+> **Note**: The k3d setup does not include Azure AI Foundry. Configure Azure AI Foundry credentials for the Node Runtime to enable agent execution. See [Azure AI Foundry Configuration](#azure-ai-foundry-configuration) section below.
+
 **Cleanup:**
 ```bash
 ./infra/scripts/cleanup-k3d.sh
