@@ -105,12 +105,18 @@ You can customize dashboards in two ways:
 
 ### Adding New Dashboards
 
+**Easy Process - No Template Updates Required:**
+
 1. Create or export a dashboard as JSON
 2. Save to `grafana/dashboards/your-dashboard.json`
 3. For Docker Compose: Dashboards are auto-loaded from the mounted directory
 4. For Helm:
    - Copy the dashboard to `helm/business-process-agents/dashboards/`
-   - Update `templates/grafana-dashboards-configmap.yaml` to include the new file
+   - The ConfigMap template automatically includes all `.json` files from the dashboards directory
+   - No template modifications needed - just add the file!
+5. Deploy or upgrade the Helm release
+
+The Helm templates use `.Files.Glob` to dynamically discover and include all dashboard JSON files, making it easy to add new dashboards without modifying templates.
 
 ## Dashboard Provisioning
 

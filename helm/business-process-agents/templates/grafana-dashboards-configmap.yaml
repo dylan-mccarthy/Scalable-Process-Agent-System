@@ -7,6 +7,7 @@ metadata:
     {{- include "business-process-agents.labels" . | nindent 4 }}
     app.kubernetes.io/component: grafana
 data:
+  # Dashboard provisioning configuration
   dashboards.yaml: |
     apiVersion: 1
     
@@ -22,9 +23,10 @@ data:
           path: /var/lib/grafana/dashboards
           foldersFromFilesStructure: false
   
-  control-plane.json: |
-{{ .Files.Get "dashboards/control-plane.json" | indent 4 }}
-  
-  node-fleet.json: |
-{{ .Files.Get "dashboards/node-fleet.json" | indent 4 }}
+  # Dashboard JSON files - automatically included from dashboards/ directory
+  {{- $path := "dashboards" }}
+  {{- range $path, $_ := .Files.Glob "dashboards/*.json" }}
+  {{ base $path }}: |
+{{ $.Files.Get $path | indent 4 }}
+  {{- end }}
 {{- end }}

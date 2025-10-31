@@ -80,14 +80,21 @@ spec:
           items:
             - key: dashboards.yaml
               path: dashboards.yaml
+      # Mount all dashboard JSON files from the ConfigMap
+      # New dashboards added to dashboards/ directory are automatically included
       - name: dashboards
-        configMap:
-          name: {{ include "business-process-agents.fullname" . }}-grafana-dashboards
-          items:
-            - key: control-plane.json
-              path: control-plane.json
-            - key: node-fleet.json
-              path: node-fleet.json
+        projected:
+          sources:
+            - configMap:
+                name: {{ include "business-process-agents.fullname" . }}-grafana-dashboards
+                {{- $files := .Files.Glob "dashboards/*.json" }}
+                {{- if $files }}
+                items:
+                {{- range $path, $_ := $files }}
+                - key: {{ base $path }}
+                  path: {{ base $path }}
+                {{- end }}
+                {{- end }}
       {{- if .Values.observability.grafana.persistence.enabled }}
       - name: data
         persistentVolumeClaim:
