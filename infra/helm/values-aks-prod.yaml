@@ -1,0 +1,241 @@
+# Helm values for AKS deployment - Production Environment
+# Task: E6-T3 - AKS environment provisioning
+#
+# This file configures the Business Process Agents platform for production deployment
+
+global:
+  imagePullSecrets: []
+  storageClass: "managed-csi-premium"
+
+# Control Plane API configuration
+controlPlane:
+  enabled: true
+  replicaCount: 3
+  
+  image:
+    repository: bpaprodacr.azurecr.io/control-plane
+    pullPolicy: IfNotPresent
+    tag: "1.0.0"
+  
+  service:
+    type: ClusterIP
+    port: 8080
+    grpcPort: 8081
+    annotations: {}
+  
+  ingress:
+    enabled: true
+    className: "nginx"
+    annotations:
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+      nginx.ingress.kubernetes.io/rate-limit: "100"
+    hosts:
+      - host: api.bpa.example.com
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: control-plane-tls
+        hosts:
+          - api.bpa.example.com
+  
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+    requests:
+      cpu: 1000m
+      memory: 1Gi
+  
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+  
+  env:
+    - name: ASPNETCORE_ENVIRONMENT
+      value: "Production"
+    - name: UseInMemoryStores
+      value: "false"
+    - name: ConnectionStrings__DefaultConnection
+      valueFrom:
+        secretKeyRef:
+          name: azure-secrets
+          key: postgresql-connection-string
+    - name: ConnectionStrings__Redis
+      valueFrom:
+        secretKeyRef:
+          name: azure-secrets
+          key: redis-connection-string
+    - name: APPLICATIONINSIGHTS_CONNECTION_STRING
+      valueFrom:
+        secretKeyRef:
+          name: azure-secrets
+          key: appinsights-connection-string
+  
+  migration:
+    enabled: false
+
+# Node Runtime configuration
+nodeRuntime:
+  enabled: true
+  replicaCount: 5
+  
+  image:
+    repository: bpaprodacr.azurecr.io/node-runtime
+    pullPolicy: IfNotPresent
+    tag: "1.0.0"
+  
+  resources:
+    limits:
+      cpu: 4000m
+      memory: 4Gi
+    requests:
+      cpu: 2000m
+      memory: 2Gi
+  
+  autoscaling:
+    enabled: true
+    minReplicas: 5
+    maxReplicas: 50
+    targetCPUUtilizationPercentage: 70
+  
+  capacity:
+    slots: 16
+    cpu: "4"
+    memory: "4Gi"
+  
+  metadata:
+    region: "eastus"
+    environment: "prod"
+  
+  env:
+    - name: ASPNETCORE_ENVIRONMENT
+      value: "Production"
+    - name: AzureOpenAI__Endpoint
+      valueFrom:
+        secretKeyRef:
+          name: azure-secrets
+          key: openai-endpoint
+    - name: AzureOpenAI__ApiKey
+      valueFrom:
+        secretKeyRef:
+          name: azure-secrets
+          key: openai-api-key
+    - name: AzureOpenAI__DeploymentName
+      value: "gpt-4o"
+    - name: APPLICATIONINSIGHTS_CONNECTION_STRING
+      valueFrom:
+        secretKeyRef:
+          name: azure-secrets
+          key: appinsights-connection-string
+
+# Admin UI configuration
+adminUI:
+  enabled: true
+  replicaCount: 2
+  
+  image:
+    repository: bpaprodacr.azurecr.io/admin-ui
+    pullPolicy: IfNotPresent
+    tag: "1.0.0"
+  
+  service:
+    type: ClusterIP
+    port: 3000
+    annotations: {}
+  
+  ingress:
+    enabled: true
+    className: "nginx"
+    annotations:
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    hosts:
+      - host: admin.bpa.example.com
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: admin-ui-tls
+        hosts:
+          - admin.bpa.example.com
+  
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+  
+  env:
+    - name: NODE_ENV
+      value: "production"
+    - name: NEXT_PUBLIC_API_URL
+      value: "https://api.bpa.example.com"
+
+# Disable in-cluster services (using Azure managed services)
+postgresql:
+  enabled: false
+
+redis:
+  enabled: false
+
+nats:
+  enabled: false
+
+# Enable OpenTelemetry Collector
+otelCollector:
+  enabled: true
+  
+  image:
+    repository: otel/opentelemetry-collector-contrib
+    tag: "0.91.0"
+    pullPolicy: IfNotPresent
+  
+  service:
+    type: ClusterIP
+    otlpGrpcPort: 4317
+    otlpHttpPort: 4318
+    metricsPort: 8889
+  
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+
+# Disable in-cluster observability (using Azure Monitor)
+observability:
+  prometheus:
+    enabled: false
+  grafana:
+    enabled: false
+  tempo:
+    enabled: false
+  loki:
+    enabled: false
+
+# Service Account
+serviceAccount:
+  create: true
+  annotations:
+    azure.workload.identity/client-id: "" # To be filled after deployment
+  name: "bpa-workload-identity"
+
+# Pod Security Context
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  fsGroup: 1001
+
+# Security Context
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: false
