@@ -45,30 +45,14 @@ public class NodeMetricsService : INodeMetricsService
 
     public int GetActiveLeases()
     {
-        try
-        {
-            return Interlocked.CompareExchange(ref _activeLeases, 0, 0);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving active leases count");
-            return 0;
-        }
+        return Interlocked.CompareExchange(ref _activeLeases, 0, 0);
     }
 
     public int GetAvailableSlots()
     {
-        try
-        {
-            var activeLeases = GetActiveLeases();
-            var available = _maxConcurrentLeases - activeLeases;
-            return available >= 0 ? available : 0;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error calculating available slots");
-            return 0;
-        }
+        var activeLeases = GetActiveLeases();
+        var available = _maxConcurrentLeases - activeLeases;
+        return available >= 0 ? available : 0;
     }
 
     public void IncrementActiveLeases()
