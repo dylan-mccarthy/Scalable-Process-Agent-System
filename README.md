@@ -78,6 +78,8 @@ docker-compose down
 - Control Plane API: http://localhost:8080
 - Admin UI: http://localhost:3000
 
+> **Note**: Docker Compose does not include Azure AI Foundry. You must configure Azure AI Foundry credentials in `src/Node.Runtime/appsettings.json` or use environment variables. See [Azure AI Foundry Configuration](#azure-ai-foundry-configuration) section below.
+
 ### Option 3: Local Development (No Docker)
 
 Build and run individual services for development:
@@ -118,6 +120,23 @@ The API will be available at `http://localhost:5109`.
 
 #### Running Node Runtime
 
+Before running the Node Runtime, **configure Azure AI Foundry** (required for agent execution):
+
+```bash
+# Option 1: Use user secrets (recommended for development)
+cd src/Node.Runtime
+dotnet user-secrets set "AgentRuntime:AzureAIFoundry:Endpoint" "https://your-resource.services.ai.azure.com/models"
+dotnet user-secrets set "AgentRuntime:AzureAIFoundry:ApiKey" "your-api-key"
+dotnet user-secrets set "AgentRuntime:AzureAIFoundry:DeploymentName" "gpt-4o-mini"
+
+# Option 2: Use environment variables
+export AgentRuntime__AzureAIFoundry__Endpoint="https://your-resource.services.ai.azure.com/models"
+export AgentRuntime__AzureAIFoundry__ApiKey="your-api-key"
+export AgentRuntime__AzureAIFoundry__DeploymentName="gpt-4o-mini"
+```
+
+Then start the Node Runtime:
+
 ```bash
 cd src/Node.Runtime
 dotnet run
@@ -134,6 +153,134 @@ The Node Runtime will:
 - PostgreSQL 14 or later (for production use)
 - Redis 6.0 or later (for lease and lock management)
 - NATS Server 2.10+ with JetStream enabled (for event streaming)
+- **Azure AI Foundry** or **Azure OpenAI Service** (for LLM-powered agent execution)
+
+## Azure AI Foundry Configuration
+
+The platform uses **Azure AI Foundry** (or Azure OpenAI Service) to power LLM-based agent execution. You must configure Azure AI Foundry for agents to process requests using AI models like GPT-4.
+
+### Quick Setup
+
+1. **Create Azure AI Foundry Resource**:
+   ```bash
+   # Create resource group
+   az group create --name rg-bpa-agents --location eastus
+   
+   # Create Azure AI Foundry resource
+   az cognitiveservices account create \
+     --name my-ai-foundry \
+     --resource-group rg-bpa-agents \
+     --kind AIServices \
+     --sku S0 \
+     --location eastus
+   ```
+
+2. **Deploy a Model**:
+   - Navigate to your Azure AI Foundry resource in the Azure Portal
+   - Go to "Deployments" → "Create new deployment"
+   - Select model: `gpt-4o-mini` (recommended for cost-effective MVP)
+   - Name: `gpt-4o-mini`
+   - Note your endpoint: `https://your-resource.services.ai.azure.com/models`
+
+3. **Configure Node Runtime** (edit `src/Node.Runtime/appsettings.json`):
+   ```json
+   {
+     "AgentRuntime": {
+       "DefaultModel": "gpt-4o-mini",
+       "DefaultTemperature": 0.7,
+       "MaxTokens": 4000,
+       "MaxDurationSeconds": 60,
+       "AzureAIFoundry": {
+         "Endpoint": "https://your-resource.services.ai.azure.com/models",
+         "DeploymentName": "gpt-4o-mini",
+         "ApiKey": "your-api-key-here",
+         "UseManagedIdentity": false
+       }
+     }
+   }
+   ```
+
+   > **Security Best Practice**: Never commit API keys to source control. Use one of these approaches:
+   > - **Development**: `dotnet user-secrets set "AgentRuntime:AzureAIFoundry:ApiKey" "your-key"`
+   > - **Production**: Use Managed Identity (set `UseManagedIdentity: true`) or Azure Key Vault
+   > - **Environment Variables**: `export AgentRuntime__AzureAIFoundry__ApiKey="your-key"`
+
+### Supported Models
+
+Azure AI Foundry supports various models for different use cases:
+
+| Model Family | Model | Best For | Cost |
+|-------------|-------|----------|------|
+| **GPT-4 Optimized** | `gpt-4o` | Latest performance, multimodal | $$$ |
+| | `gpt-4o-mini` | Cost-effective, fast, recommended for MVP | $ |
+| **GPT-4** | `gpt-4` | Complex reasoning tasks | $$$$ |
+| | `gpt-4-32k` | Extended context (32K tokens) | $$$$$ |
+| **GPT-3.5** | `gpt-3.5-turbo` | Fast, cost-effective | $ |
+| | `gpt-3.5-turbo-16k` | Extended context (16K tokens) | $$ |
+
+### Configuration Options
+
+| Setting | Required | Default | Description |
+|---------|----------|---------|-------------|
+| `Endpoint` | ✓ | - | Azure AI Foundry endpoint URL |
+| `DeploymentName` | ✓ | - | Model deployment name in Azure |
+| `ApiKey` | ✓* | - | API key for authentication |
+| `UseManagedIdentity` | | `false` | Use Azure Managed Identity instead of API key |
+
+\* Required if `UseManagedIdentity` is `false`
+
+### Using Managed Identity (Recommended for Production)
+
+Managed Identity eliminates the need for API keys:
+
+```json
+{
+  "AgentRuntime": {
+    "AzureAIFoundry": {
+      "Endpoint": "https://your-resource.services.ai.azure.com/models",
+      "DeploymentName": "gpt-4o-mini",
+      "UseManagedIdentity": true
+    }
+  }
+}
+```
+
+Grant your Node Runtime's managed identity access:
+
+```bash
+# Get Node Runtime's managed identity principal ID
+PRINCIPAL_ID=$(az aks show --name my-aks --resource-group my-rg --query identityProfile.kubeletidentity.clientId -o tsv)
+
+# Get Azure AI Foundry resource ID
+AI_RESOURCE_ID=$(az cognitiveservices account show --name my-ai-foundry --resource-group rg-bpa-agents --query id -o tsv)
+
+# Assign Cognitive Services User role
+az role assignment create \
+  --assignee $PRINCIPAL_ID \
+  --role "Cognitive Services User" \
+  --scope $AI_RESOURCE_ID
+```
+
+### Budget & Cost Management
+
+Control costs by setting budget constraints in agent definitions:
+
+```json
+{
+  "agentId": "invoice-classifier",
+  "budget": {
+    "maxTokens": 2000,
+    "maxDurationSeconds": 30
+  }
+}
+```
+
+The platform automatically tracks token usage and costs for each run. Monitor in:
+- Azure Portal: Cost analysis for Azure AI Foundry
+- Application logs: Token usage per execution
+- OpenTelemetry metrics: `run_tokens`, `run_cost_usd`
+
+**For detailed Azure AI Foundry configuration, see [docs/AZURE_AI_FOUNDRY_INTEGRATION.md](docs/AZURE_AI_FOUNDRY_INTEGRATION.md).**
 
 ## Database Setup
 
