@@ -106,7 +106,6 @@ public class AzureAIFoundryIntegrationTests : IDisposable
         // Arrange
         _mockServer
             .Given(WireMockRequest.Create()
-                
                 .UsingPost())
             .RespondWith(WireMockResponse.Create()
                 .WithStatusCode(HttpStatusCode.OK)
@@ -168,7 +167,6 @@ public class AzureAIFoundryIntegrationTests : IDisposable
         // Arrange - Setup mock to return 401 Unauthorized
         _mockServer
             .Given(WireMockRequest.Create()
-                
                 .UsingPost())
             .RespondWith(WireMockResponse.Create()
                 .WithStatusCode(HttpStatusCode.Unauthorized)
@@ -207,7 +205,6 @@ public class AzureAIFoundryIntegrationTests : IDisposable
         // Arrange - Setup mock to return 429 Too Many Requests
         _mockServer
             .Given(WireMockRequest.Create()
-                
                 .UsingPost())
             .RespondWith(WireMockResponse.Create()
                 .WithStatusCode(429)
@@ -247,7 +244,6 @@ public class AzureAIFoundryIntegrationTests : IDisposable
         // Arrange - Setup mock to return 500 Internal Server Error
         _mockServer
             .Given(WireMockRequest.Create()
-                
                 .UsingPost())
             .RespondWith(WireMockResponse.Create()
                 .WithStatusCode(HttpStatusCode.InternalServerError)
@@ -286,7 +282,6 @@ public class AzureAIFoundryIntegrationTests : IDisposable
         // Arrange
         _mockServer
             .Given(WireMockRequest.Create()
-                
                 .UsingPost())
             .RespondWith(WireMockResponse.Create()
                 .WithStatusCode(HttpStatusCode.OK)
@@ -347,7 +342,6 @@ public class AzureAIFoundryIntegrationTests : IDisposable
         // Arrange - Simulate structured JSON response (typical for invoice classification)
         _mockServer
             .Given(WireMockRequest.Create()
-                
                 .UsingPost())
             .RespondWith(WireMockResponse.Create()
                 .WithStatusCode(HttpStatusCode.OK)
