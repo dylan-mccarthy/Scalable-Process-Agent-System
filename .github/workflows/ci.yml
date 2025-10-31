@@ -223,7 +223,7 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
       
       - name: Build and export
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ${{ matrix.context }}
           file: ${{ matrix.dockerfile }}
@@ -272,7 +272,7 @@ jobs:
       # Push image to registry (main branch only)
       - name: Push image
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ${{ matrix.context }}
           file: ${{ matrix.dockerfile }}
