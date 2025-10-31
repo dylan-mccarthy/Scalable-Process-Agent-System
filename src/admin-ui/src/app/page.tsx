@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -20,9 +21,11 @@ export default function Home() {
                 <CardDescription>Monitor nodes and active runs</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button variant="outline" className="w-full">
-                  View Dashboard
-                </Button>
+                <Link href="/fleet">
+                  <Button variant="outline" className="w-full">
+                    View Dashboard
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
 
