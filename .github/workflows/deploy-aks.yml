@@ -1,0 +1,242 @@
+name: Deploy to AKS
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+      deploy_infrastructure:
+        description: 'Deploy infrastructure (Bicep)'
+        required: true
+        type: boolean
+        default: false
+      deploy_application:
+        description: 'Deploy application (Helm)'
+        required: true
+        type: boolean
+        default: true
+
+permissions:
+  id-token: write
+  contents: read
+  packages: read
+
+env:
+  DOTNET_VERSION: '9.0'
+  NODE_VERSION: '20'
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ${{ github.repository_owner }}/scalable-process-agent-system
+
+jobs:
+  deploy-infrastructure:
+    name: Deploy Infrastructure
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.deploy_infrastructure == 'true' }}
+    environment: ${{ github.event.inputs.environment }}
+    outputs:
+      aks-name: ${{ steps.deploy.outputs.aks-name }}
+      acr-name: ${{ steps.deploy.outputs.acr-name }}
+      kv-name: ${{ steps.deploy.outputs.kv-name }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      
+      - name: Deploy Bicep template
+        id: deploy
+        run: |
+          DEPLOYMENT_NAME="bpa-${{ github.event.inputs.environment }}-$(date +%Y%m%d-%H%M%S)"
+          
+          az deployment group create \
+            --name "$DEPLOYMENT_NAME" \
+            --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" \
+            --template-file infra/bicep/main.bicep \
+            --parameters infra/bicep/main.parameters.${{ github.event.inputs.environment }}.json \
+            --parameters postgresAdminPassword="${{ secrets.POSTGRES_ADMIN_PASSWORD }}" \
+            --verbose
+          
+          # Get outputs
+          AKS_NAME=$(az deployment group show \
+            --name "$DEPLOYMENT_NAME" \
+            --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" \
+            --query properties.outputs.aksClusterName.value \
+            --output tsv)
+          
+          ACR_NAME=$(az deployment group show \
+            --name "$DEPLOYMENT_NAME" \
+            --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" \
+            --query properties.outputs.acrName.value \
+            --output tsv)
+          
+          KV_NAME=$(az deployment group show \
+            --name "$DEPLOYMENT_NAME" \
+            --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" \
+            --query properties.outputs.keyVaultName.value \
+            --output tsv)
+          
+          echo "aks-name=$AKS_NAME" >> $GITHUB_OUTPUT
+          echo "acr-name=$ACR_NAME" >> $GITHUB_OUTPUT
+          echo "kv-name=$KV_NAME" >> $GITHUB_OUTPUT
+          
+          echo "### Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **AKS Cluster**: $AKS_NAME" >> $GITHUB_STEP_SUMMARY
+          echo "- **Container Registry**: $ACR_NAME" >> $GITHUB_STEP_SUMMARY
+          echo "- **Key Vault**: $KV_NAME" >> $GITHUB_STEP_SUMMARY
+
+  build-and-push:
+    name: Build and Push Images
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.deploy_application == 'true' }}
+    needs: [deploy-infrastructure]
+    # Run even if infrastructure deployment is skipped
+    if: ${{ always() && github.event.inputs.deploy_application == 'true' }}
+    environment: ${{ github.event.inputs.environment }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      
+      - name: Login to ACR
+        run: |
+          ACR_NAME="${{ needs.deploy-infrastructure.outputs.acr-name || secrets.ACR_NAME }}"
+          az acr login --name "$ACR_NAME"
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Build and push Control Plane
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: src/ControlPlane.Api/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.ACR_NAME }}.azurecr.io/control-plane:${{ github.sha }}
+            ${{ secrets.ACR_NAME }}.azurecr.io/control-plane:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      
+      - name: Build and push Node Runtime
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: src/Node.Runtime/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.ACR_NAME }}.azurecr.io/node-runtime:${{ github.sha }}
+            ${{ secrets.ACR_NAME }}.azurecr.io/node-runtime:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      
+      - name: Build and push Admin UI
+        uses: docker/build-push-action@v5
+        with:
+          context: ./src/admin-ui
+          file: src/admin-ui/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.ACR_NAME }}.azurecr.io/admin-ui:${{ github.sha }}
+            ${{ secrets.ACR_NAME }}.azurecr.io/admin-ui:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy-application:
+    name: Deploy Application
+    runs-on: ubuntu-latest
+    needs: [deploy-infrastructure, build-and-push]
+    # Run even if infrastructure deployment is skipped
+    if: ${{ always() && github.event.inputs.deploy_application == 'true' && needs.build-and-push.result == 'success' }}
+    environment: ${{ github.event.inputs.environment }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      
+      - name: Get AKS credentials
+        run: |
+          AKS_NAME="${{ needs.deploy-infrastructure.outputs.aks-name || secrets.AKS_CLUSTER_NAME }}"
+          az aks get-credentials \
+            --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" \
+            --name "$AKS_NAME" \
+            --overwrite-existing
+      
+      - name: Setup Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: '3.13.0'
+      
+      - name: Create namespace
+        run: |
+          kubectl create namespace bpa --dry-run=client -o yaml | kubectl apply -f -
+      
+      - name: Deploy with Helm
+        run: |
+          helm upgrade --install bpa ./helm/business-process-agents \
+            -f infra/helm/values-aks-${{ github.event.inputs.environment }}.yaml \
+            --set controlPlane.image.tag=${{ github.sha }} \
+            --set nodeRuntime.image.tag=${{ github.sha }} \
+            --set adminUI.image.tag=${{ github.sha }} \
+            --namespace bpa \
+            --wait \
+            --timeout 10m
+      
+      - name: Verify deployment
+        run: |
+          echo "### Deployment Status" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          kubectl get pods -n bpa >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Services" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          kubectl get svc -n bpa >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+      
+      - name: Run database migrations
+        run: |
+          # Create a job to run migrations
+          kubectl run migration-job-${{ github.run_number }} \
+            --namespace=bpa \
+            --image=${{ secrets.ACR_NAME }}.azurecr.io/control-plane:${{ github.sha }} \
+            --restart=Never \
+            --env="ConnectionStrings__DefaultConnection=${{ secrets.POSTGRES_CONNECTION_STRING }}" \
+            --command -- dotnet ef database update
+          
+          # Wait for job to complete
+          kubectl wait --for=condition=complete --timeout=300s \
+            pod/migration-job-${{ github.run_number }} \
+            --namespace=bpa
+          
+          # Show logs
+          kubectl logs migration-job-${{ github.run_number }} --namespace=bpa
+          
+          # Cleanup
+          kubectl delete pod migration-job-${{ github.run_number }} --namespace=bpa

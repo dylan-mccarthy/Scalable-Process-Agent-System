@@ -302,14 +302,49 @@ k3d cluster delete bpa-dev
 
 ## Production Deployment on AKS
 
-### Prerequisites
+> **Note**: The recommended way to deploy to AKS is using the Infrastructure as Code (IaC) approach with Bicep templates.
+> See the [infra/README.md](infra/README.md) for detailed instructions.
+
+### Option 1: Automated Deployment with Bicep (Recommended)
+
+This approach uses Azure Bicep to provision all required infrastructure including:
+- AKS cluster with auto-scaling
+- Azure Database for PostgreSQL Flexible Server
+- Azure Cache for Redis
+- Azure Key Vault with RBAC
+- Azure OpenAI Service (Azure AI Foundry)
+- Azure Container Registry
+- Application Insights and Log Analytics
+
+**Quick Start:**
+
+```bash
+# Navigate to infrastructure directory
+cd infra
+
+# Deploy using the deployment script
+./scripts/deploy-azure.sh \
+  -e dev \
+  -g bpa-dev-rg \
+  -l eastus \
+  -s "<your-subscription-id>" \
+  -p "<secure-postgres-password>"
+```
+
+For detailed instructions, see [infra/README.md](infra/README.md).
+
+### Option 2: Manual Deployment
+
+If you prefer to manually create resources, follow these steps:
+
+#### Prerequisites
 
 - Azure CLI installed
 - Azure subscription
 - Helm 3.8+
 - kubectl
 
-### Create AKS Cluster
+#### Create AKS Cluster
 
 ```bash
 # Login to Azure
@@ -318,13 +353,14 @@ az login
 # Create resource group
 az group create --name bpa-rg --location eastus
 
-# Create AKS cluster
+# Create AKS cluster with Key Vault addon
 az aks create \
   --resource-group bpa-rg \
   --name bpa-cluster \
   --node-count 3 \
   --node-vm-size Standard_D4s_v3 \
   --enable-managed-identity \
+  --enable-addons azure-keyvault-secrets-provider \
   --generate-ssh-keys
 
 # Get credentials
@@ -334,7 +370,7 @@ az aks get-credentials --resource-group bpa-rg --name bpa-cluster
 kubectl cluster-info
 ```
 
-### Create Azure Container Registry
+#### Create Azure Container Registry
 
 ```bash
 # Create ACR
@@ -353,7 +389,100 @@ az aks update \
 az acr login --name bparegistry
 ```
 
-### Build and Push Images
+#### Create Azure Database for PostgreSQL
+
+```bash
+# Create PostgreSQL Flexible Server
+az postgres flexible-server create \
+  --resource-group bpa-rg \
+  --name bpa-postgres \
+  --location eastus \
+  --admin-user bpaadmin \
+  --admin-password "<secure-password>" \
+  --sku-name Standard_D2ds_v4 \
+  --version 16 \
+  --storage-size 128
+
+# Create database
+az postgres flexible-server db create \
+  --resource-group bpa-rg \
+  --server-name bpa-postgres \
+  --database-name bpa
+
+# Allow Azure services
+az postgres flexible-server firewall-rule create \
+  --resource-group bpa-rg \
+  --name bpa-postgres \
+  --rule-name AllowAzureServices \
+  --start-ip-address 0.0.0.0 \
+  --end-ip-address 0.0.0.0
+```
+
+#### Create Azure Cache for Redis
+
+```bash
+# Create Redis cache
+az redis create \
+  --resource-group bpa-rg \
+  --name bpa-redis \
+  --location eastus \
+  --sku Standard \
+  --vm-size c1
+```
+
+#### Create Azure OpenAI Service
+
+```bash
+# Create Azure OpenAI account
+az cognitiveservices account create \
+  --resource-group bpa-rg \
+  --name bpa-openai \
+  --location eastus \
+  --kind OpenAI \
+  --sku S0
+
+# Create GPT-4o deployment
+az cognitiveservices account deployment create \
+  --resource-group bpa-rg \
+  --name bpa-openai \
+  --deployment-name gpt-4o \
+  --model-name gpt-4o \
+  --model-version "2024-08-06" \
+  --model-format OpenAI \
+  --sku-capacity 30 \
+  --sku-name Standard
+```
+
+#### Create Azure Key Vault
+
+```bash
+# Create Key Vault
+az keyvault create \
+  --resource-group bpa-rg \
+  --name bpa-kv \
+  --location eastus \
+  --enable-rbac-authorization
+
+# Store secrets
+az keyvault secret set \
+  --vault-name bpa-kv \
+  --name postgresql-connection-string \
+  --value "Host=bpa-postgres.postgres.database.azure.com;Database=bpa;Username=bpaadmin;Password=<password>;SSL Mode=Require"
+
+# Grant AKS access to Key Vault
+IDENTITY_ID=$(az aks show \
+  --resource-group bpa-rg \
+  --name bpa-cluster \
+  --query addonProfiles.azureKeyvaultSecretsProvider.identity.objectId \
+  --output tsv)
+
+az role assignment create \
+  --role "Key Vault Secrets User" \
+  --assignee $IDENTITY_ID \
+  --scope $(az keyvault show --resource-group bpa-rg --name bpa-kv --query id --output tsv)
+```
+
+#### Build and Push Images
 
 ```bash
 # Tag and push images

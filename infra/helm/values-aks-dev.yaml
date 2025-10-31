@@ -1,0 +1,293 @@
+# Helm values for AKS deployment - Development Environment
+# Task: E6-T3 - AKS environment provisioning
+#
+# This file configures the Business Process Agents platform to use Azure-managed services
+# instead of in-cluster PostgreSQL, Redis, and NATS.
+
+global:
+  imagePullSecrets: []
+  storageClass: "managed-csi"
+
+# Control Plane API configuration
+controlPlane:
+  enabled: true
+  replicaCount: 2
+  
+  image:
+    repository: bpadevacr.azurecr.io/control-plane
+    pullPolicy: IfNotPresent
+    tag: "latest"
+  
+  service:
+    type: ClusterIP
+    port: 8080
+    grpcPort: 8081
+    annotations: {}
+  
+  ingress:
+    enabled: true
+    className: "nginx"
+    annotations:
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    hosts:
+      - host: api-dev.bpa.example.com
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: control-plane-tls
+        hosts:
+          - api-dev.bpa.example.com
+  
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+  
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 80
+  
+  env:
+    - name: ASPNETCORE_ENVIRONMENT
+      value: "Production"
+    - name: UseInMemoryStores
+      value: "false"
+    # PostgreSQL connection from Key Vault
+    - name: ConnectionStrings__DefaultConnection
+      valueFrom:
+        secretKeyRef:
+          name: azure-secrets
+          key: postgresql-connection-string
+    # Redis connection from Key Vault
+    - name: ConnectionStrings__Redis
+      valueFrom:
+        secretKeyRef:
+          name: azure-secrets
+          key: redis-connection-string
+    # Application Insights
+    - name: APPLICATIONINSIGHTS_CONNECTION_STRING
+      valueFrom:
+        secretKeyRef:
+          name: azure-secrets
+          key: appinsights-connection-string
+  
+  # Disable migration job - run manually in AKS
+  migration:
+    enabled: false
+
+# Node Runtime configuration
+nodeRuntime:
+  enabled: true
+  replicaCount: 2
+  
+  image:
+    repository: bpadevacr.azurecr.io/node-runtime
+    pullPolicy: IfNotPresent
+    tag: "latest"
+  
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+    requests:
+      cpu: 1000m
+      memory: 1Gi
+  
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+  
+  capacity:
+    slots: 8
+    cpu: "2"
+    memory: "2Gi"
+  
+  metadata:
+    region: "eastus"
+    environment: "dev"
+  
+  env:
+    - name: ASPNETCORE_ENVIRONMENT
+      value: "Production"
+    # Azure OpenAI configuration from Key Vault
+    - name: AzureOpenAI__Endpoint
+      valueFrom:
+        secretKeyRef:
+          name: azure-secrets
+          key: openai-endpoint
+    - name: AzureOpenAI__ApiKey
+      valueFrom:
+        secretKeyRef:
+          name: azure-secrets
+          key: openai-api-key
+    - name: AzureOpenAI__DeploymentName
+      value: "gpt-4o"
+    # Application Insights
+    - name: APPLICATIONINSIGHTS_CONNECTION_STRING
+      valueFrom:
+        secretKeyRef:
+          name: azure-secrets
+          key: appinsights-connection-string
+
+# Admin UI configuration
+adminUI:
+  enabled: true
+  replicaCount: 1
+  
+  image:
+    repository: bpadevacr.azurecr.io/admin-ui
+    pullPolicy: IfNotPresent
+    tag: "latest"
+  
+  service:
+    type: ClusterIP
+    port: 3000
+    annotations: {}
+  
+  ingress:
+    enabled: true
+    className: "nginx"
+    annotations:
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    hosts:
+      - host: admin-dev.bpa.example.com
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: admin-ui-tls
+        hosts:
+          - admin-dev.bpa.example.com
+  
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  
+  env:
+    - name: NODE_ENV
+      value: "production"
+    - name: NEXT_PUBLIC_API_URL
+      value: "https://api-dev.bpa.example.com"
+
+# Disable in-cluster PostgreSQL (using Azure Database for PostgreSQL)
+postgresql:
+  enabled: false
+
+# Disable in-cluster Redis (using Azure Cache for Redis)
+redis:
+  enabled: false
+
+# Disable in-cluster NATS (will be configured separately if needed)
+nats:
+  enabled: false
+
+# Enable OpenTelemetry Collector
+otelCollector:
+  enabled: true
+  
+  image:
+    repository: otel/opentelemetry-collector-contrib
+    tag: "0.91.0"
+    pullPolicy: IfNotPresent
+  
+  service:
+    type: ClusterIP
+    otlpGrpcPort: 4317
+    otlpHttpPort: 4318
+    metricsPort: 8889
+  
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+    
+    processors:
+      batch:
+        timeout: 10s
+        send_batch_size: 1024
+      
+      memory_limiter:
+        check_interval: 1s
+        limit_mib: 512
+    
+    exporters:
+      # Export to Application Insights
+      azuremonitor:
+        connection_string: "${env:APPLICATIONINSIGHTS_CONNECTION_STRING}"
+      
+      # Also export to console for debugging
+      logging:
+        loglevel: info
+    
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [memory_limiter, batch]
+          exporters: [azuremonitor, logging]
+        
+        metrics:
+          receivers: [otlp]
+          processors: [memory_limiter, batch]
+          exporters: [azuremonitor, logging]
+        
+        logs:
+          receivers: [otlp]
+          processors: [memory_limiter, batch]
+          exporters: [azuremonitor, logging]
+
+# Disable observability stack (using Azure Monitor/Application Insights)
+observability:
+  prometheus:
+    enabled: false
+  grafana:
+    enabled: false
+  tempo:
+    enabled: false
+  loki:
+    enabled: false
+
+# Service Account with workload identity
+serviceAccount:
+  create: true
+  annotations:
+    azure.workload.identity/client-id: "" # To be filled after deployment
+  name: "bpa-workload-identity"
+
+# Pod Security Context
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  fsGroup: 1001
+
+# Security Context
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: false

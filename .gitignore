@@ -490,3 +490,18 @@ trivy-results-*.sarif
 sbom-*.spdx.json
 coverage/
 TestResults/
+
+# Infrastructure as Code
+*.tfstate
+*.tfstate.backup
+*.tfvars
+.terraform/
+.terraform.lock.hcl
+
+# Bicep build outputs
+*.bicepparam
+bicep-build/
+
+# Azure deployment secrets (keep parameters template files)
+infra/bicep/*.local.json
+infra/bicep/*.secret.json

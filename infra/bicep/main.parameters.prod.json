@@ -1,0 +1,57 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "value": "eastus"
+    },
+    "environment": {
+      "value": "prod"
+    },
+    "baseName": {
+      "value": "bpa"
+    },
+    "aksConfig": {
+      "value": {
+        "nodeCount": 3,
+        "nodeVmSize": "Standard_D4s_v3",
+        "enableAutoScaling": true,
+        "minNodeCount": 3,
+        "maxNodeCount": 10,
+        "kubernetesVersion": "1.28"
+      }
+    },
+    "postgresConfig": {
+      "value": {
+        "administratorLogin": "bpaadmin",
+        "skuName": "Standard_D2ds_v4",
+        "storageSizeGB": 128,
+        "version": "16"
+      }
+    },
+    "redisConfig": {
+      "value": {
+        "skuName": "Standard",
+        "skuFamily": "C",
+        "capacity": 1
+      }
+    },
+    "openAiConfig": {
+      "value": {
+        "deploymentName": "gpt-4o",
+        "modelName": "gpt-4o",
+        "modelVersion": "2024-08-06",
+        "skuName": "Standard",
+        "capacity": 30
+      }
+    },
+    "postgresAdminPassword": {
+      "reference": {
+        "keyVault": {
+          "id": "/subscriptions/{subscription-id}/resourceGroups/{rg-name}/providers/Microsoft.KeyVault/vaults/{vault-name}"
+        },
+        "secretName": "postgres-admin-password"
+      }
+    }
+  }
+}
