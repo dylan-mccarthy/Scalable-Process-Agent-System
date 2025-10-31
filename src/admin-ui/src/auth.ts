@@ -13,7 +13,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     authorized({ auth: session, request: { nextUrl } }) {
       const isLoggedIn = !!session?.user;
       const isOnLoginPage = nextUrl.pathname.startsWith("/login");
-      
+
       if (isOnLoginPage) {
         if (isLoggedIn) {
           // Redirect authenticated users away from login page
@@ -21,7 +21,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
         return true;
       }
-      
+
       // Require authentication for all other pages
       return isLoggedIn;
     },

@@ -5,7 +5,7 @@ import { Activity, Cpu, Server } from "lucide-react";
 
 /**
  * Fleet Dashboard Page - Displays nodes and active runs
- * 
+ *
  * This page provides operators with real-time visibility into:
  * - Total number of registered nodes
  * - Total active runs across the fleet
@@ -19,10 +19,7 @@ export default async function FleetDashboardPage() {
   let error: string | null = null;
 
   try {
-    const [nodesData, runsData] = await Promise.all([
-      fetchNodes(),
-      fetchRuns(),
-    ]);
+    const [nodesData, runsData] = await Promise.all([fetchNodes(), fetchRuns()]);
 
     nodes = nodesData;
     activeRuns = getActiveRuns(runsData);
@@ -32,9 +29,7 @@ export default async function FleetDashboardPage() {
   }
 
   // Calculate metrics only when we have valid data
-  const totalActiveRuns = !error
-    ? nodes.reduce((sum, node) => sum + node.status.activeRuns, 0)
-    : 0;
+  const totalActiveRuns = !error ? nodes.reduce((sum, node) => sum + node.status.activeRuns, 0) : 0;
   const totalAvailableSlots = !error
     ? nodes.reduce((sum, node) => sum + node.status.availableSlots, 0)
     : 0;
@@ -92,9 +87,7 @@ export default async function FleetDashboardPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{totalActiveRuns}</div>
-                  <p className="text-muted-foreground text-xs">
-                    From node status reports
-                  </p>
+                  <p className="text-muted-foreground text-xs">From node status reports</p>
                 </CardContent>
               </Card>
 
@@ -105,9 +98,7 @@ export default async function FleetDashboardPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{totalAvailableSlots}</div>
-                  <p className="text-muted-foreground text-xs">
-                    Capacity for new runs
-                  </p>
+                  <p className="text-muted-foreground text-xs">Capacity for new runs</p>
                 </CardContent>
               </Card>
             </div>
@@ -118,15 +109,11 @@ export default async function FleetDashboardPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Registered Nodes</CardTitle>
-                <CardDescription>
-                  Worker nodes registered with the control plane
-                </CardDescription>
+                <CardDescription>Worker nodes registered with the control plane</CardDescription>
               </CardHeader>
               <CardContent>
                 {nodes.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-8">
-                    No nodes registered yet
-                  </p>
+                  <p className="text-muted-foreground py-8 text-center">No nodes registered yet</p>
                 ) : (
                   <div className="space-y-4">
                     {nodes.map((node) => (
@@ -148,8 +135,7 @@ export default async function FleetDashboardPage() {
                             </span>
                           </div>
                           <p className="text-muted-foreground text-sm">
-                            Last heartbeat:{" "}
-                            {new Date(node.heartbeatAt).toLocaleString()}
+                            Last heartbeat: {new Date(node.heartbeatAt).toLocaleString()}
                           </p>
                         </div>
                         <div className="flex gap-6 text-sm">
@@ -175,13 +161,11 @@ export default async function FleetDashboardPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Active Runs</CardTitle>
-                <CardDescription>
-                  Currently executing or scheduled runs
-                </CardDescription>
+                <CardDescription>Currently executing or scheduled runs</CardDescription>
               </CardHeader>
               <CardContent>
                 {activeRuns.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-8">
+                  <p className="text-muted-foreground py-8 text-center">
                     No active runs at the moment
                   </p>
                 ) : (
@@ -193,9 +177,7 @@ export default async function FleetDashboardPage() {
                       >
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
-                            <h3 className="font-mono text-sm font-semibold">
-                              {run.runId}
-                            </h3>
+                            <h3 className="font-mono text-sm font-semibold">{run.runId}</h3>
                             <span
                               className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                                 run.status === "running"
@@ -211,9 +193,7 @@ export default async function FleetDashboardPage() {
                           <div className="text-muted-foreground flex gap-4 text-sm">
                             <span>Agent: {run.agentId}</span>
                             {run.nodeId && <span>Node: {run.nodeId}</span>}
-                            <span>
-                              Started: {new Date(run.createdAt).toLocaleString()}
-                            </span>
+                            <span>Started: {new Date(run.createdAt).toLocaleString()}</span>
                           </div>
                         </div>
                       </div>

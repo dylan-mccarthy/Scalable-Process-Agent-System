@@ -19,7 +19,7 @@ interface UserMenuProps {
 
 export function UserMenu({ userName, userEmail }: UserMenuProps) {
   const displayName = userName || userEmail || "User";
-  
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -31,8 +31,10 @@ export function UserMenu({ userName, userEmail }: UserMenuProps) {
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{displayName}</p>
-            {userEmail && userName && <p className="text-muted-foreground text-xs leading-none">{userEmail}</p>}
+            <p className="text-sm leading-none font-medium">{displayName}</p>
+            {userEmail && userName && (
+              <p className="text-muted-foreground text-xs leading-none">{userEmail}</p>
+            )}
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
