@@ -24,6 +24,9 @@ public sealed class HttpOutputConnector : IOutputConnector, IAsyncDisposable
 
     private static readonly ActivitySource ActivitySource = new("Node.Runtime.Connectors.Http", "1.0.0");
 
+    // Jitter factor (20% of delay) to avoid thundering herd
+    private const double JitterFactor = 0.2;
+
     /// <inheritdoc/>
     public string ConnectorType => "Http";
 
@@ -44,7 +47,9 @@ public sealed class HttpOutputConnector : IOutputConnector, IAsyncDisposable
     }
 
     /// <inheritdoc/>
+#pragma warning disable CS1998 // Async method lacks 'await' operators
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
+#pragma warning restore CS1998
     {
         using var activity = ActivitySource.StartActivity("HttpOutputConnector.Initialize");
 
@@ -99,8 +104,6 @@ public sealed class HttpOutputConnector : IOutputConnector, IAsyncDisposable
             activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
             throw;
         }
-
-        await Task.CompletedTask;
     }
 
     /// <inheritdoc/>
@@ -210,7 +213,9 @@ public sealed class HttpOutputConnector : IOutputConnector, IAsyncDisposable
     }
 
     /// <inheritdoc/>
+#pragma warning disable CS1998 // Async method lacks 'await' operators
     public async Task CloseAsync(CancellationToken cancellationToken = default)
+#pragma warning restore CS1998
     {
         using var activity = ActivitySource.StartActivity("HttpOutputConnector.Close");
 
@@ -236,8 +241,6 @@ public sealed class HttpOutputConnector : IOutputConnector, IAsyncDisposable
             activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
             throw;
         }
-
-        await Task.CompletedTask;
     }
 
     /// <inheritdoc/>
@@ -309,7 +312,7 @@ public sealed class HttpOutputConnector : IOutputConnector, IAsyncDisposable
                     // Add jitter if enabled
                     if (_options.UseJitter)
                     {
-                        var jitter = Random.Shared.Next(0, (int)(delay.TotalMilliseconds * 0.2));
+                        var jitter = Random.Shared.Next(0, (int)(delay.TotalMilliseconds * JitterFactor));
                         delay = delay.Add(TimeSpan.FromMilliseconds(jitter));
                     }
 
