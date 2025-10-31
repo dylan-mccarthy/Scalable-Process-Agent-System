@@ -37,6 +37,8 @@ Prove the core concepts of a **business process agents** platform built on the *
 
 ## 3. High‑Level Architecture (MVP)
 
+> **Note**: For detailed C4 diagrams including context and container views, see [Architecture Diagrams](docs/ARCHITECTURE_DIAGRAMS.md).
+
 ```mermaid
 C4Container
 title MVP – Container View

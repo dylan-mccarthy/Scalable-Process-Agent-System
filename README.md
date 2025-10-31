@@ -1172,6 +1172,7 @@ cd agents
 ## Documentation
 
 - [System Architecture Document (SAD)](sad.md) - High-level system design and architecture
+- [Architecture Diagrams](docs/ARCHITECTURE_DIAGRAMS.md) - C4 context and container diagrams
 - [Invoice Classifier Agent](docs/INVOICE_CLASSIFIER.md) - Technical documentation for the MVP Invoice Classifier agent
 - [Agent Definitions Guide](agents/README.md) - Guide to agent definitions and seeding agents
 - [Agent Versioning and Validation](docs/VERSIONING.md) - Guide to agent versioning, semantic versioning, and spec validation
