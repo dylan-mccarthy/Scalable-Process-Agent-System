@@ -265,11 +265,14 @@ send_demo_invoices() {
     
     for i in "${!invoices[@]}"; do
         local invoice="${invoices[$i]}"
-        local vendor_name=$(echo "$invoice" | jq -r '.vendorName')
-        local invoice_number=$(echo "$invoice" | jq -r '.invoiceNumber')
-        local amount=$(echo "$invoice" | jq -r '.totalAmount')
+        local vendor_name
+        local invoice_number
+        local amount
+        vendor_name=$(echo "$invoice" | jq -r '.vendorName')
+        invoice_number=$(echo "$invoice" | jq -r '.invoiceNumber')
+        amount=$(echo "$invoice" | jq -r '.totalAmount')
         
-        echo -e "  ${BOLD}$(($i + 1)). $vendor_name${NC}"
+        echo -e "  ${BOLD}$((i + 1)). $vendor_name${NC}"
         echo "     Invoice: $invoice_number"
         echo "     Amount: \$$amount USD"
         echo ""

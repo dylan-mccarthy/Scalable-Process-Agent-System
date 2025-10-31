@@ -45,6 +45,8 @@ This interactive demo walks you through:
 
 **See [DEMO.md](DEMO.md) for detailed walkthrough documentation.**
 
+**For a faster start, see [QUICKSTART.md](QUICKSTART.md).**
+
 ### Option 1: Local Kubernetes with k3d (Recommended)
 
 The fastest way to get a complete environment running locally:
