@@ -50,18 +50,48 @@ URL: http://localhost:3000
 
 - Pre-configured with Prometheus, Tempo, and Loki datasources
 - Anonymous access enabled (no login required for local dev)
+- Pre-configured dashboards automatically provisioned
 
-**Creating a Dashboard:**
+**Pre-configured Dashboards:**
 
-1. Navigate to Dashboards → New Dashboard
-2. Add panels for:
-   - **Run Metrics**: Query `runs_started_total`, `runs_completed_total`, `runs_failed_total`
-   - **Active Runs**: Query `active_runs` (real-time gauge)
-   - **Node Metrics**: Query `nodes_registered_total`, `nodes_disconnected_total`, `active_nodes`
-   - **Node Utilization**: Query `used_slots`, `available_slots`, `total_slots`
-   - **Utilization Percentage**: Query `(used_slots / total_slots) * 100`
-   - **Performance**: Query `run_duration_ms`, `scheduling_duration_ms`
-   - **Costs**: Query `run_tokens`, `run_cost_usd`
+The system includes two comprehensive dashboards that are automatically provisioned:
+
+1. **Control Plane - Runs & Scheduling** (`control-plane`)
+   - Active runs and run rate over time
+   - Run success/failure/cancellation metrics
+   - Run duration percentiles (p50, p95, p99)
+   - Scheduling duration and performance
+   - Token usage distribution
+   - Cost per run analysis
+   - Success rate gauge
+
+2. **Node Fleet - Health & Capacity** (`node-fleet`)
+   - Active nodes count and trend
+   - Total, used, and available slots
+   - Cluster utilization percentage
+   - Slot utilization over time
+   - Node registration/disconnection rates
+   - Lease grant/release metrics
+   - Cluster capacity breakdown
+
+**Accessing Dashboards:**
+
+After starting the observability stack, dashboards are available at:
+- http://localhost:3000/d/control-plane - Control Plane dashboard
+- http://localhost:3000/d/node-fleet - Node Fleet dashboard
+- Or navigate to Dashboards → Browse to see all available dashboards
+
+**Customizing Dashboards:**
+
+You can customize the pre-configured dashboards by:
+1. Opening the dashboard
+2. Clicking the gear icon (⚙️) in the top right
+3. Selecting "Make editable" to create a copy
+4. Saving your customizations
+
+The dashboard JSON files are located in:
+- Docker Compose: `grafana/dashboards/`
+- Helm Chart: `helm/business-process-agents/dashboards/`
 
 ### Prometheus (Metrics)
 
