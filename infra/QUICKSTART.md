@@ -40,11 +40,47 @@ This script will create:
 - ✅ Azure Database for PostgreSQL
 - ✅ Azure Cache for Redis
 - ✅ Azure Key Vault
-- ✅ Azure OpenAI Service
+- ✅ **Azure OpenAI Service (Azure AI Foundry)** - LLM endpoint for agent execution
 - ✅ Azure Container Registry
 - ✅ Application Insights
 
 **Expected time:** 15-20 minutes
+
+> **Note**: The deployment automatically creates an Azure OpenAI Service (Azure AI Foundry) resource. After deployment, you need to deploy a model (e.g., `gpt-4o-mini`) through the Azure Portal.
+
+### 2a. Deploy Azure AI Foundry Model (Required)
+
+After infrastructure deployment completes, deploy an AI model:
+
+```bash
+# Get Azure OpenAI resource name
+OPENAI_NAME=$(az deployment group show \
+  --name bpa-dev-deployment \
+  --resource-group $RESOURCE_GROUP \
+  --query properties.outputs.openAiName.value \
+  --output tsv)
+
+# Deploy gpt-4o-mini model (recommended for MVP)
+az cognitiveservices account deployment create \
+  --name $OPENAI_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --deployment-name gpt-4o-mini \
+  --model-name gpt-4o-mini \
+  --model-version "2024-07-18" \
+  --model-format OpenAI \
+  --sku-capacity 10 \
+  --sku-name Standard
+
+echo "✅ Model deployed: gpt-4o-mini"
+echo "Endpoint: $(az cognitiveservices account show --name $OPENAI_NAME --resource-group $RESOURCE_GROUP --query properties.endpoint -o tsv)"
+```
+
+**Alternative models you can deploy:**
+- `gpt-4o` - Latest GPT-4 optimized (higher cost, better performance)
+- `gpt-4` - Standard GPT-4 (highest cost, best reasoning)
+- `gpt-3.5-turbo` - Fastest, most cost-effective
+
+> **Tip**: For MVP testing, `gpt-4o-mini` offers the best balance of cost and performance.
 
 ## 3. Build and Push Images
 
@@ -167,6 +203,43 @@ curl http://localhost:8080/health
 ```
 
 ## Troubleshooting
+
+### Azure AI Foundry Issues
+
+#### Model not deployed?
+```bash
+# List all deployments
+OPENAI_NAME=$(az deployment group show \
+  --name bpa-dev-deployment \
+  --resource-group $RESOURCE_GROUP \
+  --query properties.outputs.openAiName.value \
+  --output tsv)
+
+az cognitiveservices account deployment list \
+  --name $OPENAI_NAME \
+  --resource-group $RESOURCE_GROUP
+```
+
+#### Node Runtime can't connect to Azure AI Foundry?
+```bash
+# Check logs for Node Runtime pods
+kubectl logs -l app.kubernetes.io/component=node-runtime --tail=100
+
+# Common issues:
+# 1. Model not deployed - see "Model not deployed?" above
+# 2. Invalid API key - verify Key Vault secret: openai-api-key
+# 3. Endpoint mismatch - verify Key Vault secret: openai-endpoint
+# 4. Deployment name mismatch - should be "gpt-4o-mini" (or your chosen model)
+```
+
+#### Verify Azure AI Foundry configuration in cluster
+```bash
+# Check if secrets are correctly configured
+kubectl get secret azure-secrets -o jsonpath='{.data.openai-endpoint}' | base64 -d
+kubectl get secret azure-secrets -o jsonpath='{.data.openai-api-key}' | base64 -d
+
+# Expected endpoint format: https://<resource-name>.openai.azure.com/
+```
 
 ### Pod not starting?
 ```bash
