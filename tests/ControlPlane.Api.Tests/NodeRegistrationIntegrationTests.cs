@@ -289,9 +289,6 @@ public class NodeRegistrationIntegrationTests : IAsyncLifetime
             Assert.NotNull(node);
             Assert.Equal(scenario.ActiveRuns, node.Status.ActiveRuns);
             Assert.Equal(scenario.AvailableSlots, node.Status.AvailableSlots);
-
-            // Small delay to ensure heartbeat timestamps are different
-            await Task.Delay(10);
         }
     }
 
