@@ -177,11 +177,29 @@ public class InvoiceProcessingE2ETests
                     capturedOutputs.Add(classifiedOutput);
                 }
             }
+            catch (InvalidOperationException ex)
+            {
+                invoiceStopwatch.Stop();
+                latencies.Add(invoiceStopwatch.Elapsed.TotalSeconds);
+                _httpOutputLoggerMock.Object.LogError(ex, "Invalid operation processing invoice {InvoiceNumber}", invoice.InvoiceNumber);
+            }
+            catch (TimeoutException ex)
+            {
+                invoiceStopwatch.Stop();
+                latencies.Add(invoiceStopwatch.Elapsed.TotalSeconds);
+                _httpOutputLoggerMock.Object.LogError(ex, "Timeout processing invoice {InvoiceNumber}", invoice.InvoiceNumber);
+            }
+            catch (HttpRequestException ex)
+            {
+                invoiceStopwatch.Stop();
+                latencies.Add(invoiceStopwatch.Elapsed.TotalSeconds);
+                _httpOutputLoggerMock.Object.LogError(ex, "HTTP error processing invoice {InvoiceNumber}", invoice.InvoiceNumber);
+            }
             catch (Exception ex)
             {
                 invoiceStopwatch.Stop();
                 latencies.Add(invoiceStopwatch.Elapsed.TotalSeconds);
-                _httpOutputLoggerMock.Object.LogError(ex, "Failed to process invoice {InvoiceNumber}", invoice.InvoiceNumber);
+                _httpOutputLoggerMock.Object.LogError(ex, "Unexpected error processing invoice {InvoiceNumber}", invoice.InvoiceNumber);
             }
         }
 
