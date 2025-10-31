@@ -33,7 +33,9 @@ builder.Services.AddSingleton(sp =>
 });
 
 // Register services
-builder.Services.AddSingleton<IAgentExecutor, AgentExecutorService>();
+// Use SandboxExecutor for process isolation (E2-T5)
+builder.Services.AddSingleton<IAgentExecutor, SandboxExecutorService>();
+builder.Services.AddSingleton<ISandboxExecutor, SandboxExecutorService>();
 builder.Services.AddSingleton<ILeasePullService, LeasePullService>();
 
 // Configure OpenTelemetry
