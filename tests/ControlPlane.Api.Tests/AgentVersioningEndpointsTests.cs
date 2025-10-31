@@ -384,6 +384,148 @@ public class AgentVersioningEndpointsTests : IAsyncLifetime
         Assert.Empty(versions!);
     }
 
+    [Fact]
+    public async Task CreateAgentVersion_WithInvalidSpec_MissingName_ReturnsBadRequest()
+    {
+        // Arrange
+        var agent = await CreateTestAgent("Test Agent");
+        var versionRequest = new CreateAgentVersionRequest
+        {
+            Version = "1.0.0",
+            Spec = new Agent
+            {
+                AgentId = agent.AgentId,
+                Name = "", // Invalid: empty name
+                Instructions = "Test instructions"
+            }
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync($"/v1/agents/{agent.AgentId}:version", versionRequest);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var errorResponse = await response.Content.ReadAsStringAsync();
+        Assert.Contains("name is required", errorResponse);
+    }
+
+    [Fact]
+    public async Task CreateAgentVersion_WithInvalidSpec_MissingInstructions_ReturnsBadRequest()
+    {
+        // Arrange
+        var agent = await CreateTestAgent("Test Agent");
+        var versionRequest = new CreateAgentVersionRequest
+        {
+            Version = "1.0.0",
+            Spec = new Agent
+            {
+                AgentId = agent.AgentId,
+                Name = "Test Agent",
+                Instructions = "" // Invalid: empty instructions
+            }
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync($"/v1/agents/{agent.AgentId}:version", versionRequest);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var errorResponse = await response.Content.ReadAsStringAsync();
+        Assert.Contains("instructions are required", errorResponse);
+    }
+
+    [Fact]
+    public async Task CreateAgentVersion_WithInvalidSpec_InvalidBudget_ReturnsBadRequest()
+    {
+        // Arrange
+        var agent = await CreateTestAgent("Test Agent");
+        var versionRequest = new CreateAgentVersionRequest
+        {
+            Version = "1.0.0",
+            Spec = new Agent
+            {
+                AgentId = agent.AgentId,
+                Name = "Test Agent",
+                Instructions = "Test instructions",
+                Budget = new AgentBudget
+                {
+                    MaxTokens = -1 // Invalid: negative tokens
+                }
+            }
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync($"/v1/agents/{agent.AgentId}:version", versionRequest);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var errorResponse = await response.Content.ReadAsStringAsync();
+        Assert.Contains("MaxTokens must be greater than 0", errorResponse);
+    }
+
+    [Fact]
+    public async Task CreateAgentVersion_WithInvalidSpec_InvalidConnector_ReturnsBadRequest()
+    {
+        // Arrange
+        var agent = await CreateTestAgent("Test Agent");
+        var versionRequest = new CreateAgentVersionRequest
+        {
+            Version = "1.0.0",
+            Spec = new Agent
+            {
+                AgentId = agent.AgentId,
+                Name = "Test Agent",
+                Instructions = "Test instructions",
+                Input = new ConnectorConfiguration
+                {
+                    Type = "invalid-connector" // Invalid connector type
+                }
+            }
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync($"/v1/agents/{agent.AgentId}:version", versionRequest);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var errorResponse = await response.Content.ReadAsStringAsync();
+        Assert.Contains("is not recognized", errorResponse);
+    }
+
+    [Fact]
+    public async Task CreateAgentVersion_WithValidSpec_AllFields_ReturnsCreated()
+    {
+        // Arrange
+        var agent = await CreateTestAgent("Invoice Classifier");
+        var versionRequest = new CreateAgentVersionRequest
+        {
+            Version = "1.0.0",
+            Spec = new Agent
+            {
+                AgentId = agent.AgentId,
+                Name = "Invoice Classifier",
+                Instructions = "Classify invoices",
+                Budget = new AgentBudget
+                {
+                    MaxTokens = 4000,
+                    MaxDurationSeconds = 60
+                },
+                Input = new ConnectorConfiguration { Type = "service-bus" },
+                Output = new ConnectorConfiguration { Type = "http" },
+                Tools = new List<string> { "http-post" }
+            }
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync($"/v1/agents/{agent.AgentId}:version", versionRequest);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var version = await response.Content.ReadFromJsonAsync<AgentVersionResponse>();
+        Assert.NotNull(version);
+        Assert.Equal("1.0.0", version.Version);
+    }
+
     private async Task<Agent> CreateTestAgent(string name)
     {
         var request = new CreateAgentRequest

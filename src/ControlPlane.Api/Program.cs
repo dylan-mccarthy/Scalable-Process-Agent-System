@@ -234,6 +234,9 @@ builder.Services.AddSingleton<IScheduler, LeastLoadedScheduler>();
 // Add LeaseService for gRPC
 builder.Services.AddSingleton<ILeaseService, LeaseServiceLogic>();
 
+// Add Agent Spec Validator
+builder.Services.AddSingleton<IAgentSpecValidator, AgentSpecValidator>();
+
 var app = builder.Build();
 
 // Initialize NATS JetStream streams (optional - fail gracefully if NATS is not available)
@@ -313,7 +316,7 @@ app.MapDelete("/v1/agents/{agentId}", async (string agentId, IAgentStore store) 
 .WithTags("Agents");
 
 // Agent Version endpoints
-app.MapPost("/v1/agents/{agentId}:version", async (string agentId, CreateAgentVersionRequest request, IAgentStore store) =>
+app.MapPost("/v1/agents/{agentId}:version", async (string agentId, CreateAgentVersionRequest request, IAgentStore store, IAgentSpecValidator specValidator) =>
 {
     if (string.IsNullOrWhiteSpace(request.Version))
     {
@@ -322,7 +325,16 @@ app.MapPost("/v1/agents/{agentId}:version", async (string agentId, CreateAgentVe
 
     try
     {
+        // Validate semantic version format
         VersionValidator.ValidateOrThrow(request.Version);
+        
+        // Validate agent specification
+        var validationResult = specValidator.Validate(request.Spec);
+        if (!validationResult.IsValid)
+        {
+            return Results.BadRequest(new { error = "Spec validation failed", errors = validationResult.Errors });
+        }
+        
         var version = await store.CreateVersionAsync(agentId, request);
         return Results.Created($"/v1/agents/{agentId}/versions/{version.Version}", version);
     }

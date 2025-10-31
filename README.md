@@ -1034,6 +1034,15 @@ The Node Runtime executes business process agents on worker nodes. See [Node Run
 In development mode, OpenAPI documentation is available at:
 - `/openapi/v1.json` - OpenAPI specification
 
+## Documentation
+
+- [System Architecture Document (SAD)](sad.md) - High-level system design and architecture
+- [Agent Versioning and Validation](docs/VERSIONING.md) - Guide to agent versioning, semantic versioning, and spec validation
+- [Authentication](AUTHENTICATION.md) - Authentication and authorization setup
+- [Deployment](DEPLOYMENT.md) - Deployment guides for local and cloud environments
+- [Observability](OBSERVABILITY.md) - Monitoring, logging, and tracing configuration
+- [CI/CD](CI-CD.md) - Continuous integration and deployment pipelines
+
 ## Contributing
 
 Follow the branching strategy defined in `.github/copilot-instructions.md`:
