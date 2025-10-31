@@ -52,6 +52,8 @@ public sealed class AzureAIFoundryChatClient : IChatClient
         // Call Azure AI Foundry API
         var response = await _client.CompleteAsync(completionOptions, cancellationToken);
         
+        // Extract content from the response
+        // The ChatCompletions response has a Content property at the top level
         var chatResponse = new ChatResponse(new[]
         {
             new ChatMessage(ExtensionsChatRole.Assistant, response.Value.Content)
