@@ -1087,6 +1087,7 @@ In development mode, OpenAPI documentation is available at:
 
 - [System Architecture Document (SAD)](sad.md) - High-level system design and architecture
 - [Agent Versioning and Validation](docs/VERSIONING.md) - Guide to agent versioning, semantic versioning, and spec validation
+- [Azure AI Foundry Tool Registry](docs/AZURE_AI_FOUNDRY_TOOLS.md) - Azure AI Foundry tool provider and MAF SDK integration
 - [Authentication](AUTHENTICATION.md) - Authentication and authorization setup
 - [Deployment](DEPLOYMENT.md) - Deployment guides for local and cloud environments
 - [Observability](OBSERVABILITY.md) - Monitoring, logging, and tracing configuration
