@@ -36,9 +36,9 @@ public interface ILeaseService
     /// <param name="costs">Cost information</param>
     /// <returns>True if completion was successful</returns>
     Task<bool> CompleteRunAsync(
-        string leaseId, 
-        string runId, 
-        string nodeId, 
+        string leaseId,
+        string runId,
+        string nodeId,
         IDictionary<string, string>? result,
         TimingInfo? timings,
         CostInfo? costs);

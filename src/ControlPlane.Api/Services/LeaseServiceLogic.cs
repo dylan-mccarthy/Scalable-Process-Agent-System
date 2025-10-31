@@ -30,8 +30,8 @@ public class LeaseServiceLogic : ILeaseService
     }
 
     public async IAsyncEnumerable<Grpc.Lease> GetLeasesAsync(
-        string nodeId, 
-        int maxLeases, 
+        string nodeId,
+        int maxLeases,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         _logger.LogInformation("Node {NodeId} requesting up to {MaxLeases} leases", nodeId, maxLeases);
@@ -48,7 +48,7 @@ public class LeaseServiceLogic : ILeaseService
         while (!cancellationToken.IsCancellationRequested)
         {
             var leasesToYield = new List<Grpc.Lease>();
-            
+
             try
             {
                 // Get pending runs
@@ -68,13 +68,13 @@ public class LeaseServiceLogic : ILeaseService
                         Dictionary<string, object>? placementConstraints = null;
                         // TODO: When deployments are fully implemented, extract placement from deployment
                         // For now, we can work with the scheduler using basic node selection
-                        
+
                         selectedNodeId = await _scheduler.ScheduleRunAsync(run, placementConstraints, cancellationToken);
-                        
+
                         // If scheduler didn't select this node, skip this run
                         if (selectedNodeId != nodeId)
                         {
-                            _logger.LogDebug("Run {RunId} scheduled to different node {SelectedNode}, skipping for {NodeId}", 
+                            _logger.LogDebug("Run {RunId} scheduled to different node {SelectedNode}, skipping for {NodeId}",
                                 run.RunId, selectedNodeId, nodeId);
                             continue;
                         }
@@ -83,11 +83,11 @@ public class LeaseServiceLogic : ILeaseService
                     // Try to acquire lease for this run
                     var leaseId = $"lease-{run.RunId}-{Guid.NewGuid():N}";
                     var ttlSeconds = 300; // 5 minutes in seconds
-                    
+
                     var acquired = await _leaseStore.AcquireLeaseAsync(run.RunId, nodeId, ttlSeconds);
                     if (acquired)
                     {
-                        _logger.LogInformation("Acquired lease {LeaseId} for run {RunId} on node {NodeId}", 
+                        _logger.LogInformation("Acquired lease {LeaseId} for run {RunId} on node {NodeId}",
                             leaseId, run.RunId, nodeId);
 
                         // Update run to assign to node
@@ -161,7 +161,7 @@ public class LeaseServiceLogic : ILeaseService
 
     public async Task<bool> AcknowledgeLeaseAsync(string leaseId, string nodeId, long ackTimestamp)
     {
-        _logger.LogInformation("Node {NodeId} acknowledging lease {LeaseId} at {Timestamp}", 
+        _logger.LogInformation("Node {NodeId} acknowledging lease {LeaseId} at {Timestamp}",
             nodeId, leaseId, ackTimestamp);
 
         // Lease acknowledgment is primarily for telemetry and diagnostics
@@ -177,7 +177,7 @@ public class LeaseServiceLogic : ILeaseService
         TimingInfo? timings,
         CostInfo? costs)
     {
-        _logger.LogInformation("Node {NodeId} completing run {RunId} with lease {LeaseId}", 
+        _logger.LogInformation("Node {NodeId} completing run {RunId} with lease {LeaseId}",
             nodeId, runId, leaseId);
 
         try
@@ -243,7 +243,7 @@ public class LeaseServiceLogic : ILeaseService
         TimingInfo? timings,
         bool retryable)
     {
-        _logger.LogWarning("Node {NodeId} reporting failure for run {RunId}: {ErrorMessage}", 
+        _logger.LogWarning("Node {NodeId} reporting failure for run {RunId}: {ErrorMessage}",
             nodeId, runId, errorMessage);
 
         try
@@ -284,9 +284,9 @@ public class LeaseServiceLogic : ILeaseService
 
             // Determine if we should retry (simple retry logic - max 3 attempts)
             var retryCount = updatedRun.ErrorInfo?.ContainsKey("retry_count") == true
-                ? Convert.ToInt32(updatedRun.ErrorInfo["retry_count"]) 
+                ? Convert.ToInt32(updatedRun.ErrorInfo["retry_count"])
                 : 0;
-            
+
             var shouldRetry = retryable && retryCount < 3;
 
             // Release the lease

@@ -26,20 +26,20 @@ public class AgentVersioningEndpointsTests : IAsyncLifetime
                         ["UseInMemoryStores"] = "true"
                     });
                 });
-                
+
                 builder.ConfigureServices(services =>
                 {
                     var descriptorsToRemove = services
-                        .Where(d => d.ServiceType == typeof(IAgentStore) || 
-                                    d.ServiceType == typeof(INodeStore) || 
+                        .Where(d => d.ServiceType == typeof(IAgentStore) ||
+                                    d.ServiceType == typeof(INodeStore) ||
                                     d.ServiceType == typeof(IRunStore))
                         .ToList();
-                    
+
                     foreach (var descriptor in descriptorsToRemove)
                     {
                         services.Remove(descriptor);
                     }
-                    
+
                     services.AddSingleton<IAgentStore, InMemoryAgentStore>();
                     services.AddSingleton<INodeStore, InMemoryNodeStore>();
                     services.AddSingleton<IRunStore, InMemoryRunStore>();

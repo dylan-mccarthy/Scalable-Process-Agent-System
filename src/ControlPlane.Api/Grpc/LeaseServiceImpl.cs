@@ -25,7 +25,7 @@ public class LeaseServiceImpl : LeaseService.LeaseServiceBase
         activity?.SetTag("node.id", request.NodeId);
         activity?.SetTag("max.leases", request.MaxLeases);
 
-        _logger.LogInformation("Pull request received from node {NodeId} for {MaxLeases} leases", 
+        _logger.LogInformation("Pull request received from node {NodeId} for {MaxLeases} leases",
             request.NodeId, request.MaxLeases);
 
         try
@@ -46,7 +46,7 @@ public class LeaseServiceImpl : LeaseService.LeaseServiceBase
                 await responseStream.WriteAsync(lease);
                 _logger.LogDebug("Sent lease {LeaseId} to node {NodeId}", lease.LeaseId, request.NodeId);
                 leaseCount++;
-                
+
                 TelemetryConfig.LeasesGrantedCounter.Add(1,
                     new KeyValuePair<string, object?>("node.id", request.NodeId),
                     new KeyValuePair<string, object?>("lease.id", lease.LeaseId));
@@ -72,7 +72,7 @@ public class LeaseServiceImpl : LeaseService.LeaseServiceBase
 
     public override async Task<AckResponse> Ack(AckRequest request, ServerCallContext context)
     {
-        _logger.LogInformation("Ack request received for lease {LeaseId} from node {NodeId}", 
+        _logger.LogInformation("Ack request received for lease {LeaseId} from node {NodeId}",
             request.LeaseId, request.NodeId);
 
         try
@@ -96,8 +96,8 @@ public class LeaseServiceImpl : LeaseService.LeaseServiceBase
             }
 
             var success = await _leaseService.AcknowledgeLeaseAsync(
-                request.LeaseId, 
-                request.NodeId, 
+                request.LeaseId,
+                request.NodeId,
                 request.AckTimestampUnixMs);
 
             return new AckResponse
@@ -119,7 +119,7 @@ public class LeaseServiceImpl : LeaseService.LeaseServiceBase
 
     public override async Task<CompleteResponse> Complete(CompleteRequest request, ServerCallContext context)
     {
-        _logger.LogInformation("Complete request received for run {RunId} from node {NodeId}", 
+        _logger.LogInformation("Complete request received for run {RunId} from node {NodeId}",
             request.RunId, request.NodeId);
 
         try
@@ -178,7 +178,7 @@ public class LeaseServiceImpl : LeaseService.LeaseServiceBase
 
     public override async Task<FailResponse> Fail(FailRequest request, ServerCallContext context)
     {
-        _logger.LogInformation("Fail request received for run {RunId} from node {NodeId}: {ErrorMessage}", 
+        _logger.LogInformation("Fail request received for run {RunId} from node {NodeId}: {ErrorMessage}",
             request.RunId, request.NodeId, request.ErrorMessage);
 
         try

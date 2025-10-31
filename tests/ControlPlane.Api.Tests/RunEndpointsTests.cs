@@ -26,22 +26,22 @@ public class RunEndpointsTests : IAsyncLifetime
                         ["UseInMemoryStores"] = "true"
                     });
                 });
-                
+
                 // Override service registrations to use in-memory stores
                 builder.ConfigureServices(services =>
                 {
                     // Remove any existing IAgentStore, INodeStore, IRunStore registrations
                     var descriptorsToRemove = services
-                        .Where(d => d.ServiceType == typeof(IAgentStore) || 
-                                    d.ServiceType == typeof(INodeStore) || 
+                        .Where(d => d.ServiceType == typeof(IAgentStore) ||
+                                    d.ServiceType == typeof(INodeStore) ||
                                     d.ServiceType == typeof(IRunStore))
                         .ToList();
-                    
+
                     foreach (var descriptor in descriptorsToRemove)
                     {
                         services.Remove(descriptor);
                     }
-                    
+
                     // Add in-memory stores
                     services.AddSingleton<IAgentStore, InMemoryAgentStore>();
                     services.AddSingleton<INodeStore, InMemoryNodeStore>();
@@ -78,7 +78,7 @@ public class RunEndpointsTests : IAsyncLifetime
         // For this test, we'll need to add an endpoint or use a test helper
         // Since we don't have a CreateRun endpoint in the spec, we'll test the concept
         // by creating one through the service layer directly
-        
+
         // This test demonstrates the endpoint structure
         var runId = Guid.NewGuid().ToString();
         var completeRequest = new CompleteRunRequest

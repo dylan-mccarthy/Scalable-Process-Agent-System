@@ -15,8 +15,8 @@ public interface IScheduler
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>The selected node ID, or null if no suitable node is available</returns>
     Task<string?> ScheduleRunAsync(
-        Run run, 
-        Dictionary<string, object>? placementConstraints = null, 
+        Run run,
+        Dictionary<string, object>? placementConstraints = null,
         CancellationToken cancellationToken = default);
 
     /// <summary>

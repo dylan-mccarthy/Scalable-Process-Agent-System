@@ -26,23 +26,23 @@ public class DeploymentEndpointsTests : IAsyncLifetime
                         ["UseInMemoryStores"] = "true"
                     });
                 });
-                
+
                 // Override service registrations to use in-memory stores
                 builder.ConfigureServices(services =>
                 {
                     // Remove any existing store registrations
                     var descriptorsToRemove = services
-                        .Where(d => d.ServiceType == typeof(IAgentStore) || 
-                                    d.ServiceType == typeof(INodeStore) || 
+                        .Where(d => d.ServiceType == typeof(IAgentStore) ||
+                                    d.ServiceType == typeof(INodeStore) ||
                                     d.ServiceType == typeof(IRunStore) ||
                                     d.ServiceType == typeof(IDeploymentStore))
                         .ToList();
-                    
+
                     foreach (var descriptor in descriptorsToRemove)
                     {
                         services.Remove(descriptor);
                     }
-                    
+
                     // Add in-memory stores
                     services.AddSingleton<IAgentStore, InMemoryAgentStore>();
                     services.AddSingleton<INodeStore, InMemoryNodeStore>();
@@ -85,7 +85,7 @@ public class DeploymentEndpointsTests : IAsyncLifetime
         var agentResponse = await _client.PostAsJsonAsync("/v1/agents", agentRequest);
         agentResponse.EnsureSuccessStatusCode();
         var agent = await agentResponse.Content.ReadFromJsonAsync<Agent>();
-        
+
         var versionRequest = new CreateAgentVersionRequest
         {
             Version = "1.0.0",
@@ -214,7 +214,7 @@ public class DeploymentEndpointsTests : IAsyncLifetime
         };
         var agentResponse = await _client.PostAsJsonAsync("/v1/agents", agentRequest);
         var agent = await agentResponse.Content.ReadFromJsonAsync<Agent>();
-        
+
         var versionRequest = new CreateAgentVersionRequest
         {
             Version = "1.0.0",
@@ -265,7 +265,7 @@ public class DeploymentEndpointsTests : IAsyncLifetime
         };
         var agentResponse = await _client.PostAsJsonAsync("/v1/agents", agentRequest);
         var agent = await agentResponse.Content.ReadFromJsonAsync<Agent>();
-        
+
         var versionRequest = new CreateAgentVersionRequest
         {
             Version = "1.0.0",
@@ -312,7 +312,7 @@ public class DeploymentEndpointsTests : IAsyncLifetime
         };
         var agentResponse = await _client.PostAsJsonAsync("/v1/agents", agentRequest);
         var agent = await agentResponse.Content.ReadFromJsonAsync<Agent>();
-        
+
         var versionRequest = new CreateAgentVersionRequest
         {
             Version = "1.0.0",
@@ -381,7 +381,7 @@ public class DeploymentEndpointsTests : IAsyncLifetime
         };
         var agentResponse = await _client.PostAsJsonAsync("/v1/agents", agentRequest);
         var agent = await agentResponse.Content.ReadFromJsonAsync<Agent>();
-        
+
         var versionRequest = new CreateAgentVersionRequest
         {
             Version = "1.0.0",
@@ -430,7 +430,7 @@ public class DeploymentEndpointsTests : IAsyncLifetime
         };
         var agentResponse = await _client.PostAsJsonAsync("/v1/agents", agentRequest);
         var agent = await agentResponse.Content.ReadFromJsonAsync<Agent>();
-        
+
         var versionRequest = new CreateAgentVersionRequest
         {
             Version = "1.0.0",
@@ -468,7 +468,7 @@ public class DeploymentEndpointsTests : IAsyncLifetime
         };
         var agentResponse = await _client.PostAsJsonAsync("/v1/agents", agentRequest);
         var agent = await agentResponse.Content.ReadFromJsonAsync<Agent>();
-        
+
         var versionRequest = new CreateAgentVersionRequest
         {
             Version = "1.0.0",
@@ -519,7 +519,7 @@ public class DeploymentEndpointsTests : IAsyncLifetime
         };
         var agent1Response = await _client.PostAsJsonAsync("/v1/agents", agent1Request);
         var agent1 = await agent1Response.Content.ReadFromJsonAsync<Agent>();
-        
+
         var version1Request = new CreateAgentVersionRequest
         {
             Version = "1.0.0",
@@ -534,7 +534,7 @@ public class DeploymentEndpointsTests : IAsyncLifetime
         };
         var agent2Response = await _client.PostAsJsonAsync("/v1/agents", agent2Request);
         var agent2 = await agent2Response.Content.ReadFromJsonAsync<Agent>();
-        
+
         var version2Request = new CreateAgentVersionRequest
         {
             Version = "1.0.0",

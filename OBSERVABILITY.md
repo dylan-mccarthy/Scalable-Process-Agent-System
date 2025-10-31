@@ -56,7 +56,10 @@ URL: http://localhost:3000
 1. Navigate to Dashboards → New Dashboard
 2. Add panels for:
    - **Run Metrics**: Query `runs_started_total`, `runs_completed_total`, `runs_failed_total`
-   - **Node Metrics**: Query `nodes_registered_total`, `nodes_disconnected_total`
+   - **Active Runs**: Query `active_runs` (real-time gauge)
+   - **Node Metrics**: Query `nodes_registered_total`, `nodes_disconnected_total`, `active_nodes`
+   - **Node Utilization**: Query `used_slots`, `available_slots`, `total_slots`
+   - **Utilization Percentage**: Query `(used_slots / total_slots) * 100`
    - **Performance**: Query `run_duration_ms`, `scheduling_duration_ms`
    - **Costs**: Query `run_tokens`, `run_cost_usd`
 
@@ -76,12 +79,55 @@ rate(runs_failed_total[5m])
 # p95 run duration
 histogram_quantile(0.95, rate(run_duration_ms_bucket[5m]))
 
-# Node utilization
-nodes_registered_total - nodes_disconnected_total
+# Current active runs (NEW - Observable Gauge)
+active_runs
+
+# Current active nodes (NEW - Observable Gauge)
+active_nodes
+
+# Node utilization percentage (NEW)
+(used_slots / total_slots) * 100
+
+# Available capacity (NEW - Observable Gauge)
+available_slots
+
+# Total cluster capacity (NEW - Observable Gauge)
+total_slots
 
 # Average scheduling time
 avg(rate(scheduling_duration_ms_sum[5m]) / rate(scheduling_duration_ms_count[5m]))
 ```
+
+### Metrics Collection Details
+
+The Control Plane API collects comprehensive metrics about node utilization, run success/failure, and latency as specified in E4-T2.
+
+#### Counters (Cumulative)
+- `runs_started_total` - Total runs started
+- `runs_completed_total` - Total successful completions
+- `runs_failed_total` - Total failures
+- `runs_cancelled_total` - Total cancellations
+- `nodes_registered_total` - Total nodes registered
+- `nodes_disconnected_total` - Total nodes disconnected
+- `leases_granted_total` - Total leases granted
+- `leases_released_total` - Total leases released
+- `scheduling_attempts_total` - Total scheduling attempts
+- `scheduling_failures_total` - Total scheduling failures
+
+#### Histograms (Distribution)
+- `run_duration_ms` - Run execution latency in milliseconds
+- `scheduling_duration_ms` - Scheduling operation latency
+- `run_tokens` - Token usage per run
+- `run_cost_usd` - Cost per run in USD
+
+#### Observable Gauges (Real-time State)
+- `active_runs` - Current number of active runs (running or pending)
+- `active_nodes` - Current number of active nodes (heartbeat within 60s)
+- `total_slots` - Total execution slots across all active nodes
+- `used_slots` - Number of slots currently executing runs
+- `available_slots` - Number of slots available for new runs
+
+Observable gauges are automatically updated and provide real-time visibility into cluster state and utilization.
 
 ### Tempo (Distributed Tracing)
 

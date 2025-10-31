@@ -153,7 +153,7 @@ public sealed class LeasePullService : ILeasePullService
                 // Exponential backoff with jitter for reconnection
                 _reconnectAttempts++;
                 var delay = CalculateReconnectDelay(_reconnectAttempts);
-                
+
                 TelemetryConfig.LeaseStreamReconnectsCounter.Add(1,
                     new KeyValuePair<string, object?>("node.id", _options.NodeId),
                     new KeyValuePair<string, object?>("attempt", _reconnectAttempts));
@@ -264,8 +264,8 @@ public sealed class LeasePullService : ILeasePullService
                 AgentId = agentId,
                 Version = version,
                 Name = lease.RunSpec.Metadata.TryGetValue("agent_name", out var name) ? name : agentId,
-                Instructions = lease.RunSpec.Metadata.TryGetValue("instructions", out var instr) 
-                    ? instr 
+                Instructions = lease.RunSpec.Metadata.TryGetValue("instructions", out var instr)
+                    ? instr
                     : "Process the input message.",
                 ModelProfile = null, // Will use defaults from AgentRuntimeOptions
                 Budget = lease.RunSpec.Budgets != null

@@ -42,7 +42,7 @@ public class RedisLockStore : ILockStore
             throw new ArgumentException("OwnerId cannot be null or empty", nameof(ownerId));
 
         var key = GetLockKey(lockKey);
-        
+
         // Use Lua script to ensure atomic check-and-delete
         // Only delete if the owner matches
         const string script = @"
@@ -75,7 +75,7 @@ public class RedisLockStore : ILockStore
             throw new ArgumentException("Additional seconds must be greater than 0", nameof(additionalSeconds));
 
         var key = GetLockKey(lockKey);
-        
+
         // Use Lua script to ensure atomic check-and-extend
         // Only extend if the owner matches
         const string script = @"
@@ -91,10 +91,10 @@ public class RedisLockStore : ILockStore
             end";
 
         var result = await _db.ScriptEvaluateAsync(
-            script, 
-            new RedisKey[] { key }, 
+            script,
+            new RedisKey[] { key },
             new RedisValue[] { ownerId, additionalSeconds });
-        
+
         return (int)result == 1;
     }
 

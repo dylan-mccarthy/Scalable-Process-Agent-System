@@ -96,7 +96,7 @@ public class TelemetryConfigTests
     {
         // This test verifies that counters can record values without throwing exceptions
         // The actual values are exported to the configured telemetry backend
-        
+
         // Act & Assert (should not throw)
         TelemetryConfig.RunsStartedCounter.Add(1);
         TelemetryConfig.RunsCompletedCounter.Add(1);
@@ -107,7 +107,7 @@ public class TelemetryConfigTests
     public void Histograms_CanRecordValues()
     {
         // This test verifies that histograms can record values without throwing exceptions
-        
+
         // Act & Assert (should not throw)
         TelemetryConfig.RunDurationHistogram.Record(1500.0);
         TelemetryConfig.SchedulingDurationHistogram.Record(50.0);
@@ -119,14 +119,35 @@ public class TelemetryConfigTests
     public void Metrics_CanIncludeAttributes()
     {
         // This test verifies that metrics can include attributes without throwing exceptions
-        
+
         // Act & Assert (should not throw)
-        TelemetryConfig.RunsStartedCounter.Add(1, 
+        TelemetryConfig.RunsStartedCounter.Add(1,
             new KeyValuePair<string, object?>("agent.id", "test-agent"),
             new KeyValuePair<string, object?>("agent.version", "1.0.0"));
-        
+
         TelemetryConfig.RunDurationHistogram.Record(1500.0,
             new KeyValuePair<string, object?>("agent.id", "test-agent"),
             new KeyValuePair<string, object?>("status", "completed"));
+    }
+
+    [Fact]
+    public void TelemetryConfig_ObservableGaugeProperties_ShouldBeNullableAndSettable()
+    {
+        // This test verifies that observable gauge properties can be set
+        // The actual gauges are initialized in Program.cs when the app starts
+
+        // Act - Set a test gauge
+        var testGauge = TelemetryConfig.Meter.CreateObservableGauge(
+            "test_gauge",
+            () => 42,
+            description: "Test gauge");
+
+        TelemetryConfig.ActiveRunsGauge = testGauge;
+
+        // Assert - Should be settable
+        Assert.NotNull(TelemetryConfig.ActiveRunsGauge);
+
+        // Clean up
+        TelemetryConfig.ActiveRunsGauge = null;
     }
 }

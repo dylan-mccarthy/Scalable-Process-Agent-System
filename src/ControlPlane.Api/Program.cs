@@ -112,7 +112,7 @@ builder.Services.AddOpenApi();
 builder.Services.AddGrpc();
 
 // Configure authentication
-var authConfig = builder.Configuration.GetSection("Authentication").Get<AuthenticationOptions>() 
+var authConfig = builder.Configuration.GetSection("Authentication").Get<AuthenticationOptions>()
     ?? new AuthenticationOptions();
 
 if (authConfig.Enabled)
@@ -123,7 +123,7 @@ if (authConfig.Enabled)
             options.Authority = authConfig.Authority;
             options.Audience = authConfig.Audience;
             options.RequireHttpsMetadata = authConfig.RequireHttpsMetadata;
-            
+
             options.TokenValidationParameters = new TokenValidationParameters
             {
                 ValidateIssuer = authConfig.ValidateIssuer,
@@ -154,7 +154,7 @@ if (authConfig.Enabled)
                 {
                     var logger = context.HttpContext.RequestServices
                         .GetRequiredService<ILogger<Program>>();
-                    logger.LogWarning(context.Exception, 
+                    logger.LogWarning(context.Exception,
                         "Authentication failed for {Path}", context.Request.Path);
                     return Task.CompletedTask;
                 },
@@ -162,7 +162,7 @@ if (authConfig.Enabled)
                 {
                     var logger = context.HttpContext.RequestServices
                         .GetRequiredService<ILogger<Program>>();
-                    logger.LogDebug("Token validated for {User}", 
+                    logger.LogDebug("Token validated for {User}",
                         context.Principal?.Identity?.Name ?? "unknown");
                     return Task.CompletedTask;
                 }
@@ -188,7 +188,7 @@ else
     // Add Database context only when using PostgreSQL
     builder.Services.AddDbContext<ApplicationDbContext>(options =>
         options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-    
+
     builder.Services.AddScoped<IAgentStore, PostgresAgentStore>();
     builder.Services.AddScoped<INodeStore, PostgresNodeStore>();
     builder.Services.AddScoped<IRunStore, PostgresRunStore>();
@@ -197,7 +197,7 @@ else
 
 // Add Redis connection
 var redisConnectionString = builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379";
-builder.Services.AddSingleton<IConnectionMultiplexer>(sp => 
+builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
     ConnectionMultiplexer.Connect(redisConnectionString));
 
 // Add Redis-backed lease and lock stores
@@ -240,7 +240,38 @@ builder.Services.AddSingleton<ILeaseService, LeaseServiceLogic>();
 // Add Agent Spec Validator
 builder.Services.AddSingleton<IAgentSpecValidator, AgentSpecValidator>();
 
+// Add Metrics Service for observable gauges
+builder.Services.AddSingleton<IMetricsService, MetricsService>();
+
 var app = builder.Build();
+
+// Initialize observable gauges for metrics
+var metricsService = app.Services.GetRequiredService<IMetricsService>();
+
+TelemetryConfig.ActiveRunsGauge = TelemetryConfig.Meter.CreateObservableGauge(
+    "active_runs",
+    () => metricsService.GetActiveRunsCount(),
+    description: "Current number of active runs (running or pending)");
+
+TelemetryConfig.ActiveNodesGauge = TelemetryConfig.Meter.CreateObservableGauge(
+    "active_nodes",
+    () => metricsService.GetActiveNodesCount(),
+    description: "Current number of active nodes");
+
+TelemetryConfig.TotalSlotsGauge = TelemetryConfig.Meter.CreateObservableGauge(
+    "total_slots",
+    () => metricsService.GetTotalSlots(),
+    description: "Total number of slots across all active nodes");
+
+TelemetryConfig.UsedSlotsGauge = TelemetryConfig.Meter.CreateObservableGauge(
+    "used_slots",
+    () => metricsService.GetUsedSlots(),
+    description: "Number of slots currently in use");
+
+TelemetryConfig.AvailableSlotsGauge = TelemetryConfig.Meter.CreateObservableGauge(
+    "available_slots",
+    () => metricsService.GetAvailableSlots(),
+    description: "Number of slots currently available");
 
 // Initialize NATS JetStream streams (optional - fail gracefully if NATS is not available)
 try
@@ -344,14 +375,14 @@ app.MapPost("/v1/agents/{agentId}:version", async (string agentId, CreateAgentVe
     {
         // Validate semantic version format
         VersionValidator.ValidateOrThrow(request.Version);
-        
+
         // Validate agent specification
         var validationResult = specValidator.Validate(request.Spec);
         if (!validationResult.IsValid)
         {
             return Results.BadRequest(new { error = "Spec validation failed", errors = validationResult.Errors });
         }
-        
+
         var version = await store.CreateVersionAsync(agentId, request);
         return Results.Created($"/v1/agents/{agentId}/versions/{version.Version}", version);
     }

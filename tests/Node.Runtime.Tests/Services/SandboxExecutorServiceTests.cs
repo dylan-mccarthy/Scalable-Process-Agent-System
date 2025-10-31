@@ -213,7 +213,7 @@ public sealed class SandboxExecutorServiceTests
         };
 
         var cts = new CancellationTokenSource();
-        
+
         // Start execution and cancel after a short delay
         var executionTask = service.ExecuteAsync(spec, "Test input", cts.Token);
         await Task.Delay(50); // Give it a moment to start

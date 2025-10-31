@@ -30,22 +30,22 @@ public class NodeRegistrationIntegrationTests : IAsyncLifetime
                         ["UseInMemoryStores"] = "true"
                     });
                 });
-                
+
                 // Override service registrations to use in-memory stores
                 builder.ConfigureServices(services =>
                 {
                     // Remove any existing store registrations
                     var descriptorsToRemove = services
-                        .Where(d => d.ServiceType == typeof(IAgentStore) || 
-                                    d.ServiceType == typeof(INodeStore) || 
+                        .Where(d => d.ServiceType == typeof(IAgentStore) ||
+                                    d.ServiceType == typeof(INodeStore) ||
                                     d.ServiceType == typeof(IRunStore))
                         .ToList();
-                    
+
                     foreach (var descriptor in descriptorsToRemove)
                     {
                         services.Remove(descriptor);
                     }
-                    
+
                     // Add in-memory stores
                     services.AddSingleton<IAgentStore, InMemoryAgentStore>();
                     services.AddSingleton<INodeStore, InMemoryNodeStore>();
@@ -99,7 +99,7 @@ public class NodeRegistrationIntegrationTests : IAsyncLifetime
 
         // Act 2: Retrieve the registered node
         var getResponse = await _client.GetAsync($"/v1/nodes/{nodeId}");
-        
+
         // Assert: Node can be retrieved
         Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
         var retrievedNode = await getResponse.Content.ReadFromJsonAsync<Node>();
@@ -172,14 +172,14 @@ public class NodeRegistrationIntegrationTests : IAsyncLifetime
         foreach (var nodeRequest in nodes)
         {
             var response = await _client.PostAsJsonAsync("/v1/nodes:register", nodeRequest);
-            
+
             // Assert: Each registration succeeds
             Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         }
 
         // Act: Retrieve all nodes
         var getAllResponse = await _client.GetAsync("/v1/nodes");
-        
+
         // Assert: All nodes are registered
         Assert.Equal(HttpStatusCode.OK, getAllResponse.StatusCode);
         var allNodes = await getAllResponse.Content.ReadFromJsonAsync<List<Node>>();
@@ -297,7 +297,7 @@ public class NodeRegistrationIntegrationTests : IAsyncLifetime
     {
         // Arrange: Register nodes in different regions
         var regions = new[] { "us-east-1", "us-west-2", "eu-west-1", "ap-southeast-1" };
-        
+
         foreach (var region in regions)
         {
             var registerRequest = new RegisterNodeRequest
@@ -322,7 +322,7 @@ public class NodeRegistrationIntegrationTests : IAsyncLifetime
         // Assert: All regional nodes are registered with correct metadata
         Assert.NotNull(allNodes);
         Assert.Equal(4, allNodes.Count);
-        
+
         foreach (var region in regions)
         {
             var node = allNodes.FirstOrDefault(n => n.NodeId == $"node-{region}");

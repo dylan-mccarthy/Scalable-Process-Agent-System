@@ -58,15 +58,15 @@ public class SchedulerIntegrationTests
         var run1 = await runStore.CreateRunAsync("agent-1", "1.0.0");
         run1.NodeId = "node-1";
         run1.Status = "running";
-        
+
         var run2 = await runStore.CreateRunAsync("agent-1", "1.0.0");
         run2.NodeId = "node-1";
         run2.Status = "running";
-        
+
         var run3 = await runStore.CreateRunAsync("agent-1", "1.0.0");
         run3.NodeId = "node-1";
         run3.Status = "assigned";
-        
+
         var run4 = await runStore.CreateRunAsync("agent-1", "1.0.0");
         run4.NodeId = "node-2";
         run4.Status = "running";
@@ -178,11 +178,11 @@ public class SchedulerIntegrationTests
         var run1 = await runStore.CreateRunAsync("agent-1", "1.0.0");
         run1.NodeId = "test-node";
         run1.Status = "running";
-        
+
         var run2 = await runStore.CreateRunAsync("agent-1", "1.0.0");
         run2.NodeId = "test-node";
         run2.Status = "running";
-        
+
         var run3 = await runStore.CreateRunAsync("agent-1", "1.0.0");
         run3.NodeId = "test-node";
         run3.Status = "assigned";

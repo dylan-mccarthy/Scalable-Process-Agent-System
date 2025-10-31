@@ -25,7 +25,7 @@ public sealed class LeasePullServiceTests : IDisposable
         _mockLeaseClient = new Mock<LeaseService.LeaseServiceClient>();
         _mockAgentExecutor = new Mock<IAgentExecutor>();
         _mockLogger = new Mock<ILogger<LeasePullService>>();
-        
+
         _options = new NodeRuntimeOptions
         {
             NodeId = "test-node",
@@ -109,7 +109,7 @@ public sealed class LeasePullServiceTests : IDisposable
     {
         // This test verifies that the active lease count is properly tracked
         // We'll verify through the public interface
-        
+
         // Arrange
         var initialCount = _service.GetActiveLeaseCount();
 
@@ -141,7 +141,7 @@ public sealed class LeasePullServiceIntegrationTests
     {
         _mockAgentExecutor = new Mock<IAgentExecutor>();
         _mockLogger = new Mock<ILogger<LeasePullService>>();
-        
+
         _options = new NodeRuntimeOptions
         {
             NodeId = "test-node",

@@ -48,8 +48,8 @@ public class PostgresRunStore : IRunStore
 
         var run = MapToModel(entity);
         activity?.SetTag("run.id", run.RunId);
-        
-        TelemetryConfig.RunsStartedCounter.Add(1, 
+
+        TelemetryConfig.RunsStartedCounter.Add(1,
             new KeyValuePair<string, object?>("agent.id", agentId),
             new KeyValuePair<string, object?>("agent.version", version));
 
@@ -68,11 +68,11 @@ public class PostgresRunStore : IRunStore
         }
 
         entity.Status = "completed";
-        
+
         if (request.Timings != null)
         {
             entity.Timings = JsonSerializer.Serialize(request.Timings);
-            
+
             // Record run duration metric
             if (request.Timings.TryGetValue("duration", out var duration))
             {
@@ -87,7 +87,7 @@ public class PostgresRunStore : IRunStore
         if (request.Costs != null)
         {
             entity.Costs = JsonSerializer.Serialize(request.Costs);
-            
+
             // Record token and cost metrics
             if (request.Costs.TryGetValue("tokens", out var tokens))
             {
@@ -96,7 +96,7 @@ public class PostgresRunStore : IRunStore
                     new KeyValuePair<string, object?>("agent.id", entity.AgentId));
                 activity?.SetTag("run.tokens", tokenCount);
             }
-            
+
             if (request.Costs.TryGetValue("usd", out var usd))
             {
                 var costUsd = Convert.ToDouble(usd);
@@ -126,24 +126,24 @@ public class PostgresRunStore : IRunStore
         }
 
         entity.Status = "failed";
-        
+
         var errorInfo = new Dictionary<string, object>
         {
             ["errorMessage"] = request.ErrorMessage
         };
-        
+
         if (request.ErrorDetails != null)
         {
             errorInfo["errorDetails"] = request.ErrorDetails;
         }
-        
+
         entity.ErrorInfo = JsonSerializer.Serialize(errorInfo);
         activity?.SetTag("run.error", request.ErrorMessage);
 
         if (request.Timings != null)
         {
             entity.Timings = JsonSerializer.Serialize(request.Timings);
-            
+
             // Record run duration metric even for failed runs
             if (request.Timings.TryGetValue("duration", out var duration))
             {
@@ -176,12 +176,12 @@ public class PostgresRunStore : IRunStore
         }
 
         entity.Status = "cancelled";
-        
+
         var errorInfo = new Dictionary<string, object>
         {
             ["reason"] = request.Reason
         };
-        
+
         entity.ErrorInfo = JsonSerializer.Serialize(errorInfo);
 
         await _context.SaveChangesAsync();
@@ -202,18 +202,18 @@ public class PostgresRunStore : IRunStore
             Version = entity.Version,
             DeploymentId = entity.DepId,
             NodeId = entity.NodeId,
-            InputRef = entity.InputRef != null 
-                ? JsonSerializer.Deserialize<Dictionary<string, object>>(entity.InputRef) 
+            InputRef = entity.InputRef != null
+                ? JsonSerializer.Deserialize<Dictionary<string, object>>(entity.InputRef)
                 : null,
             Status = entity.Status,
-            Timings = entity.Timings != null 
-                ? JsonSerializer.Deserialize<Dictionary<string, object>>(entity.Timings) 
+            Timings = entity.Timings != null
+                ? JsonSerializer.Deserialize<Dictionary<string, object>>(entity.Timings)
                 : null,
-            Costs = entity.Costs != null 
-                ? JsonSerializer.Deserialize<Dictionary<string, object>>(entity.Costs) 
+            Costs = entity.Costs != null
+                ? JsonSerializer.Deserialize<Dictionary<string, object>>(entity.Costs)
                 : null,
-            ErrorInfo = entity.ErrorInfo != null 
-                ? JsonSerializer.Deserialize<Dictionary<string, object>>(entity.ErrorInfo) 
+            ErrorInfo = entity.ErrorInfo != null
+                ? JsonSerializer.Deserialize<Dictionary<string, object>>(entity.ErrorInfo)
                 : null,
             TraceId = entity.TraceId,
             CreatedAt = entity.CreatedAt

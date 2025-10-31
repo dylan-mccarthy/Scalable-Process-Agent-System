@@ -11,7 +11,7 @@ try
 {
     // Read request from stdin
     var requestJson = await Console.In.ReadToEndAsync();
-    
+
     if (string.IsNullOrWhiteSpace(requestJson))
     {
         await WriteErrorResponse("No input provided");
@@ -19,7 +19,7 @@ try
     }
 
     var request = JsonSerializer.Deserialize<AgentExecutionRequest>(requestJson);
-    
+
     if (request == null)
     {
         await WriteErrorResponse("Failed to deserialize request");
@@ -28,11 +28,11 @@ try
 
     // Execute the agent
     var response = await ExecuteAgentAsync(request);
-    
+
     // Write response to stdout
     var responseJson = JsonSerializer.Serialize(response);
     await Console.Out.WriteLineAsync(responseJson);
-    
+
     return response.Success ? 0 : 1;
 }
 catch (Exception ex)
@@ -142,7 +142,7 @@ static async Task WriteErrorResponse(string errorMessage)
         Error = errorMessage,
         DurationMs = 0
     };
-    
+
     var responseJson = JsonSerializer.Serialize(errorResponse);
     await Console.Out.WriteLineAsync(responseJson);
 }

@@ -31,10 +31,10 @@ public class LeastLoadedScheduler : IScheduler
         using var activity = TelemetryConfig.ActivitySource.StartActivity("Scheduler.ScheduleRun");
         activity?.SetTag("run.id", run.RunId);
         activity?.SetTag("agent.id", run.AgentId);
-        
+
         var startTime = Stopwatch.GetTimestamp();
-        
-        _logger.LogDebug("Scheduling run {RunId} with constraints: {Constraints}", 
+
+        _logger.LogDebug("Scheduling run {RunId} with constraints: {Constraints}",
             run.RunId, placementConstraints);
 
         TelemetryConfig.SchedulingAttemptsCounter.Add(1,
@@ -81,7 +81,7 @@ public class LeastLoadedScheduler : IScheduler
         }
 
         var loadPercentage = nodeLoads[selectedNode].LoadPercentage;
-        _logger.LogInformation("Scheduled run {RunId} to node {NodeId} (load: {LoadPercentage:F1}%)", 
+        _logger.LogInformation("Scheduled run {RunId} to node {NodeId} (load: {LoadPercentage:F1}%)",
             run.RunId, selectedNode, loadPercentage);
 
         activity?.SetTag("scheduling.result", "success");
@@ -108,8 +108,8 @@ public class LeastLoadedScheduler : IScheduler
             var totalSlots = GetSlotsFromCapacity(node.Capacity);
 
             // Count active runs on this node
-            var activeRuns = runs.Count(r => 
-                r.NodeId == node.NodeId && 
+            var activeRuns = runs.Count(r =>
+                r.NodeId == node.NodeId &&
                 (r.Status == "assigned" || r.Status == "running"));
 
             var availableSlots = node.Status.AvailableSlots;

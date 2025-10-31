@@ -25,13 +25,13 @@ public class NatsEventPublisherTests : IAsyncLifetime
     public async Task InitializeAsync()
     {
         await _natsContainer.StartAsync();
-        
+
         var opts = NatsOpts.Default with { Url = _natsContainer.GetConnectionString() };
         _natsConnection = new NatsConnection(opts);
-        
+
         _logger = new LoggerFactory().CreateLogger<NatsEventPublisher>();
         _publisher = new NatsEventPublisher(_natsConnection, _logger);
-        
+
         // Initialize streams
         await _publisher.InitializeStreamsAsync();
     }
@@ -69,7 +69,7 @@ public class NatsEventPublisherTests : IAsyncLifetime
     {
         // Arrange & Act - initialize twice
         await _publisher!.InitializeStreamsAsync();
-        
+
         // Assert - should not throw
         await _publisher.InitializeStreamsAsync();
     }
@@ -78,7 +78,7 @@ public class NatsEventPublisherTests : IAsyncLifetime
     public async Task PublishAsync_ThrowsArgumentNullException_WhenEventIsNull()
     {
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => 
+        await Assert.ThrowsAsync<ArgumentNullException>(() =>
             _publisher!.PublishAsync(null!));
     }
 

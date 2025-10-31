@@ -26,22 +26,22 @@ public class AgentEndpointsTests : IAsyncLifetime
                         ["UseInMemoryStores"] = "true"
                     });
                 });
-                
+
                 // Override service registrations to use in-memory stores
                 builder.ConfigureServices(services =>
                 {
                     // Remove any existing IAgentStore, INodeStore, IRunStore registrations
                     var descriptorsToRemove = services
-                        .Where(d => d.ServiceType == typeof(IAgentStore) || 
-                                    d.ServiceType == typeof(INodeStore) || 
+                        .Where(d => d.ServiceType == typeof(IAgentStore) ||
+                                    d.ServiceType == typeof(INodeStore) ||
                                     d.ServiceType == typeof(IRunStore))
                         .ToList();
-                    
+
                     foreach (var descriptor in descriptorsToRemove)
                     {
                         services.Remove(descriptor);
                     }
-                    
+
                     // Add in-memory stores
                     services.AddSingleton<IAgentStore, InMemoryAgentStore>();
                     services.AddSingleton<INodeStore, InMemoryNodeStore>();
@@ -289,8 +289,8 @@ public class AgentEndpointsTests : IAsyncLifetime
 
         var updateRequest = new UpdateAgentRequest
         {
-            Budget = new AgentBudget 
-            { 
+            Budget = new AgentBudget
+            {
                 MaxTokens = 5000,
                 MaxDurationSeconds = 120
             },

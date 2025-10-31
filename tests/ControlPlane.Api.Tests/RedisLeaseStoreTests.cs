@@ -42,7 +42,7 @@ public class RedisLeaseStoreTests : IAsyncLifetime
 
         // Assert
         Assert.True(result);
-        
+
         var lease = await _store.GetLeaseAsync(runId);
         Assert.NotNull(lease);
         Assert.Equal(runId, lease.RunId);
@@ -65,7 +65,7 @@ public class RedisLeaseStoreTests : IAsyncLifetime
         // Assert
         Assert.True(firstAcquire);
         Assert.False(secondAcquire);
-        
+
         var lease = await _store.GetLeaseAsync(runId);
         Assert.NotNull(lease);
         Assert.Equal(nodeId1, lease.NodeId); // Original node still holds the lease
@@ -80,7 +80,7 @@ public class RedisLeaseStoreTests : IAsyncLifetime
         var ttlSeconds = 30;
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => 
+        await Assert.ThrowsAsync<ArgumentException>(() =>
             _store!.AcquireLeaseAsync(runId, nodeId, ttlSeconds));
     }
 
@@ -93,7 +93,7 @@ public class RedisLeaseStoreTests : IAsyncLifetime
         var ttlSeconds = 30;
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => 
+        await Assert.ThrowsAsync<ArgumentException>(() =>
             _store!.AcquireLeaseAsync(runId, nodeId, ttlSeconds));
     }
 
@@ -105,9 +105,9 @@ public class RedisLeaseStoreTests : IAsyncLifetime
         var nodeId = "node-1";
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => 
+        await Assert.ThrowsAsync<ArgumentException>(() =>
             _store!.AcquireLeaseAsync(runId, nodeId, 0));
-        await Assert.ThrowsAsync<ArgumentException>(() => 
+        await Assert.ThrowsAsync<ArgumentException>(() =>
             _store!.AcquireLeaseAsync(runId, nodeId, -1));
     }
 
@@ -125,7 +125,7 @@ public class RedisLeaseStoreTests : IAsyncLifetime
 
         // Assert
         Assert.True(result);
-        
+
         var lease = await _store.GetLeaseAsync(runId);
         Assert.Null(lease);
     }
@@ -150,7 +150,7 @@ public class RedisLeaseStoreTests : IAsyncLifetime
         var runId = "";
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => 
+        await Assert.ThrowsAsync<ArgumentException>(() =>
             _store!.ReleaseLeaseAsync(runId));
     }
 
@@ -193,7 +193,7 @@ public class RedisLeaseStoreTests : IAsyncLifetime
         var runId = "";
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => 
+        await Assert.ThrowsAsync<ArgumentException>(() =>
             _store!.GetLeaseAsync(runId));
     }
 
@@ -223,7 +223,7 @@ public class RedisLeaseStoreTests : IAsyncLifetime
         var initialTtl = 5;
         var additionalSeconds = 10;
         await _store!.AcquireLeaseAsync(runId, nodeId, initialTtl);
-        
+
         var leaseBefore = await _store.GetLeaseAsync(runId);
         Assert.NotNull(leaseBefore);
 
@@ -232,7 +232,7 @@ public class RedisLeaseStoreTests : IAsyncLifetime
 
         // Assert
         Assert.True(result);
-        
+
         var leaseAfter = await _store.GetLeaseAsync(runId);
         Assert.NotNull(leaseAfter);
         Assert.True(leaseAfter.ExpiresAt > leaseBefore.ExpiresAt);
@@ -260,7 +260,7 @@ public class RedisLeaseStoreTests : IAsyncLifetime
         var additionalSeconds = 10;
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => 
+        await Assert.ThrowsAsync<ArgumentException>(() =>
             _store!.ExtendLeaseAsync(runId, additionalSeconds));
     }
 
@@ -271,9 +271,9 @@ public class RedisLeaseStoreTests : IAsyncLifetime
         var runId = "run-123";
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => 
+        await Assert.ThrowsAsync<ArgumentException>(() =>
             _store!.ExtendLeaseAsync(runId, 0));
-        await Assert.ThrowsAsync<ArgumentException>(() => 
+        await Assert.ThrowsAsync<ArgumentException>(() =>
             _store!.ExtendLeaseAsync(runId, -1));
     }
 }

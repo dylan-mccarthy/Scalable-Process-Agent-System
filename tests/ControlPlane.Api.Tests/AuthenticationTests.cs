@@ -78,16 +78,16 @@ public class AuthenticationTests : IAsyncLifetime
         {
             // Use in-memory stores for testing
             var descriptorsToRemove = services
-                .Where(d => d.ServiceType == typeof(IAgentStore) || 
-                            d.ServiceType == typeof(INodeStore) || 
+                .Where(d => d.ServiceType == typeof(IAgentStore) ||
+                            d.ServiceType == typeof(INodeStore) ||
                             d.ServiceType == typeof(IRunStore))
                 .ToList();
-            
+
             foreach (var descriptor in descriptorsToRemove)
             {
                 services.Remove(descriptor);
             }
-            
+
             services.AddSingleton<IAgentStore, InMemoryAgentStore>();
             services.AddSingleton<INodeStore, InMemoryNodeStore>();
             services.AddSingleton<IRunStore, InMemoryRunStore>();
@@ -168,7 +168,7 @@ public class AuthenticationTests : IAsyncLifetime
         Assert.Equal("https://login.microsoftonline.com/tenant-id", options.Authority);
         Assert.Equal("api://control-plane", options.Audience);
         Assert.True(options.RequireHttpsMetadata);
-        Assert.Equal("https://login.microsoftonline.com/tenant-id/.well-known/openid-configuration", 
+        Assert.Equal("https://login.microsoftonline.com/tenant-id/.well-known/openid-configuration",
             options.MetadataAddress);
         Assert.True(options.ValidateIssuer);
         Assert.NotNull(options.ValidIssuers);
@@ -184,7 +184,7 @@ public class AuthenticationTests : IAsyncLifetime
     /// authorization tests with [Authorize] attributes. The method uses a test
     /// secret and should only be used in unit tests.
     /// </summary>
-    private static string GenerateTestJwtToken(string issuer = "http://localhost:8080/realms/bpa", 
+    private static string GenerateTestJwtToken(string issuer = "http://localhost:8080/realms/bpa",
         string audience = "control-plane-api")
     {
         var securityKey = new SymmetricSecurityKey(

@@ -39,10 +39,10 @@ public sealed class SandboxExecutorService : ISandboxExecutor, IAgentExecutor
     {
         _options = options.Value;
         _logger = logger;
-        
+
         // Determine the path to the Agent.Host executable
         _agentHostPath = FindAgentHostExecutable();
-        
+
         _logger.LogInformation("SandboxExecutor initialized with Agent.Host at: {Path}", _agentHostPath);
     }
 
@@ -52,13 +52,13 @@ public sealed class SandboxExecutorService : ISandboxExecutor, IAgentExecutor
         CancellationToken cancellationToken = default)
     {
         var stopwatch = Stopwatch.StartNew();
-        
+
         _logger.LogInformation(
             "Starting sandbox execution for agent {AgentId} v{Version}",
             spec.AgentId, spec.Version);
 
         Process? process = null;
-        
+
         try
         {
             // Apply budget constraints
@@ -93,11 +93,11 @@ public sealed class SandboxExecutorService : ISandboxExecutor, IAgentExecutor
             };
 
             process = new Process { StartInfo = processStartInfo };
-            
+
             // Set up output capture
             var outputBuilder = new System.Text.StringBuilder();
             var errorBuilder = new System.Text.StringBuilder();
-            
+
             process.OutputDataReceived += (sender, e) =>
             {
                 if (e.Data != null)
@@ -105,7 +105,7 @@ public sealed class SandboxExecutorService : ISandboxExecutor, IAgentExecutor
                     outputBuilder.AppendLine(e.Data);
                 }
             };
-            
+
             process.ErrorDataReceived += (sender, e) =>
             {
                 if (e.Data != null)
@@ -145,9 +145,9 @@ public sealed class SandboxExecutorService : ISandboxExecutor, IAgentExecutor
                 _logger.LogWarning(
                     "Sandbox process {ProcessId} exceeded timeout ({TimeoutSeconds}s), terminating",
                     process.Id, maxDurationSeconds);
-                
+
                 KillProcessTree(process);
-                
+
                 return new AgentExecutionResult
                 {
                     Success = false,
@@ -183,7 +183,7 @@ public sealed class SandboxExecutorService : ISandboxExecutor, IAgentExecutor
 
             // Deserialize the response
             var response = JsonSerializer.Deserialize<AgentExecutionResponse>(output);
-            
+
             if (response == null)
             {
                 return new AgentExecutionResult
@@ -225,25 +225,25 @@ public sealed class SandboxExecutorService : ISandboxExecutor, IAgentExecutor
         catch (OperationCanceledException)
         {
             _logger.LogWarning("Sandbox execution cancelled for agent {AgentId}", spec.AgentId);
-            
+
             if (process != null && !process.HasExited)
             {
                 KillProcessTree(process);
             }
-            
+
             throw;
         }
         catch (Exception ex)
         {
             stopwatch.Stop();
-            
+
             _logger.LogError(ex, "Error executing agent {AgentId} in sandbox", spec.AgentId);
-            
+
             if (process != null && !process.HasExited)
             {
                 KillProcessTree(process);
             }
-            
+
             return new AgentExecutionResult
             {
                 Success = false,
@@ -299,7 +299,7 @@ public sealed class SandboxExecutorService : ISandboxExecutor, IAgentExecutor
     private string FindAgentHostExecutable()
     {
         var currentDir = AppContext.BaseDirectory;
-        
+
         // Determine the executable name based on OS
         var exeName = OperatingSystem.IsWindows() ? "Agent.Host.exe" : "Agent.Host";
 

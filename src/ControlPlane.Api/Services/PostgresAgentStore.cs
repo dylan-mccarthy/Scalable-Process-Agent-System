@@ -34,8 +34,8 @@ public class PostgresAgentStore : IAgentStore
             Name = request.Name,
             Description = request.Description,
             Instructions = request.Instructions,
-            ModelProfile = request.ModelProfile != null 
-                ? JsonSerializer.Serialize(request.ModelProfile) 
+            ModelProfile = request.ModelProfile != null
+                ? JsonSerializer.Serialize(request.ModelProfile)
                 : null,
             Budget = request.Budget != null
                 ? JsonSerializer.Serialize(request.Budget)
@@ -142,7 +142,7 @@ public class PostgresAgentStore : IAgentStore
 
         var existingVersion = await _context.AgentVersions
             .FirstOrDefaultAsync(v => v.AgentId == agentId && v.Version == request.Version);
-        
+
         if (existingVersion != null)
         {
             throw new InvalidOperationException($"Version {request.Version} already exists for agent {agentId}");
@@ -166,7 +166,7 @@ public class PostgresAgentStore : IAgentStore
     {
         var versionEntity = await _context.AgentVersions
             .FirstOrDefaultAsync(v => v.AgentId == agentId && v.Version == version);
-        
+
         return versionEntity != null ? MapVersionToResponse(versionEntity) : null;
     }
 
@@ -176,7 +176,7 @@ public class PostgresAgentStore : IAgentStore
             .Where(v => v.AgentId == agentId)
             .OrderByDescending(v => v.CreatedAt)
             .ToListAsync();
-        
+
         return versions.Select(MapVersionToResponse);
     }
 
@@ -184,7 +184,7 @@ public class PostgresAgentStore : IAgentStore
     {
         var versionEntity = await _context.AgentVersions
             .FirstOrDefaultAsync(v => v.AgentId == agentId && v.Version == version);
-        
+
         if (versionEntity == null)
         {
             return false;

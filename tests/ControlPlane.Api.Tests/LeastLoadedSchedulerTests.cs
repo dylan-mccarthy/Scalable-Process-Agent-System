@@ -17,7 +17,7 @@ public class LeastLoadedSchedulerTests
         _mockNodeStore = new Mock<INodeStore>();
         _mockRunStore = new Mock<IRunStore>();
         _mockLogger = new Mock<ILogger<LeastLoadedScheduler>>();
-        
+
         _scheduler = new LeastLoadedScheduler(
             _mockNodeStore.Object,
             _mockRunStore.Object,
@@ -347,8 +347,8 @@ public class LeastLoadedSchedulerTests
             new Node
             {
                 NodeId = "node-1",
-                Metadata = new Dictionary<string, object> 
-                { 
+                Metadata = new Dictionary<string, object>
+                {
                     ["region"] = "us-east-1",
                     ["environment"] = "production"
                 },
@@ -363,8 +363,8 @@ public class LeastLoadedSchedulerTests
             new Node
             {
                 NodeId = "node-2",
-                Metadata = new Dictionary<string, object> 
-                { 
+                Metadata = new Dictionary<string, object>
+                {
                     ["region"] = "us-east-1",
                     ["environment"] = "staging"
                 },
@@ -379,8 +379,8 @@ public class LeastLoadedSchedulerTests
             new Node
             {
                 NodeId = "node-3",
-                Metadata = new Dictionary<string, object> 
-                { 
+                Metadata = new Dictionary<string, object>
+                {
                     ["region"] = "us-west-1",
                     ["environment"] = "production"
                 },
@@ -502,14 +502,14 @@ public class LeastLoadedSchedulerTests
 
         // Assert
         Assert.Equal(2, result.Count);
-        
+
         Assert.Equal("node-1", result["node-1"].NodeId);
         Assert.Equal(4, result["node-1"].TotalSlots);
         Assert.Equal(2, result["node-1"].ActiveRuns);
         Assert.Equal(2, result["node-1"].AvailableSlots);
         Assert.Equal(50.0, result["node-1"].LoadPercentage);
         Assert.True(result["node-1"].HasCapacity);
-        
+
         Assert.Equal("node-2", result["node-2"].NodeId);
         Assert.Equal(8, result["node-2"].TotalSlots);
         Assert.Equal(3, result["node-2"].ActiveRuns);
