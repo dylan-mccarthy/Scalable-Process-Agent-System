@@ -163,7 +163,12 @@ cleanup() {
     
     # Clean up any leftover Docker volumes
     log_info "Cleaning up Docker volumes..."
-    docker volume ls -q | grep "k3d-${CLUSTER_NAME}" | xargs -r docker volume rm 2>/dev/null || true
+    # Use while read loop for safe processing
+    docker volume ls -q | while IFS= read -r volume; do
+        if [[ "${volume}" == k3d-"${CLUSTER_NAME}"* ]]; then
+            docker volume rm "${volume}" 2>/dev/null || true
+        fi
+    done
     
     log_success "Cleanup complete!"
 }

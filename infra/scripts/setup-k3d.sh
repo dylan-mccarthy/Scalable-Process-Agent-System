@@ -305,14 +305,24 @@ deploy_application() {
     # Install or upgrade the Helm release
     log_info "Installing/upgrading Helm release 'bpa' in namespace '${NAMESPACE}'..."
     
-    # shellcheck disable=SC2086
-    helm upgrade --install bpa "${HELM_CHART_DIR}" \
-        --namespace "${NAMESPACE}" \
-        --create-namespace \
-        ${helm_values} \
-        "${set_values[@]}" \
-        --wait \
-        --timeout 10m
+    # Build helm command with proper quoting
+    local helm_cmd=(
+        helm upgrade --install bpa "${HELM_CHART_DIR}"
+        --namespace "${NAMESPACE}"
+        --create-namespace
+    )
+    
+    # Add values file if it exists
+    if [ -n "${helm_values}" ]; then
+        helm_cmd+=("${helm_values}")
+    fi
+    
+    # Add all set values
+    helm_cmd+=("${set_values[@]}")
+    helm_cmd+=(--wait --timeout 10m)
+    
+    # Execute helm command
+    "${helm_cmd[@]}"
     
     log_success "Application deployed successfully"
 }
