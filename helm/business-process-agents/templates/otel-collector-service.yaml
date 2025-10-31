@@ -1,0 +1,31 @@
+{{- if .Values.otelCollector.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "business-process-agents.fullname" . }}-otel-collector
+  labels:
+    {{- include "business-process-agents.labels" . | nindent 4 }}
+    app.kubernetes.io/component: otel-collector
+  {{- with .Values.otelCollector.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.otelCollector.service.type }}
+  ports:
+  - port: {{ .Values.otelCollector.service.otlpGrpcPort }}
+    targetPort: otlp-grpc
+    protocol: TCP
+    name: otlp-grpc
+  - port: {{ .Values.otelCollector.service.otlpHttpPort }}
+    targetPort: otlp-http
+    protocol: TCP
+    name: otlp-http
+  - port: {{ .Values.otelCollector.service.metricsPort }}
+    targetPort: metrics
+    protocol: TCP
+    name: metrics
+  selector:
+    {{- include "business-process-agents.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: otel-collector
+{{- end }}

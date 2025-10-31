@@ -1,0 +1,92 @@
+{{- if .Values.otelCollector.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "business-process-agents.fullname" . }}-otel-collector-config
+  labels:
+    {{- include "business-process-agents.labels" . | nindent 4 }}
+    app.kubernetes.io/component: otel-collector
+data:
+  config.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:{{ .Values.otelCollector.service.otlpGrpcPort }}
+          http:
+            endpoint: 0.0.0.0:{{ .Values.otelCollector.service.otlpHttpPort }}
+    
+    processors:
+      batch:
+        timeout: 10s
+        send_batch_size: 1024
+      
+      resource:
+        attributes:
+          - key: deployment.environment
+            value: {{ .Values.nodeRuntime.metadata.environment }}
+            action: upsert
+    
+    exporters:
+      # Console exporter for debugging
+      logging:
+        loglevel: debug
+        sampling_initial: 5
+        sampling_thereafter: 200
+      
+      {{- if .Values.observability.prometheus.enabled }}
+      # Prometheus metrics exporter
+      prometheus:
+        endpoint: "0.0.0.0:{{ .Values.otelCollector.service.metricsPort }}"
+        namespace: controlplane
+        const_labels:
+          service: control-plane-api
+      {{- end }}
+      
+      {{- if .Values.observability.tempo.enabled }}
+      # OTLP exporter for Tempo (traces)
+      otlp/tempo:
+        endpoint: {{ include "business-process-agents.fullname" . }}-tempo:{{ .Values.observability.tempo.service.otlpPort }}
+        tls:
+          insecure: true
+      {{- end }}
+      
+      {{- if .Values.observability.loki.enabled }}
+      # Loki exporter for logs
+      loki:
+        endpoint: http://{{ include "business-process-agents.fullname" . }}-loki:{{ .Values.observability.loki.service.port }}/loki/api/v1/push
+        tenant_id: "bpa-mvp"
+      {{- end }}
+    
+    service:
+      pipelines:
+        # Metrics pipeline
+        metrics:
+          receivers: [otlp]
+          processors: [batch, resource]
+          exporters:
+            - logging
+            {{- if .Values.observability.prometheus.enabled }}
+            - prometheus
+            {{- end }}
+        
+        # Traces pipeline
+        traces:
+          receivers: [otlp]
+          processors: [batch, resource]
+          exporters:
+            - logging
+            {{- if .Values.observability.tempo.enabled }}
+            - otlp/tempo
+            {{- end }}
+        
+        # Logs pipeline
+        logs:
+          receivers: [otlp]
+          processors: [batch, resource]
+          exporters:
+            - logging
+            {{- if .Values.observability.loki.enabled }}
+            - loki
+            {{- end }}
+{{- end }}

@@ -1,0 +1,27 @@
+{{- if .Values.observability.tempo.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "business-process-agents.fullname" . }}-tempo
+  labels:
+    {{- include "business-process-agents.labels" . | nindent 4 }}
+    app.kubernetes.io/component: tempo
+  {{- with .Values.observability.tempo.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.observability.tempo.service.type }}
+  ports:
+  - port: {{ .Values.observability.tempo.service.port }}
+    targetPort: http
+    protocol: TCP
+    name: http
+  - port: {{ .Values.observability.tempo.service.otlpPort }}
+    targetPort: otlp-grpc
+    protocol: TCP
+    name: otlp-grpc
+  selector:
+    {{- include "business-process-agents.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: tempo
+{{- end }}

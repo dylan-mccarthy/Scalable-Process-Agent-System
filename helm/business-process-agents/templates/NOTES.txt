@@ -103,6 +103,43 @@ OpenTelemetry Collector is disabled. To enable it:
   $ helm upgrade {{ .Release.Name }} . --set otelCollector.enabled=true
 {{- end }}
 
+{{- if .Values.observability.prometheus.enabled }}
+
+📈 PROMETHEUS (Metrics)
+  Access Prometheus at:
+  
+  $ kubectl port-forward svc/{{ include "business-process-agents.fullname" . }}-prometheus {{ .Values.observability.prometheus.service.port }}:{{ .Values.observability.prometheus.service.port }}
+  
+  Then visit: http://localhost:{{ .Values.observability.prometheus.service.port }}
+{{- end }}
+
+{{- if .Values.observability.grafana.enabled }}
+
+📊 GRAFANA (Dashboards)
+  Access Grafana at:
+  
+  $ kubectl port-forward svc/{{ include "business-process-agents.fullname" . }}-grafana {{ .Values.observability.grafana.service.port }}:{{ .Values.observability.grafana.service.port }}
+  
+  Then visit: http://localhost:{{ .Values.observability.grafana.service.port }}
+{{- if .Values.observability.grafana.auth.anonymous.enabled }}
+  (Anonymous access enabled - no login required)
+{{- else }}
+  Default credentials: admin / {{ .Values.observability.grafana.adminPassword }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.observability.tempo.enabled }}
+
+🔍 TEMPO (Distributed Tracing)
+  Access via Grafana → Explore → Tempo datasource
+{{- end }}
+
+{{- if .Values.observability.loki.enabled }}
+
+📝 LOKI (Logs)
+  Access via Grafana → Explore → Loki datasource
+{{- end }}
+
 View logs:
 
   # Control Plane

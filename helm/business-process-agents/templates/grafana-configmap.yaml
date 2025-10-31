@@ -1,0 +1,62 @@
+{{- if .Values.observability.grafana.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "business-process-agents.fullname" . }}-grafana-datasources
+  labels:
+    {{- include "business-process-agents.labels" . | nindent 4 }}
+    app.kubernetes.io/component: grafana
+data:
+  datasources.yaml: |
+    apiVersion: 1
+    
+    datasources:
+      {{- if .Values.observability.prometheus.enabled }}
+      - name: Prometheus
+        type: prometheus
+        access: proxy
+        url: http://{{ include "business-process-agents.fullname" . }}-prometheus:{{ .Values.observability.prometheus.service.port }}
+        isDefault: true
+        editable: true
+        jsonData:
+          timeInterval: 15s
+      {{- end }}
+      
+      {{- if .Values.observability.tempo.enabled }}
+      - name: Tempo
+        type: tempo
+        access: proxy
+        url: http://{{ include "business-process-agents.fullname" . }}-tempo:{{ .Values.observability.tempo.service.port }}
+        editable: true
+        jsonData:
+          httpMethod: GET
+          {{- if .Values.observability.loki.enabled }}
+          tracesToLogs:
+            datasourceUid: 'Loki'
+            tags: ['trace_id']
+            mappedTags: [{ key: 'service.name', value: 'service' }]
+            mapTagNamesEnabled: false
+            spanStartTimeShift: '1h'
+            spanEndTimeShift: '-1h'
+            filterByTraceID: true
+            filterBySpanID: false
+          {{- end }}
+      {{- end }}
+      
+      {{- if .Values.observability.loki.enabled }}
+      - name: Loki
+        type: loki
+        access: proxy
+        url: http://{{ include "business-process-agents.fullname" . }}-loki:{{ .Values.observability.loki.service.port }}
+        editable: true
+        jsonData:
+          maxLines: 1000
+          {{- if .Values.observability.tempo.enabled }}
+          derivedFields:
+            - datasourceUid: 'Tempo'
+              matcherRegex: 'trace_id=(\w+)'
+              name: 'TraceID'
+              url: '$${__value.raw}'
+          {{- end }}
+      {{- end }}
+{{- end }}

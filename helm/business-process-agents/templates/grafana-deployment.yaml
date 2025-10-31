@@ -1,0 +1,81 @@
+{{- if .Values.observability.grafana.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "business-process-agents.fullname" . }}-grafana
+  labels:
+    {{- include "business-process-agents.labels" . | nindent 4 }}
+    app.kubernetes.io/component: grafana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "business-process-agents.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: grafana
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/grafana-configmap.yaml") . | sha256sum }}
+      labels:
+        {{- include "business-process-agents.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: grafana
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "business-process-agents.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+      - name: grafana
+        securityContext:
+          {{- toYaml .Values.securityContext | nindent 10 }}
+        image: "{{ .Values.observability.grafana.image.repository }}:{{ .Values.observability.grafana.image.tag }}"
+        imagePullPolicy: {{ .Values.observability.grafana.image.pullPolicy }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.observability.grafana.service.port }}
+          protocol: TCP
+        env:
+        - name: GF_AUTH_ANONYMOUS_ENABLED
+          value: "{{ .Values.observability.grafana.auth.anonymous.enabled }}"
+        - name: GF_AUTH_ANONYMOUS_ORG_ROLE
+          value: "{{ .Values.observability.grafana.auth.anonymous.orgRole }}"
+        - name: GF_AUTH_DISABLE_LOGIN_FORM
+          value: "{{ .Values.observability.grafana.auth.disableLoginForm }}"
+        {{- if .Values.observability.grafana.adminPassword }}
+        - name: GF_SECURITY_ADMIN_PASSWORD
+          value: "{{ .Values.observability.grafana.adminPassword }}"
+        {{- end }}
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: http
+          initialDelaySeconds: 60
+          timeoutSeconds: 30
+          failureThreshold: 10
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: http
+        resources:
+          {{- toYaml .Values.observability.grafana.resources | nindent 10 }}
+        volumeMounts:
+        - name: datasources
+          mountPath: /etc/grafana/provisioning/datasources
+        - name: data
+          mountPath: /var/lib/grafana
+      volumes:
+      - name: datasources
+        configMap:
+          name: {{ include "business-process-agents.fullname" . }}-grafana-datasources
+      {{- if .Values.observability.grafana.persistence.enabled }}
+      - name: data
+        persistentVolumeClaim:
+          claimName: {{ include "business-process-agents.fullname" . }}-grafana-data
+      {{- else }}
+      - name: data
+        emptyDir: {}
+      {{- end }}
+{{- end }}

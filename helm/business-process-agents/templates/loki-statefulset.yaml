@@ -1,0 +1,78 @@
+{{- if .Values.observability.loki.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "business-process-agents.fullname" . }}-loki
+  labels:
+    {{- include "business-process-agents.labels" . | nindent 4 }}
+    app.kubernetes.io/component: loki
+spec:
+  serviceName: {{ include "business-process-agents.fullname" . }}-loki
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "business-process-agents.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: loki
+  template:
+    metadata:
+      labels:
+        {{- include "business-process-agents.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: loki
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "business-process-agents.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+      - name: loki
+        securityContext:
+          {{- toYaml .Values.securityContext | nindent 10 }}
+        image: "{{ .Values.observability.loki.image.repository }}:{{ .Values.observability.loki.image.tag }}"
+        imagePullPolicy: {{ .Values.observability.loki.image.pullPolicy }}
+        args:
+          - -config.file=/etc/loki/local-config.yaml
+        ports:
+        - name: http
+          containerPort: {{ .Values.observability.loki.service.port }}
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /ready
+            port: http
+          initialDelaySeconds: 45
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http
+          initialDelaySeconds: 45
+        resources:
+          {{- toYaml .Values.observability.loki.resources | nindent 10 }}
+        volumeMounts:
+        - name: data
+          mountPath: /loki
+      volumes:
+      {{- if not .Values.observability.loki.persistence.enabled }}
+      - name: data
+        emptyDir: {}
+      {{- end }}
+  {{- if .Values.observability.loki.persistence.enabled }}
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      {{- if .Values.observability.loki.persistence.storageClass }}
+      {{- if (eq "-" .Values.observability.loki.persistence.storageClass) }}
+      storageClassName: ""
+      {{- else }}
+      storageClassName: {{ .Values.observability.loki.persistence.storageClass }}
+      {{- end }}
+      {{- end }}
+      resources:
+        requests:
+          storage: {{ .Values.observability.loki.persistence.size }}
+  {{- end }}
+{{- end }}

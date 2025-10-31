@@ -1,0 +1,43 @@
+{{- if .Values.observability.tempo.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "business-process-agents.fullname" . }}-tempo-config
+  labels:
+    {{- include "business-process-agents.labels" . | nindent 4 }}
+    app.kubernetes.io/component: tempo
+data:
+  tempo.yaml: |
+    server:
+      http_listen_port: {{ .Values.observability.tempo.service.port }}
+    
+    distributor:
+      receivers:
+        otlp:
+          protocols:
+            grpc:
+              endpoint: 0.0.0.0:{{ .Values.observability.tempo.service.otlpPort }}
+    
+    ingester:
+      trace_idle_period: 10s
+      max_block_bytes: 1_000_000
+      max_block_duration: 5m
+    
+    compactor:
+      compaction:
+        compaction_window: 1h
+        max_block_bytes: 100_000_000
+        block_retention: 1h
+        compacted_block_retention: 10m
+    
+    storage:
+      trace:
+        backend: local
+        local:
+          path: /tmp/tempo/blocks
+        wal:
+          path: /tmp/tempo/wal
+        pool:
+          max_workers: 100
+          queue_depth: 10000
+{{- end }}

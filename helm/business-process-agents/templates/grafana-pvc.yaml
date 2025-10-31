@@ -1,0 +1,22 @@
+{{- if and .Values.observability.grafana.enabled .Values.observability.grafana.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "business-process-agents.fullname" . }}-grafana-data
+  labels:
+    {{- include "business-process-agents.labels" . | nindent 4 }}
+    app.kubernetes.io/component: grafana
+spec:
+  accessModes:
+    - ReadWriteOnce
+  {{- if .Values.observability.grafana.persistence.storageClass }}
+  {{- if (eq "-" .Values.observability.grafana.persistence.storageClass) }}
+  storageClassName: ""
+  {{- else }}
+  storageClassName: {{ .Values.observability.grafana.persistence.storageClass }}
+  {{- end }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.observability.grafana.persistence.size }}
+{{- end }}

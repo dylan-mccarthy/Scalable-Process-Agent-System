@@ -274,6 +274,7 @@ otelCollector:
     otlpGrpcPort: 4317
     otlpHttpPort: 4318
     metricsPort: 8889
+    annotations: {}
   
   resources:
     limits:
@@ -282,64 +283,125 @@ otelCollector:
     requests:
       cpu: 250m
       memory: 256Mi
-  
-  config:
-    receivers:
-      otlp:
-        protocols:
-          grpc:
-            endpoint: 0.0.0.0:4317
-          http:
-            endpoint: 0.0.0.0:4318
-    
-    exporters:
-      logging:
-        loglevel: debug
-      prometheus:
-        endpoint: 0.0.0.0:8889
-    
-    service:
-      pipelines:
-        metrics:
-          receivers: [otlp]
-          exporters: [prometheus, logging]
-        traces:
-          receivers: [otlp]
-          exporters: [logging]
-        logs:
-          receivers: [otlp]
-          exporters: [logging]
 
 # Observability stack (optional)
 observability:
   # Prometheus for metrics
   prometheus:
     enabled: false
+    
+    image:
+      repository: prom/prometheus
+      tag: "v2.48.0"
+      pullPolicy: IfNotPresent
+    
     service:
       type: ClusterIP
       port: 9090
+      annotations: {}
+    
+    persistence:
+      enabled: true
+      storageClass: ""
+      size: 10Gi
+    
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+      requests:
+        cpu: 500m
+        memory: 512Mi
   
   # Grafana for visualization
   grafana:
     enabled: false
+    
+    image:
+      repository: grafana/grafana
+      tag: "10.2.2"
+      pullPolicy: IfNotPresent
+    
     service:
       type: ClusterIP
       port: 3000
+      annotations: {}
+    
+    persistence:
+      enabled: true
+      storageClass: ""
+      size: 5Gi
+    
+    auth:
+      anonymous:
+        enabled: true
+        orgRole: Admin
+      disableLoginForm: true
+    
     adminPassword: admin
+    
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
   
   # Tempo for traces
   tempo:
     enabled: false
+    
+    image:
+      repository: grafana/tempo
+      tag: "2.3.1"
+      pullPolicy: IfNotPresent
+    
     service:
       type: ClusterIP
       port: 3200
+      otlpPort: 4317
+      annotations: {}
+    
+    persistence:
+      enabled: true
+      storageClass: ""
+      size: 10Gi
+    
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+      requests:
+        cpu: 500m
+        memory: 512Mi
   
   # Loki for logs
   loki:
     enabled: false
+    
+    image:
+      repository: grafana/loki
+      tag: "2.9.3"
+      pullPolicy: IfNotPresent
+    
     service:
       type: ClusterIP
       port: 3100
+      annotations: {}
+    
+    persistence:
+      enabled: true
+      storageClass: ""
+      size: 10Gi
+    
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
 
 # Service Account
 serviceAccount:
