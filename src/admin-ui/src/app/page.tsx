@@ -35,9 +35,11 @@ export default function Home() {
                 <CardDescription>View latest runs with status</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button variant="outline" className="w-full">
-                  View Runs
-                </Button>
+                <Link href="/runs">
+                  <Button variant="outline" className="w-full">
+                    View Runs
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
 

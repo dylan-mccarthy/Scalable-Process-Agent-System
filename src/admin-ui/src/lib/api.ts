@@ -49,7 +49,5 @@ export async function fetchRuns(): Promise<Run[]> {
  * Get active runs (status: pending, running, or scheduled)
  */
 export function getActiveRuns(runs: Run[]): Run[] {
-  return runs.filter((run) =>
-    ACTIVE_RUN_STATUSES.includes(run.status.toLowerCase())
-  );
+  return runs.filter((run) => ACTIVE_RUN_STATUSES.includes(run.status.toLowerCase()));
 }
