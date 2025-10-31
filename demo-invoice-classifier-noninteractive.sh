@@ -23,6 +23,9 @@ RED='\033[0;31m'
 NC='\033[0m'
 
 # Configuration
+# Note: This demo uses Docker Compose which exposes the Control Plane on port 8080.
+# When running locally with 'dotnet run', the API uses port 5109 instead.
+# The agent seed script will use the CONTROL_PLANE_URL environment variable.
 CONTROL_PLANE_URL="${CONTROL_PLANE_URL:-http://localhost:8080}"  # Docker Compose port (local dev uses 5109)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TIMEOUT=120
