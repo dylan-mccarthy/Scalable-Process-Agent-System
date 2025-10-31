@@ -127,12 +127,12 @@ Before running the Node Runtime, **configure Azure AI Foundry** (required for ag
 ```bash
 # Option 1: Use user secrets (recommended for development)
 cd src/Node.Runtime
-dotnet user-secrets set "AgentRuntime:AzureAIFoundry:Endpoint" "https://your-resource.services.ai.azure.com/models"
+dotnet user-secrets set "AgentRuntime:AzureAIFoundry:Endpoint" "https://your-resource.openai.azure.com/"
 dotnet user-secrets set "AgentRuntime:AzureAIFoundry:ApiKey" "your-api-key"
 dotnet user-secrets set "AgentRuntime:AzureAIFoundry:DeploymentName" "gpt-4o-mini"
 
 # Option 2: Use environment variables
-export AgentRuntime__AzureAIFoundry__Endpoint="https://your-resource.services.ai.azure.com/models"
+export AgentRuntime__AzureAIFoundry__Endpoint="https://your-resource.openai.azure.com/"
 export AgentRuntime__AzureAIFoundry__ApiKey="your-api-key"
 export AgentRuntime__AzureAIFoundry__DeploymentName="gpt-4o-mini"
 ```
@@ -182,7 +182,7 @@ The platform uses **Azure AI Foundry** (or Azure OpenAI Service) to power LLM-ba
    - Go to "Deployments" → "Create new deployment"
    - Select model: `gpt-4o-mini` (recommended for cost-effective MVP)
    - Name: `gpt-4o-mini`
-   - Note your endpoint: `https://your-resource.services.ai.azure.com/models`
+   - Note your endpoint: `https://your-resource.openai.azure.com/`
 
 3. **Configure Node Runtime** (edit `src/Node.Runtime/appsettings.json`):
    ```json
@@ -193,7 +193,7 @@ The platform uses **Azure AI Foundry** (or Azure OpenAI Service) to power LLM-ba
        "MaxTokens": 4000,
        "MaxDurationSeconds": 60,
        "AzureAIFoundry": {
-         "Endpoint": "https://your-resource.services.ai.azure.com/models",
+         "Endpoint": "https://your-resource.openai.azure.com/",
          "DeploymentName": "gpt-4o-mini",
          "ApiKey": "your-api-key-here",
          "UseManagedIdentity": false
@@ -239,7 +239,7 @@ Managed Identity eliminates the need for API keys:
 {
   "AgentRuntime": {
     "AzureAIFoundry": {
-      "Endpoint": "https://your-resource.services.ai.azure.com/models",
+      "Endpoint": "https://your-resource.openai.azure.com/",
       "DeploymentName": "gpt-4o-mini",
       "UseManagedIdentity": true
     }
