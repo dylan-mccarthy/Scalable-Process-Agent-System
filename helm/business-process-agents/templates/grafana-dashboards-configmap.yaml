@@ -1,0 +1,30 @@
+{{- if .Values.observability.grafana.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "business-process-agents.fullname" . }}-grafana-dashboards
+  labels:
+    {{- include "business-process-agents.labels" . | nindent 4 }}
+    app.kubernetes.io/component: grafana
+data:
+  dashboards.yaml: |
+    apiVersion: 1
+    
+    providers:
+      - name: 'Business Process Agents'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        allowUiUpdates: true
+        options:
+          path: /var/lib/grafana/dashboards
+          foldersFromFilesStructure: false
+  
+  control-plane.json: |
+{{ .Files.Get "dashboards/control-plane.json" | indent 4 }}
+  
+  node-fleet.json: |
+{{ .Files.Get "dashboards/node-fleet.json" | indent 4 }}
+{{- end }}
