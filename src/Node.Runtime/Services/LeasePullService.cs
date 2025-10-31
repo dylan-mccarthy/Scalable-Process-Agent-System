@@ -539,7 +539,13 @@ public sealed class LeasePullService : ILeasePullService
             {
                 _logger.LogError(rpcEx, "gRPC error reporting failure for lease {LeaseId}: {StatusCode}", lease.LeaseId, rpcEx.StatusCode);
             }
-            catch (Exception failEx)
+            // Only catch non-fatal exceptions during failure reporting.
+            // Do not catch OutOfMemoryException, StackOverflowException, or ThreadAbortException
+            catch (Exception failEx) when (
+                !(failEx is OutOfMemoryException) &&
+                !(failEx is StackOverflowException) &&
+                !(failEx is ThreadAbortException)
+            )
             {
                 _logger.LogError(failEx, "Unexpected error reporting failure for lease {LeaseId}", lease.LeaseId);
             }
