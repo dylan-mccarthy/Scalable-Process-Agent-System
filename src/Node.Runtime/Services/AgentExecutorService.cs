@@ -3,6 +3,9 @@ using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 using Node.Runtime.Configuration;
 using Microsoft.Extensions.Options;
+using Azure;
+using Azure.AI.Inference;
+using Azure.Identity;
 
 namespace Node.Runtime.Services;
 
@@ -227,16 +230,66 @@ public class AgentExecutorService : IAgentExecutor
 
     /// <summary>
     /// Gets a chat client based on the model profile.
-    /// This is a placeholder that will be replaced with actual Azure AI Foundry integration.
+    /// Supports Azure AI Foundry endpoints with API key or managed identity authentication.
     /// </summary>
     private IChatClient GetChatClient(Dictionary<string, object>? modelProfile)
     {
-        // This will be implemented in E3-T4 (Azure AI Foundry integration)
-        // For now, we throw to indicate this needs configuration
-        throw new NotImplementedException(
-            "Chat client creation needs to be configured with Azure AI Foundry or OpenAI credentials. " +
-            "This will be implemented in E3-T4 (Azure AI Foundry integration). " +
-            "The agent executor is ready to execute agents once a model provider is configured.");
+        // Check for Azure AI Foundry configuration
+        if (_options.AzureAIFoundry == null)
+        {
+            throw new InvalidOperationException(
+                "Azure AI Foundry configuration is not set. " +
+                "Please configure AgentRuntime:AzureAIFoundry section in appsettings.json with Endpoint and DeploymentName.");
+        }
+
+        var foundryConfig = _options.AzureAIFoundry;
+
+        // Validate required configuration
+        if (string.IsNullOrWhiteSpace(foundryConfig.Endpoint))
+        {
+            throw new InvalidOperationException(
+                "Azure AI Foundry Endpoint is not configured. " +
+                "Please set AgentRuntime:AzureAIFoundry:Endpoint in appsettings.json.");
+        }
+
+        if (string.IsNullOrWhiteSpace(foundryConfig.DeploymentName))
+        {
+            throw new InvalidOperationException(
+                "Azure AI Foundry DeploymentName is not configured. " +
+                "Please set AgentRuntime:AzureAIFoundry:DeploymentName in appsettings.json.");
+        }
+
+        _logger.LogDebug(
+            "Creating Azure AI Foundry chat client for endpoint {Endpoint}, deployment {DeploymentName}",
+            foundryConfig.Endpoint,
+            foundryConfig.DeploymentName);
+
+        // Create ChatCompletionsClient based on authentication method
+        ChatCompletionsClient chatCompletionsClient;
+
+        if (foundryConfig.UseManagedIdentity || string.IsNullOrWhiteSpace(foundryConfig.ApiKey))
+        {
+            // Use managed identity (DefaultAzureCredential)
+            _logger.LogInformation("Using managed identity authentication for Azure AI Foundry");
+            chatCompletionsClient = new ChatCompletionsClient(
+                new Uri(foundryConfig.Endpoint),
+                new DefaultAzureCredential());
+        }
+        else
+        {
+            // Use API key authentication
+            _logger.LogInformation("Using API key authentication for Azure AI Foundry");
+            chatCompletionsClient = new ChatCompletionsClient(
+                new Uri(foundryConfig.Endpoint),
+                new AzureKeyCredential(foundryConfig.ApiKey));
+        }
+
+        // Create a wrapper IChatClient that uses the ChatCompletionsClient
+        var chatClient = new AzureAIFoundryChatClient(chatCompletionsClient, foundryConfig.DeploymentName);
+
+        _logger.LogDebug("Successfully created Azure AI Foundry chat client");
+
+        return chatClient;
     }
 
     /// <summary>
