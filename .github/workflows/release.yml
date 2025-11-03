@@ -165,7 +165,7 @@ jobs:
     
     steps:
       - name: Download all SBOMs
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           pattern: sbom-*-release
           path: ./sboms
