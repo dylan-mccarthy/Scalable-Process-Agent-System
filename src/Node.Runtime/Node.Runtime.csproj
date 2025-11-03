@@ -21,7 +21,7 @@
     <PackageReference Include="Microsoft.Agents.AI.OpenAI" Version="1.0.0-preview.251028.1" />
     <PackageReference Include="Azure.Identity" Version="1.17.0" />
     <PackageReference Include="Azure.AI.Inference" Version="1.0.0-beta.5" />
-    <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.10.0" />
+    <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.13.1" />
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.13.1" />
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.10.0" />
     <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.13.0" />
