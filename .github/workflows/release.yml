@@ -114,7 +114,7 @@ jobs:
           format: spdx-json
       
       - name: Upload SBOM to release
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: sbom-${{ matrix.name }}-release
           path: sbom-${{ matrix.name }}-${{ steps.version.outputs.version }}.spdx.json
