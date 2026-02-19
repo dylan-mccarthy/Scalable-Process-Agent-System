@@ -11,13 +11,8 @@
     <PackageReference Include="Microsoft.Agents.AI" Version="1.0.0-preview.251028.1" />
     <PackageReference Include="Microsoft.Agents.AI.AzureAI" Version="1.0.0-preview.251028.1" />
     <PackageReference Include="Microsoft.Agents.AI.OpenAI" Version="1.0.0-preview.251028.1" />
-<<<<<<< dependabot/nuget/src/ControlPlane.Api/Microsoft.AspNetCore.OpenApi-9.0.11
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.10" />
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.11" />
-=======
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.11" />
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.9" />
->>>>>>> main
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.11" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.10">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
